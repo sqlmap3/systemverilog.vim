@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Sat Dec 06 11:15:30 CST 2025
+" Last Change:	Sat Dec 08 19:23:33 CST 2025
 
 " Only do this when not done yet for this buffer
 if exists("b:did_ftplugin")
@@ -42,12 +42,12 @@ if exists("loaded_matchit")
   let b:match_ignorecase=0
   let b:match_words=
     \ '\<begin\>:\<end\>,' .
-    \ '\<assert\>:\<else\>,' .
-    \ '\<else\>:\<assert\>,' .
-    \ '\<else\>:\<final\>,' .
-    \ '\<final\>:\<else\>,' .
     \ '\<if\>:\<else\>,' .
     \ '\<else\>:\<if\>,' .
+    \ '\<assert\>\%(\s\+property\)\=:\<else\>,' .
+    \ '\<else\>:\<assert\>\%(\s\+property\)\=,' .
+    \ '\<else\>:\<final\>,' .
+    \ '\<final\>:\<else\>,' .
     \ '`if\%[n]def\>:`els\%(if\|e\)\>:`endif\>,' .
     \ '\<case\%[xz]\>\|\<randcase\>:\<endcase\>,' .
     \ '\%(disable\s\+\)\@<!\<fork\>:\<\%(join_none\|join_any\|join\)\>,' .
