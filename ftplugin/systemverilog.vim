@@ -42,7 +42,12 @@ if exists("loaded_matchit")
   let b:match_ignorecase=0
   let b:match_words=
     \ '\<begin\>:\<end\>,' .
+    \ '\<assert\>:\<else\>,' .
+    \ '\<else\>:\<assert\>,' .
+    \ '\<else\>:\<final\>,' .
+    \ '\<final\>:\<else\>,' .
     \ '\<if\>:\<else\>,' .
+    \ '\<else\>:\<if\>,' .
     \ '`if\%[n]def\>:`els\%(if\|e\)\>:`endif\>,' .
     \ '\<case\%[xz]\>\|\<randcase\>:\<endcase\>,' .
     \ '\%(disable\s\+\)\@<!\<fork\>:\<\%(join_none\|join_any\|join\)\>,' .
@@ -58,8 +63,6 @@ if exists("loaded_matchit")
     \ '\<clocking\>:\<endclocking\>,' .
     \ '\<property\>:\<endproperty\>,' .
     \ '\<sequence\>:\<endsequence\>,' .
-    \ '\<package\>:\<endpackage\>,' .
-    \ '\<covergroup\>:\<endgroup\>,' .
     \ '\<primitive\>:\<endprimitive\>,' .
     \ '\<randsequence\>:\<endsequence\>,' .
     \ '\<generate\>:\<endgenerate\>,' .
