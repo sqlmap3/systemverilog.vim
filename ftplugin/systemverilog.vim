@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Sat Dec 06 11:15:30 CST 2025
+" Last Change:	Sat Dec 08 14:33:30 CST 2025
 
 " Only do this when not done yet for this buffer
 if exists("b:did_ftplugin")
