@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Sat Dec 08 13:58:30 CST 2025
+" Last Change:	Sat Dec 23 21:15:05 CST 2025
 if exists("b:did_indent")
 	finish
 endif
@@ -163,6 +163,65 @@ function! GetSystemVerilogIndent( line_num )
 		if ( strpart( prev2_codeline , strlen(prev2_codeline) - 1 , 1) == '\' )
 			let indnt = indnt - &shiftwidth
 		endif
+	endif
+	if this_codeline =~ '^\s*`\s*\cinclude\>'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`\s*\cendif\>'
+				break
+			endif
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+				return indent(ln) + &shiftwidth
+			endif
+			if l =~ '^\s*`\s*\cinclude\>'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			break
+		endwhile
+	endif
+	if this_codeline !~ '^\s*`'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\cinclude\>'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`\s*\cendif\>'
+				break
+			endif
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+				return indent(ln) + &shiftwidth
+			endif
+			break
+		endwhile
+	endif
+	if this_codeline =~ '^\s*//'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`\s*\cendif\>'
+				break
+			endif
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+				return indent(ln) + &shiftwidth
+			endif
+			if l =~ '^\s*`\s*\cinclude\>'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			break
+		endwhile
 	endif
 
 	let prev1_line_num = s:GetPrevWholeLineNum (a:line_num)
