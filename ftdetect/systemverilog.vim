@@ -6,5 +6,5 @@
 " Last Change:	Sat Dec 06 11:15:30 CST 2025
 augroup ftdetect_systemverilog
   autocmd!
-  autocmd BufRead,BufNewFile *.v,*.vh,*.sv,*.svh,*.svp,*.svi setfiletype systemverilog
+  autocmd BufRead,BufNewFile *.v,*.vh,*.sv,*.svh,*.svp,*.svi,*.sva setfiletype systemverilog
 augroup END
