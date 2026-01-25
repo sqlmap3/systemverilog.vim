@@ -18,9 +18,12 @@ syntax keyword svType real realtime event reg wire integer logic bit time byte c
 syntax keyword svDirection input output inout ref
 syntax keyword svStorageClass virtual var protected rand const static automatic extern forkjoin export import
 syntax match svPreProc "`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|default_nettype\|end_keywords\|endcelldefine\|include\|line\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>"
-syntax match svPreCondit "`\(else\|elsif\|endif\|ifdef\|ifndef\)\>"
+" only else/elsif/endif here
+syntax match svPreCondit "`\(else\|elsif\|endif\)\>"
 syntax match svInclude "`include\>"
-syntax match svDefine "`define\>"
+" `define itself, and let next token be svDefineName
+syntax match svDefine "`define\>" nextgroup=svDefineName skipwhite containedin=ALL
+
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
 syntax keyword svKeyword fork join join_any join_none begin end module endmodule function endfunction task endtask always always_ff always_latch always_comb initial this generate endgenerate config endconfig class endclass clocking endclocking interface endinterface package endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover covergroup coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed priority program property pure randc randcase randsequence sequence solve super tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
@@ -45,10 +48,15 @@ syntax match svSVAOp "\(|->\|=>\|##\d\+\|##\|\[\*\(\d\+\(:\d\+\)\?\)\?\]\)"
 " Covergroup / coverpoint / bins names
 syntax match svCovergroupName "\<covergroup\>\s\+\zs\h\w*"
 " Macro guard names
-syntax match svIfndefTok "`ifndef\>" nextgroup=svIfndefName skipwhite containedin=ALL
-syntax match svDefineTok  "`define\>"  nextgroup=svDefineName  skipwhite containedin=ALL
-syntax match svIfndefName "[A-Z0-9_]\+" contained
-syntax match svDefineName  "[A-Z0-9_]\+" contained
+syntax match svIfndefTok "`ifndef\>" skipwhite containedin=ALL
+syntax match svIfdefTok  "`ifdef\>"  skipwhite containedin=ALL
+" Highlight macro names that follow `ifndef/`ifdef/`define
+" e.g. `ifndef AAA / `ifdef FOO_BAR / `define MY_MACRO
+syntax match svIfndefName "\%(`ifndef\s\+\)\@<=\h\w*" containedin=ALL
+syntax match svIfdefName  "\%(`ifdef\s\+\)\@<=\h\w*"  containedin=ALL
+syntax match svDefineName "\%(`define\s\+\)\@<=\h\w*" containedin=ALL
+" Macro usage in normal code: `AAA, `foo_bar, etc.
+syntax match svMacroRef "`\h\w*" containedin=ALL
 syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
 syntax match svHashNumber  "#[0-9_]\+" containedin=ALL
 syntax match svTimeUnitHash  "#[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>" containedin=ALL
@@ -306,7 +314,10 @@ highlight! default link svStorageClass StorageClass
 highlight! default link svPreProc PreProc
 highlight! default link svPreCondit PreCondit
 highlight! default link svInclude Include
-highlight! default link svDefine Define
+highlight! default link svDefine Macro          " `define keyword as Macro
+" macros in conditional guards/defines
+highlight! default link svIfndefTok Macro       " `ifndef keyword as Macro
+highlight! default link svIfdefTok  Macro       " `ifdef  keyword as Macro
 highlight! default link svConditional Conditional
 highlight! default link svRepeat Repeat
 highlight! default link svKeyword Keyword
@@ -328,10 +339,13 @@ highlight! default link svCoverWithPred Identifier
 highlight! default link svCoverIffPred Identifier
 highlight! default link svCoverOption Label
 highlight! default link svCoverTypeOption Label
-highlight! default link svIfndefName Number
-highlight! default link svDefineName Number
+highlight! default link svIfndefName Macro      " macro name after `ifndef as Macro
+highlight! default link svIfdefName  Macro      " macro name after `ifdef  as Macro
+highlight! default link svDefineName Macro      " macro name after `define as Macro
 highlight! default link svUpperDot Number
 highlight! default link svHashNumber Number
+" Highlight user macro usage
+highlight! default link svMacroRef Macro
 highlight! default link svTimeUnitHash Special
 highlight! default link svTimeUnitPlain Special
 
