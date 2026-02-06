@@ -22,19 +22,20 @@ syntax match svPreProc "`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|defau
 syntax match svPreCondit "`\(else\|elsif\|endif\)\>"
 syntax match svInclude "`include\>"
 " `define itself, and let next token be svDefineName
-syntax match svDefine "`define\>" nextgroup=svDefineName skipwhite containedin=ALL
+syntax match svDefine "`define\>" nextgroup=svDefineName skipwhite
 
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
 syntax keyword svKeyword fork join join_any join_none begin end module endmodule function endfunction task endtask always always_ff always_latch always_comb initial this generate endgenerate config endconfig class endclass clocking endclocking interface endinterface package endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover covergroup coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed priority program property pure randc randcase randsequence sequence solve super tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
+" Numeric literals - optimized patterns
+" Plain decimal without base specifier
 syntax match svInteger "\<\(\.\)\@<![0-9_]\+\(\s*['.]\)\@!\>"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(d\|D\)\s*[0-9_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(o\|O\)\s*[0-7_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(b\|B\)\s*[01_ZzXx?]\+"
-syntax match svInteger "\<'\(d\|D\|h\|H\|o\|O\|b\|B\)\>"
-syntax match svInteger "'[01xXzZ?]\>"
-syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
+" Based literals: [width]'[s][base][digits] - consolidated pattern
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\([dDhHoObB]\)\s*[0-9a-fA-F_ZzXx?]\+"
+" Unbased unsized literals: 'd, 'h, 'o, 'b or single bit literals
+syntax match svInteger "\<'\([dDhHoObB]\|[01xXzZ?]\)\>"
+" Real number literals
+syntax match svReal "\<[0-9_]\+\.\([0-9_]\+\)\?\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
 syntax keyword svStructure struct union enum
 syntax keyword svTypedef typedef parameter localparam
@@ -48,19 +49,19 @@ syntax match svSVAOp "\(|->\|=>\|##\d\+\|##\|\[\*\(\d\+\(:\d\+\)\?\)\?\]\)"
 " Covergroup / coverpoint / bins names
 syntax match svCovergroupName "\<covergroup\>\s\+\zs\h\w*"
 " Macro guard names
-syntax match svIfndefTok "`ifndef\>" skipwhite containedin=ALL
-syntax match svIfdefTok  "`ifdef\>"  skipwhite containedin=ALL
+syntax match svIfndefTok "`ifndef\>" skipwhite
+syntax match svIfdefTok  "`ifdef\>"  skipwhite
 " Highlight macro names that follow `ifndef/`ifdef/`define
 " e.g. `ifndef AAA / `ifdef FOO_BAR / `define MY_MACRO
-syntax match svIfndefName "\%(`ifndef\s\+\)\@<=\h\w*" containedin=ALL
-syntax match svIfdefName  "\%(`ifdef\s\+\)\@<=\h\w*"  containedin=ALL
-syntax match svDefineName "\%(`define\s\+\)\@<=\h\w*" containedin=ALL
+syntax match svIfndefName "\%(`ifndef\s\+\)\@<=\h\w*"
+syntax match svIfdefName  "\%(`ifdef\s\+\)\@<=\h\w*"
+syntax match svDefineName "\%(`define\s\+\)\@<=\h\w*"
 " Macro usage in normal code: `AAA, `foo_bar, etc.
-syntax match svMacroRef "`\h\w*" containedin=ALL
-syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
-syntax match svHashNumber  "#[0-9_]\+" containedin=ALL
-syntax match svTimeUnitHash  "#[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>" containedin=ALL
-syntax match svTimeUnitPlain "\<[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>" containedin=ALL
+syntax match svMacroRef "`\h\w*"
+syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>"
+syntax match svHashNumber  "#[0-9_]\+"
+syntax match svTimeUnitHash  "#[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>"
+syntax match svTimeUnitPlain "\<[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>"
 syntax match svCoverLabel "\<\zs\h\w*\ze\s*:\s*\(coverpoint\|cross\)\>"
 syntax match svBinsName "\<\(wildcard\s\+\)\?bins\>\s\+\zs\h\w*"
 syntax match svBinsName "\<\(illegal_bins\|ignore_bins\)\>\s\+\zs\h\w*"
@@ -263,11 +264,9 @@ highlight! default link uvmMethodFactory Structure
 highlight! default link uvmMethodConfig Label
 
 syntax keyword uvmPhase build_phase check_phase configure_phase connect_phase define_domain do_kill end_of_elaboration_phase exec_task extract_phase final_phase main_phase phase_ended phase_ready_to_end phase_started post_configure_phase post_main_phase post_reset_phase post_shutdown_phase pre_configure_phase pre_main_phase pre_reset_phase pre_shutdown_phase report_phase reset_phase run_phase shutdown_phase start_of_simulation_phase
+" Match uvm_*_phase patterns (covers uvm_build_phase, uvm_reset_phase, etc.)
+syntax match uvmPhase "\<uvm_\(pre_reset\|reset\|post_reset\|pre_configure\|configure\|post_configure\|pre_main\|main\|post_main\|pre_shutdown\|shutdown\|post_shutdown\|build\|connect\|end_of_elaboration\|start_of_simulation\|run\|extract\|check\|report\|final\)_phase\>"
 highlight! default link uvmPhase Type
-
-syntax match uvmPhase "\<uvm_\(pre_reset\|reset\|post_reset\|pre_configure\|configure\|post_configure\|pre_main\|main\|post_main\|pre_shutdown\|shutdown\|post_shutdown\)_phase\>"
-
-syntax match uvmPhase "\<uvm_\(build\|connect\|end_of_elaboration\|start_of_simulation\|run\|extract\|check\|report\|final\)_phase\>"
 
 syntax keyword uvmSeq uvm_reg_bit_hash_seq uvm_reg_hw_reset_seq uvm_reg_mem_built_in_seq
 highlight! default link uvmSeq Identifier
@@ -438,32 +437,3 @@ highlight! default link svCtorCall Function
 highlight! default link uvmTypeIdCreate Function
 highlight! default link uvmObjectCreate Function
 highlight! default link svRandCallback Function
-
-highlight! default link uvmConfig Structure
-highlight! default link uvmResource Structure
-highlight! default link uvmPort StorageClass
-highlight! default link uvmSocket Structure
-highlight! default link uvmTLM Structure
-highlight! default link uvmReg Structure
-highlight! default link uvmEnum Constant
-highlight! default link uvmMacros Macro
-highlight! default link uvmMethodObjection Keyword
-highlight! default link uvmMethodTrans Operator
-highlight! default link uvmMethodSeqCtrl Repeat
-highlight! default link uvmMethodFactory Structure
-highlight! default link uvmMethodConfig Label
-highlight! default link uvmPhase Type
-highlight! default link uvmSeq Identifier
-highlight! default link uvmConfigApi Label
-highlight! default link uvmResourceApi Label
-highlight! default link uvmResourceApi2 Label
-highlight! default link uvmRegApi Operator
-highlight! default link uvmHDLApi Operator
-highlight! default link uvmEventMethod Statement
-highlight! default link uvmMethodInfo Global
-highlight! default link uvmFactoryApi2 Structure
-highlight! default link uvmAnalysisApi Function
-highlight! default link uvmSubscriberApi Function
-highlight! default link uvmReportServerApi Global
-highlight! default link uvmSequenceApi Repeat
-highlight! default link uvmSequencerApi Repeat
