@@ -269,8 +269,12 @@ highlight! default link uvmMethodFactory Structure
 highlight! default link uvmMethodConfig Label
 
 syntax keyword uvmPhase build_phase check_phase configure_phase connect_phase define_domain do_kill end_of_elaboration_phase exec_task extract_phase final_phase main_phase phase_ended phase_ready_to_end phase_started post_configure_phase post_main_phase post_reset_phase post_shutdown_phase pre_configure_phase pre_main_phase pre_reset_phase pre_shutdown_phase report_phase reset_phase run_phase shutdown_phase start_of_simulation_phase
-" Match uvm_*_phase patterns (covers uvm_build_phase, uvm_reset_phase, etc.)
-syntax match uvmPhase "\<uvm_\(pre_reset\|reset\|post_reset\|pre_configure\|configure\|post_configure\|pre_main\|main\|post_main\|pre_shutdown\|shutdown\|post_shutdown\|build\|connect\|end_of_elaboration\|start_of_simulation\|run\|extract\|check\|report\|final\)_phase\>"
+" Match uvm_*_phase patterns for standard UVM phases
+syntax match uvmPhase "\<uvm_\(build\|connect\|end_of_elaboration\|start_of_simulation\|run\|extract\|check\|report\|final\)_phase\>"
+" Match uvm_*_phase patterns for reset phases
+syntax match uvmPhase "\<uvm_\(pre_reset\|reset\|post_reset\)_phase\>"
+" Match uvm_*_phase patterns for configure/main/shutdown phases
+syntax match uvmPhase "\<uvm_\(pre_configure\|configure\|post_configure\|pre_main\|main\|post_main\|pre_shutdown\|shutdown\|post_shutdown\)_phase\>"
 highlight! default link uvmPhase Type
 
 syntax keyword uvmSeq uvm_reg_bit_hash_seq uvm_reg_hw_reset_seq uvm_reg_mem_built_in_seq
