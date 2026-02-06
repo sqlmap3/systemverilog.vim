@@ -27,15 +27,20 @@ syntax match svDefine "`define\>" nextgroup=svDefineName skipwhite
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
 syntax keyword svKeyword fork join join_any join_none begin end module endmodule function endfunction task endtask always always_ff always_latch always_comb initial this generate endgenerate config endconfig class endclass clocking endclocking interface endinterface package endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover covergroup coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed priority program property pure randc randcase randsequence sequence solve super tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
-" Numeric literals - optimized patterns
+" Numeric literals
 " Plain decimal without base specifier
 syntax match svInteger "\<\(\.\)\@<![0-9_]\+\(\s*['.]\)\@!\>"
-" Based literals: [width]'[s][base][digits] - consolidated pattern
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\([dDhHoObB]\)\s*[0-9a-fA-F_ZzXx?]\+"
-" Unbased unsized literals: 'd, 'h, 'o, 'b or single bit literals
-syntax match svInteger "\<'\([dDhHoObB]\|[01xXzZ?]\)\>"
+" Based literals: [width]'[signed][base][digits] with base-specific digit validation
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(d\|D\)\s*[0-9_ZzXx?]\+"
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+"
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(o\|O\)\s*[0-7_ZzXx?]\+"
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(b\|B\)\s*[01_ZzXx?]\+"
+" Unbased unsized literals: 'd, 'h, 'o, 'b
+syntax match svInteger "\<'\(d\|D\|h\|H\|o\|O\|b\|B\)\>"
+" Single bit literals
+syntax match svInteger "'[01xXzZ?]\>"
 " Real number literals
-syntax match svReal "\<[0-9_]\+\.\([0-9_]\+\)\?\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
+syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
 syntax keyword svStructure struct union enum
 syntax keyword svTypedef typedef parameter localparam
