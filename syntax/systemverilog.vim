@@ -10,19 +10,23 @@ endif
 
 let b:current_syntax = "systemverilog"
 
-syntax keyword svTodo TODO contained
+syntax match svTodo "\c\<\(todo\|fixme\|fix\|xxx\|bug\|hack\|note\|warn\|warning\|optimize\|review\|tbd\)\>" contained
 syntax match svLineComment "//.*" contains=svTodo
 syntax region svBlockComment start="/\*" end="\*/" contains=svTodo
-syntax region svString start=+"+ skip=+\\"+ end=+"+
+syntax region svString start=+"+ skip=+\\"+ end=+"+ contains=NONE
 syntax keyword svType real realtime event reg wire integer logic bit time byte chandle genvar signed unsigned shortint shortreal string void int specparam
 syntax keyword svDirection input output inout ref
 syntax keyword svStorageClass virtual var protected rand const static automatic extern forkjoin export import
-syntax match svPreProc "`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|default_nettype\|end_keywords\|endcelldefine\|include\|line\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>"
-" only else/elsif/endif here
-syntax match svPreCondit "`\(else\|elsif\|endif\)\>"
-syntax match svInclude "`include\>"
-" `define itself, and let next token be svDefineName
-syntax match svDefine "`define\>" nextgroup=svDefineName skipwhite containedin=ALL
+syntax match svMacroRef "`\h\%(\w\|\$\)*"
+syntax match svDefine "^\s*`define\>" nextgroup=svDefineName skipwhite
+syntax match svUndef  "^\s*`undef\>"  nextgroup=svDefineName skipwhite
+syntax match svPreProc "^\s*`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|default_nettype\|end_keywords\|endcelldefine\|line\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undefineall\)\>"
+syntax match svInclude "^\s*`include\>" nextgroup=svIncludeString,svIncludeAngle skipwhite
+syntax region svIncludeString start=+"+ skip=+\\"+ end=+"+ contained contains=svIncludeExt
+syntax region svIncludeAngle  start=+<+ end=+>+ contained contains=svIncludeExt
+syntax match svIncludeExt "\.\c\(svh\|sv\|vh\|v\)\>" contained
+syntax match svPreConditElsif "^\s*`elsif\>" nextgroup=svIfdefName skipwhite
+syntax match svPreCondit "^\s*`\(else\|endif\)\>"
 
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
@@ -38,7 +42,27 @@ syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
 syntax keyword svStructure struct union enum
 syntax keyword svTypedef typedef parameter localparam
+syntax region svEnumBody start="\<enum\>\_.\{-}{" end="}" keepend transparent contains=ALL
+syntax match svEnumerator "\%(\s*{\s*\|,\s*\)\zs\h\w*\ze\%(\s*=\|\s*}\|\s*,\)" contained containedin=svEnumBody
+syntax region svPortList start="^\s*\%(module\|interface\)\>\_.\{-}\%(\_s*#\_s*(\_.\{-})\)\?\_s*(" end=");" keepend transparent contains=ALL
+syntax match svPortName "\<\h\w*\>\ze\%(\_s*\(\[[^]]*\]\_s*\)\*\)\_s*\%(,\|)\|=\)" contained containedin=svPortList
+syntax region svInstStmt start="^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\h\w*\_s*\%(\[[^]]*]\_s*\)\?(" end=";" keepend transparent contains=ALL
+syntax match svInstanceName "^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\zs\h\w*\ze\_s*\%(\[[^]]*]\_s*\)\?(" contained containedin=svInstStmt
+syntax match svInstanceName ",\_s*\zs\h\w*\ze\_s*\%(\[[^]]*]\_s*\)\?(" contained containedin=svInstStmt
+syntax match svModuleName "\<module\>\_s\+\%(automatic\_s\+\)\?\zs\h\w*\ze\_s*\%((\|;\)"
+syntax match svInterfaceName "\<interface\>\_s\+\zs\h\w*\ze\_s*\%((\|;\)"
+syntax match svPackageName "\<package\>\_s\+\zs\h\w*\ze\_s*;"
+syntax match svClassName "\<class\>\_s\+\zs\h\w*\ze\_s*\%(#\|extends\|;\)"
+syntax match svTaskName "\<task\>\_.\{-}\zs\h\w*\ze\_s*\%((\|;\)"
+syntax match svFunctionName "\<function\>\_.\{-}\zs\h\w*\ze\_s*("
+syntax match svParamName "^\s*\%(parameter\|localparam\)\>.\{-}\zs\h\w*\ze\_s*="
+syntax match svTypedefName "\<typedef\>\_.\{-}\zs\h\w*\ze\_s*;"
+syntax region svStructBody start="\<\(struct\|union\)\>\%(\_s\+packed\)\?\_s*{" end="}" keepend transparent contains=ALL
+syntax match svStructField "\%(\.\|::\)\@<!\<\h\w*\>\ze\%(\s*\(\[[^]]*\]\s*\)\*\)\s*\%(,\|;\|=\)" contained containedin=svStructBody
+syntax match svNamedPort "\%(\s\|[(,]\)\.\zs\h\w*\ze\_s*(" containedin=ALL,svInstStmt
+syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>" containedin=ALL
 syntax match svSystemFunction "\$\(display\|displayb\|displayo\|displayh\|write\|writeb\|writeo\|writeh\|strobe\|strobeb\|strobeh\|strobeo\|monitor\|monitorb\|monitorh\|monitoro\|fopen\|fclose\|ftell\|fseek\|rewind\|fdisplay\|fdisplayb\|fdisplayh\|fdisplayo\|fwrite\|fwriteb\|fwriteh\|fwriteo\|fstrobe\|fstrobeb\|fstrobeh\|fstrobeo\|fmonitor\|fmonitorb\|fmonitorh\|fmonitoro\|finish\|stop\|exit\|realtime\|stime\|time\|printtimescale\|timeformat\|bitstoreal\|realtobits\|bitstoshortreal\|shortrealtobits\|itor\|rtoi\|signed\|unsigned\|cast\|bits\|isunbounded\|typename\|unpacked_dimensions\|dimensions\|left\|right\|low\|high\|increment\|size\|clog2\|asin\|ln\|acos\|log10\|atan\|exp\|atan2\|sqrt\|hypot\|pow\|sinh\|floor\|cosh\|ceil\|tanh\|sin\|asinh\|cos\|acosh\|tan\|atanh\|countbits\|countones\|onehot\|onehot0\|isunknown\|fatal\|error\|warning\|info\|fatal\|error\|warning\|info\|asserton\|assertoff\|assertkill\|assertcontrol\|assertpasson\|assertpassoff\|assertfailon\|assertfailoff\|assertnonvacuouson\|assertvacuousoff\|sampled\|rose\|fell\|stable\|changed\|past\|past_gclk\|rose_gclk\|fell_gclk\|stable_gclk\|changed_gclk\|future_gclk\|rising_gclk\|falling_gclk\|steady_gclk\|changing_gclk\|coverage_control\|coverage_get_max\|coverage_get\|coverage_merge\|coverage_save\|get_coverage\|set_coverage_db_name\|load_coverage_db\|random\|urandom\|urandom_range\|dist_chi_square\|dist_erlang\|dist_exponential\|dist_normal\|dist_poisson\|dist_t\|dist_uniform\|q_initialize\|q_add\|q_remove\|q_full\|q_exam\|asyncandarray\|asyncandplane\|asyncnandarray\|asyncnandplane\|asyncorarray\|asyncorplane\|asyncnorarray\|asyncnorplane\|syncandarray\|syncandplane\|syncnandarray\|syncnandplane\|syncorarray\|syncorplane\|syncnorarray\|syncnorplane\|system\|contained\|transparent\|dumpfile\|dumpvars\|dumpon\|dumpoff\|dumpall\|dumplimit\|dumpflush\|readmemb\|readmemh\|writememb\|writememh\)\>"
+syntax match svSystemCall "\$\h\w*\>"
 syntax match svObjectFunctions "\.\(num\|size\|delete\|exists\|first\|last\|next\|prev\|insert\|pop_front\|pop_back\|push_front\|push_back\|find\|find_index\|find_first\|find_first_index\|find_last\|find_last_index\|min\|max\|reverse\|sort\|rsort\|shuffle\|sum\|product\|and\|or\|xor\)\>\_s*("he=e-1
 syntax match svOperator "\(\~\|&\|||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
 syntax match svDelimiter "\({\|}\|(\|)\)"
@@ -48,19 +72,19 @@ syntax match svSVAOp "\(|->\|=>\|##\d\+\|##\|\[\*\(\d\+\(:\d\+\)\?\)\?\]\)"
 " Covergroup / coverpoint / bins names
 syntax match svCovergroupName "\<covergroup\>\s\+\zs\h\w*"
 " Macro guard names
-syntax match svIfndefTok "`ifndef\>" skipwhite containedin=ALL
-syntax match svIfdefTok  "`ifdef\>"  skipwhite containedin=ALL
-" Highlight macro names that follow `ifndef/`ifdef/`define
-" e.g. `ifndef AAA / `ifdef FOO_BAR / `define MY_MACRO
-syntax match svIfndefName "\%(`ifndef\s\+\)\@<=\h\w*" containedin=ALL
-syntax match svIfdefName  "\%(`ifdef\s\+\)\@<=\h\w*"  containedin=ALL
-syntax match svDefineName "\%(`define\s\+\)\@<=\h\w*" containedin=ALL
-" Macro usage in normal code: `AAA, `foo_bar, etc.
-syntax match svMacroRef "`\h\w*" containedin=ALL
+syntax match svIfndefTok "^\s*`ifndef\>" nextgroup=svIfndefName skipwhite
+syntax match svIfdefTok  "^\s*`ifdef\>"  nextgroup=svIfdefName  skipwhite
+syntax match svIfndefName "\h\%(\w\|\$\)*" contained
+syntax match svIfdefName  "\h\%(\w\|\$\)*" contained
+syntax match svDefineName "\h\%(\w\|\$\)*" contained nextgroup=svMacroArgs skipwhite
+syntax region svMacroArgs start="(" end=")" contained contains=NONE
 syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
+syntax match svUpperIdent  "\<\(UVM_\)\@![A-Z][A-Z0-9_]*\>"
 syntax match svHashNumber  "#[0-9_]\+" containedin=ALL
-syntax match svTimeUnitHash  "#[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>" containedin=ALL
-syntax match svTimeUnitPlain "\<[0-9_]\+\s*\zs\(fs\|ps\|ns\|us\|ms\|s\)\>" containedin=ALL
+syntax match svTimeUnitHash     "#[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
+syntax match svTimeUnitHash     "#[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
+syntax match svTimeUnitPlain    "\<[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
+syntax match svTimeUnitPlain    "\<[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
 syntax match svCoverLabel "\<\zs\h\w*\ze\s*:\s*\(coverpoint\|cross\)\>"
 syntax match svBinsName "\<\(wildcard\s\+\)\?bins\>\s\+\zs\h\w*"
 syntax match svBinsName "\<\(illegal_bins\|ignore_bins\)\>\s\+\zs\h\w*"
@@ -269,6 +293,9 @@ syntax match uvmPhase "\<uvm_\(pre_reset\|reset\|post_reset\|pre_configure\|conf
 
 syntax match uvmPhase "\<uvm_\(build\|connect\|end_of_elaboration\|start_of_simulation\|run\|extract\|check\|report\|final\)_phase\>"
 
+syntax match uvmPhaseGet "\<uvm_\w\+_phase\>\s*::\s*get\>"
+highlight! default link uvmPhaseGet Function
+
 syntax keyword uvmSeq uvm_reg_bit_hash_seq uvm_reg_hw_reset_seq uvm_reg_mem_built_in_seq
 highlight! default link uvmSeq Identifier
 
@@ -313,20 +340,40 @@ highlight! default link svDirection StorageClass
 highlight! default link svStorageClass StorageClass
 highlight! default link svPreProc PreProc
 highlight! default link svPreCondit PreCondit
+highlight! default link svPreConditElsif PreCondit
 highlight! default link svInclude Include
-highlight! default link svDefine Macro          " `define keyword as Macro
+highlight! default link svIncludeString String
+highlight! default link svIncludeAngle String
+highlight! default link svIncludeExt Special
+highlight! default link svDefine PreCondit      " `define keyword as PreCondit
+highlight! default link svUndef PreProc
 " macros in conditional guards/defines
-highlight! default link svIfndefTok Macro       " `ifndef keyword as Macro
-highlight! default link svIfdefTok  Macro       " `ifdef  keyword as Macro
+highlight! default link svIfndefTok PreCondit   " `ifndef keyword as PreCondit
+highlight! default link svIfdefTok  PreCondit   " `ifdef  keyword as PreCondit
 highlight! default link svConditional Conditional
 highlight! default link svRepeat Repeat
 highlight! default link svKeyword Keyword
 highlight! default link svInteger Number
 highlight! default link svReal Float
 highlight! default link svStructure Structure
+highlight! default link svModuleName Identifier
+highlight! default link svInterfaceName Identifier
+highlight! default link svPackageName Identifier
+highlight! default link svClassName Type
+highlight! default link svTaskName Function
+highlight! default link svFunctionName Function
+highlight! default link svParamName Identifier
+highlight! default link svTypedefName Type
+highlight! default link svPortName Identifier
+highlight! default link svInstanceName Identifier
+highlight! default link svEnumerator Constant
+highlight! default link svStructField Identifier
 highlight! default link svTypedef Typedef
 highlight! default link svSystemFunction Function
+highlight! default link svSystemCall Function
 highlight! default link svOperator Operator
+highlight! default link svNamedPort Identifier
+highlight! default link svAssertLabel Label
 highlight! default link svDelimiter Delimiter
 highlight! default link svObjectFunctions Function
 highlight! default link svSVAOp Operator
@@ -342,7 +389,9 @@ highlight! default link svCoverTypeOption Label
 highlight! default link svIfndefName Macro      " macro name after `ifndef as Macro
 highlight! default link svIfdefName  Macro      " macro name after `ifdef  as Macro
 highlight! default link svDefineName Macro      " macro name after `define as Macro
-highlight! default link svUpperDot Number
+highlight! default link svMacroArgs Special
+highlight! default link svUpperDot Constant
+highlight! default link svUpperIdent Constant
 highlight! default link svHashNumber Number
 " Highlight user macro usage
 highlight! default link svMacroRef Macro
