@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Sat Dec 06 11:15:30 CST 2025
+" Last Change:	Wed Feb 11 21:08:29 CST 2026
 if exists("b:current_syntax")
 	finish
 endif
