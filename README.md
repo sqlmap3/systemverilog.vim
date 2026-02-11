@@ -1,6 +1,6 @@
 # systemverilog.vim
 
-**Vim/Neovim Indent Plugin for SystemVerilog & UVM**
+**Vim/Neovim Indent & Syntax Plugin for SystemVerilog & UVM**
 
 [![License: GPL-2.0](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](LICENSE)
 
@@ -8,7 +8,7 @@
 **Maintainer:** [sqlmap3](https://github.com/sqlmap3/systemverilog.vim)  
 **Version:** 0.1  
 **First Change:** 2025-12-06  
-**Last Change:** 2025-12-08  
+**Last Change:** Wed Feb 11 21:08:29 CST 2026  
 
 ---
 
@@ -28,12 +28,38 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
   - Indentation fixes for single-line `if ... begin ... end` and `else` on next line
   - Lower priority for `assert`/`else` in multi-line conditions (if/else jump preferred)
 
+- Syntax highlighting improvements for SystemVerilog/UVM, including:
+  - `include` path highlighting (`"file.svh"` / `<file.sv>`) and file extension emphasis
+  - Macro usage highlighting for `` `uvm_* `` and user macros; macro args highlighting for `` `define NAME(args) ``
+  - Time unit highlighting (`fs/ps/ns/us/ms/s/step`, case-insensitive, supports real delays)
+  - UVM phase helpers (e.g., `uvm_*_phase::get`)
+  - Enum enumerator highlighting, struct field highlighting
+  - Instantiation readability: instance name highlighting and named port `.port(...)` highlighting
+  - Assertion labels highlighting: `label: assert/assume/cover ...`
+
+## Recent Changes (2026-02-11)
+
+- Expand TODO markers in comments: `TODO/FIXME/XXX/BUG/...` (case-insensitive)
+- Fix macro name regex so `` `uvm_info/`uvm_error `` highlight as a whole token
+- Unify preprocessor directive coloring (e.g., `ifdef/ifndef/elsif/else/endif/define`)
+- Add/extend SV highlighting:
+  - Time units, uppercase identifiers, generic `$system_call` highlighting
+  - `include` path + extension, enum enumerators, struct fields
+  - Module/interface/class/task/function/typedef/parameter naming
+  - Instantiation: instance names + named port `.port` names
+
 ## Installation
 
 **Manual:**
-- Vim: `indent/systemverilog.vim` → `~/.vim/indent/`
-- Neovim: → `~/.config/nvim/indent/`
-- Windows: → `~/vimfiles/indent/` or `~/AppData/Local/nvim/indent/`
+- Vim:
+  - `indent/systemverilog.vim` → `~/.vim/indent/`
+  - `syntax/systemverilog.vim` → `~/.vim/syntax/`
+- Neovim:
+  - `indent/systemverilog.vim` → `~/.config/nvim/indent/`
+  - `syntax/systemverilog.vim` → `~/.config/nvim/syntax/`
+- Windows:
+  - `indent/systemverilog.vim` → `~/vimfiles/indent/` or `~/AppData/Local/nvim/indent/`
+  - `syntax/systemverilog.vim` → `~/vimfiles/syntax/` or `~/AppData/Local/nvim/syntax/`
 
 **Plugin manager (vim-plug):**
 ```vim
