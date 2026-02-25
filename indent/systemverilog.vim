@@ -176,7 +176,10 @@ function! GetSystemVerilogIndent( line_num )
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
-				return indent(ln) + &shiftwidth
+				if indent(ln) == 0
+					return 0
+				endif
+				return indent(ln)
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
 				let ln = prevnonblank(ln - 1)
@@ -197,7 +200,28 @@ function! GetSystemVerilogIndent( line_num )
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
-				return indent(ln) + &shiftwidth
+				if indent(ln) == 0
+					" 顶层：保持宏行之外的结构按常规规则，为 end* 与起始关键字对齐
+					if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
+						return 0
+					endif
+					" 顶层：起始关键字本身（class/function/task...）顶格
+					if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
+						return 0
+					endif
+					return 0
+				endif
+				" 块内：起始/结束关键字与宏头对齐，其余在宏内 +1 级
+				if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
+					if indent(ln) > 0
+						return indent(ln) - &shiftwidth
+					endif
+					return 0
+				endif
+				if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
+					return indent(ln)
+				endif
+				return indent(ln)
 			endif
 			break
 		endwhile
@@ -214,6 +238,24 @@ function! GetSystemVerilogIndent( line_num )
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+				if indent(ln) == 0
+					if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
+						return 0
+					endif
+					if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
+						return 0
+					endif
+					return 0
+				endif
+				if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
+					if indent(ln) > 0
+						return indent(ln) - &shiftwidth
+					endif
+					return 0
+				endif
+				if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
+					return indent(ln)
+				endif
 				return indent(ln) + &shiftwidth
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
@@ -285,7 +327,16 @@ function! GetSystemVerilogIndent( line_num )
 		return 0
 	endif
 	if (this_codes =~ s:PREPROCESSOR)
-		return 0
+		if this_codeline =~ '^\s*`\s*\c\(endif\|else\|elsif\)\>'
+			if indent(prev1_line_num) == 0
+				return 0
+			endif
+			return indnt
+		endif
+		if indent(prev1_line_num) == 0
+			return 0
+		endif
+		return indnt
 	endif
 	if (this_codes =~ s:LINE_COMMENT)
 		return indnt
