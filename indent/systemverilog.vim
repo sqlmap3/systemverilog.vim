@@ -12,7 +12,7 @@ let b:did_indent = 1
 
 setlocal indentexpr=GetSystemVerilogIndent(v:lnum)
 setlocal indentkeys&
-setlocal indentkeys+==end,=endgenerate,=generate,=join,(,),{,},=`begin_keywords,=`celldefine,=`default_nettype,=`define,=`end_keywords,=`endcelldefine,=`endif,=`ifdef,=`ifndef,=`include,=`nounconnected_drive,=`pragma,=`resetall,=`timescale,=`unconnected_drive,=`undef,=`undefineall;
+setlocal indentkeys+==end,=endgenerate,=generate,=join,(,),{,},=`begin_keywords,=`celldefine,=`default_nettype,=`define,=`end_keywords,=`endcelldefine,=`endif,=`ifdef,=`ifndef,=`else,=`elsif,=`include,=`nounconnected_drive,=`pragma,=`resetall,=`timescale,=`unconnected_drive,=`undef,=`undefineall;
 
 if exists("*GetSystemVerilogIndent")
 	finish
@@ -52,7 +52,7 @@ function! s:ConvertToCodes( codeline )
 	let delims = substitute(delims, 'assert\s\+\%\[\(property\)\]', '', 'g')
 	let delims = substitute(delims, 'assume\s\+\%\[\(property\)\]', '', 'g')
 	let delims = substitute(delims, 'cover\s\+\%\[\(property\)\]', '', 'g')
-	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
+	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
 	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\)\>', 'b', 'g')
 	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\)\>', 'e', 'g')
 	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>', 'f', 'g')
@@ -68,7 +68,6 @@ function! s:ConvertToCodes( codeline )
 	let delims = substitute(delims, '\@', 'x', 'g')
 	let delims = substitute(delims, '[({]', 'b', 'g')
 	let delims = substitute(delims, '[)}]', 'e', 'g')
-	let delims = substitute(delims, '^\s*`.*$', ';', 'g')
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
 	let delims = substitute(delims, '\s', '', 'g')
 	let delims = substitute(delims, '^o\+:', 'x', 'g')
@@ -223,6 +222,40 @@ function! GetSystemVerilogIndent( line_num )
 			break
 		endwhile
 	endif
+	if this_codeline =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\cinclude\>'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			return indent(ln)
+		endwhile
+		return 0
+	endif
+	if this_codeline =~ '^\s*`\s*\c\(else\|elsif\|endif\)\>'
+		let depth = 0
+		let ln = a:line_num - 1
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*`\s*\cendif\>'
+				let depth = depth + 1
+			elseif l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+				if depth == 0
+					return indent(ln)
+				else
+					let depth = depth - 1
+				endif
+			endif
+			let ln = ln - 1
+		endwhile
+		return indent(prevnonblank(a:line_num - 1))
+	endif
 
 	let prev1_line_num = s:GetPrevWholeLineNum (a:line_num)
 	let prev1_for_comment_line = prev1_line_num
@@ -282,9 +315,6 @@ function! GetSystemVerilogIndent( line_num )
 	endif
 
 	if a:line_num == 1
-		return 0
-	endif
-	if (this_codes =~ s:PREPROCESSOR)
 		return 0
 	endif
 	if (this_codes =~ s:LINE_COMMENT)
