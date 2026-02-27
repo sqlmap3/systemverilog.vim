@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Sat Dec 23 21:15:05 CST 2025
+" Last Change:	Fri Feb 27 18:45:21 CST 2026
 if exists("b:did_indent")
 	finish
 endif
@@ -175,11 +175,11 @@ function! GetSystemVerilogIndent( line_num )
 			if l =~ '^\s*`\s*\cendif\>'
 				break
 			endif
-			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
-				if indent(ln) == 0
-					return 0
-				endif
-				return indent(ln)
+				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
+					if indent(ln) == 0
+						return &shiftwidth
+					endif
+					return indent(ln) + &shiftwidth
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
 				let ln = prevnonblank(ln - 1)
@@ -187,6 +187,35 @@ function! GetSystemVerilogIndent( line_num )
 			endif
 			break
 		endwhile
+	endif
+	if this_codeline =~ '^\s*`\s*\c\(else\|elsif\)\>'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l !~ '^\s*`'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`\s*\cinclude\>'
+				let ln = prevnonblank(ln - 1)
+				continue
+			endif
+			if l =~ '^\s*`\s*\cendif\>'
+				return indnt
+			endif
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+				return indent(ln)
+			endif
+			if l =~ '^\s*`\s*\c\(elsif\|else\)\>'
+				return indent(ln)
+			endif
+			break
+		endwhile
+		return indnt
 	endif
 	if this_codeline !~ '^\s*`'
 		let ln = prevnonblank(a:line_num - 1)
@@ -197,21 +226,21 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
-				break
+					return indent(ln)
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
 				if indent(ln) == 0
-					" 顶层：保持宏行之外的结构按常规规则，为 end* 与起始关键字对齐
+					" Top-level: keep non-macro structure by normal rules; align end* and starters
 					if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
 						return 0
 					endif
-					" 顶层：起始关键字本身（class/function/task...）顶格
+					" Top-level: starting keywords (class/function/task, etc.) at column 0
 					if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
 						return 0
 					endif
 					return 0
 				endif
-				" 块内：起始/结束关键字与宏头对齐，其余在宏内 +1 级
+				" In blocks: start/end keywords align to macro head; others +1 inside macro
 				if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
 					if indent(ln) > 0
 						return indent(ln) - &shiftwidth
@@ -221,7 +250,7 @@ function! GetSystemVerilogIndent( line_num )
 				if this_codeline =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>'
 					return indent(ln)
 				endif
-				return indent(ln)
+				return indent(ln) + &shiftwidth
 			endif
 			break
 		endwhile
@@ -235,7 +264,7 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
-				break
+					return indent(ln)
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
 				if indent(ln) == 0
@@ -327,13 +356,78 @@ function! GetSystemVerilogIndent( line_num )
 		return 0
 	endif
 	if (this_codes =~ s:PREPROCESSOR)
-		if this_codeline =~ '^\s*`\s*\c\(endif\|else\|elsif\)\>'
+		if this_codeline =~ '^\s*`\s*\c\(else\|elsif\)\>'
+			let ln = prevnonblank(a:line_num - 1)
+			while ln > 0
+				let l = getline(ln)
+				if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l !~ '^\s*`'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*`\s*\cinclude\>'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*`\s*\cendif\>'
+					return indnt
+				endif
+				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+					return indent(ln)
+				endif
+				if l =~ '^\s*`\s*\c\(elsif\|else\)\>'
+					return indent(ln)
+				endif
+				break
+			endwhile
+			return indnt
+		endif
+		if this_codeline =~ '^\s*`\s*\cendif\>'
+			let ln = prevnonblank(a:line_num - 1)
+			while ln > 0
+				let l = getline(ln)
+				if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l !~ '^\s*`'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*`\s*\cinclude\>'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*`\s*\cendif\>'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
+					return indent(ln)
+				endif
+				break
+			endwhile
 			if indent(prev1_line_num) == 0
 				return 0
 			endif
 			return indnt
 		endif
 		if indent(prev1_line_num) == 0
+			let ln = prevnonblank(a:line_num - 1)
+			while ln > 0
+				let l = getline(ln)
+				if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
+				if l =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|module\|interface\|package\|program\)\>'
+					return &shiftwidth
+				endif
+				break
+			endwhile
 			return 0
 		endif
 		return indnt
