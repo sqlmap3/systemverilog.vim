@@ -3,7 +3,7 @@
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
 " Version:	0.1
 " First Change:	Sat Dec 06 11:15:30 CST 2025
-" Last Change:	Fri Feb 27 18:45:21 CST 2026
+" Last Change:	Fri Feb 27 21:12:21 CST 2026
 if exists("b:did_indent")
 	finish
 endif
@@ -142,6 +142,75 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 	return indnt
 endfunction
 
+function! s:IsSkippableForMacro( codeline )
+	return a:codeline =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\cinclude\>'
+endfunction
+
+function! s:FindMatchingMacroHeadLine( line_num )
+	let ln = prevnonblank(a:line_num - 1)
+	let depth = 0
+	while ln > 0
+		let l = getline(ln)
+		if s:IsSkippableForMacro(l)
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l !~ '^\s*`'
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l =~ '^\s*`\s*\cendif\>'
+			let depth = depth + 1
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			if depth == 0
+				return ln
+			endif
+			let depth = depth - 1
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		let ln = prevnonblank(ln - 1)
+	endwhile
+	return 0
+endfunction
+
+function! s:FindMacroPeerLine( line_num )
+	let ln = prevnonblank(a:line_num - 1)
+	let depth = 0
+	while ln > 0
+		let l = getline(ln)
+		if s:IsSkippableForMacro(l)
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l !~ '^\s*`'
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l =~ '^\s*`\s*\cendif\>'
+			let depth = depth + 1
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			if depth == 0
+				return ln
+			endif
+			let depth = depth - 1
+			let ln = prevnonblank(ln - 1)
+			continue
+		endif
+		if l =~ '^\s*`\s*\c\(elsif\|else\)\>' && depth == 0
+			return ln
+		endif
+		let ln = prevnonblank(ln - 1)
+	endwhile
+	return 0
+endfunction
+
 let b:in_block_comment = 0
 
 function! GetSystemVerilogIndent( line_num )
@@ -189,32 +258,10 @@ function! GetSystemVerilogIndent( line_num )
 		endwhile
 	endif
 	if this_codeline =~ '^\s*`\s*\c\(else\|elsif\)\>'
-		let ln = prevnonblank(a:line_num - 1)
-		while ln > 0
-			let l = getline(ln)
-			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
-				let ln = prevnonblank(ln - 1)
-				continue
-			endif
-			if l !~ '^\s*`'
-				let ln = prevnonblank(ln - 1)
-				continue
-			endif
-			if l =~ '^\s*`\s*\cinclude\>'
-				let ln = prevnonblank(ln - 1)
-				continue
-			endif
-			if l =~ '^\s*`\s*\cendif\>'
-				return indnt
-			endif
-			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
-				return indent(ln)
-			endif
-			if l =~ '^\s*`\s*\c\(elsif\|else\)\>'
-				return indent(ln)
-			endif
-			break
-		endwhile
+		let ln = s:FindMacroPeerLine(a:line_num)
+		if ln > 0
+			return indent(ln)
+		endif
 		return indnt
 	endif
 	if this_codeline !~ '^\s*`'
@@ -226,7 +273,13 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
-					return indent(ln)
+				if this_codeline =~ '^\s*\c\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>'
+					if indent(ln) > 0
+						return indent(ln) - &shiftwidth
+					endif
+					return 0
+				endif
+				return indent(ln)
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
 				if indent(ln) == 0
@@ -357,6 +410,13 @@ function! GetSystemVerilogIndent( line_num )
 	endif
 	if (this_codes =~ s:PREPROCESSOR)
 		if this_codeline =~ '^\s*`\s*\c\(else\|elsif\)\>'
+			let ln = s:FindMacroPeerLine(a:line_num)
+			if ln > 0
+				return indent(ln)
+			endif
+			return indnt
+		endif
+		if this_codeline =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
 			let ln = prevnonblank(a:line_num - 1)
 			while ln > 0
 				let l = getline(ln)
@@ -364,21 +424,14 @@ function! GetSystemVerilogIndent( line_num )
 					let ln = prevnonblank(ln - 1)
 					continue
 				endif
-				if l !~ '^\s*`'
-					let ln = prevnonblank(ln - 1)
-					continue
-				endif
 				if l =~ '^\s*`\s*\cinclude\>'
 					let ln = prevnonblank(ln - 1)
 					continue
 				endif
+				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
+					return indent(ln) + &shiftwidth
+				endif
 				if l =~ '^\s*`\s*\cendif\>'
-					return indnt
-				endif
-				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
-					return indent(ln)
-				endif
-				if l =~ '^\s*`\s*\c\(elsif\|else\)\>'
 					return indent(ln)
 				endif
 				break
@@ -386,30 +439,10 @@ function! GetSystemVerilogIndent( line_num )
 			return indnt
 		endif
 		if this_codeline =~ '^\s*`\s*\cendif\>'
-			let ln = prevnonblank(a:line_num - 1)
-			while ln > 0
-				let l = getline(ln)
-				if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
-					let ln = prevnonblank(ln - 1)
-					continue
-				endif
-				if l !~ '^\s*`'
-					let ln = prevnonblank(ln - 1)
-					continue
-				endif
-				if l =~ '^\s*`\s*\cinclude\>'
-					let ln = prevnonblank(ln - 1)
-					continue
-				endif
-				if l =~ '^\s*`\s*\cendif\>'
-					let ln = prevnonblank(ln - 1)
-					continue
-				endif
-				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
-					return indent(ln)
-				endif
-				break
-			endwhile
+			let ln = s:FindMatchingMacroHeadLine(a:line_num)
+			if ln > 0
+				return indent(ln)
+			endif
 			if indent(prev1_line_num) == 0
 				return 0
 			endif
