@@ -1,3 +1,4 @@
+
 " Vim indent file
 " Language:	systemverilog
 " Maintainer:	sqlmap3 < https://github.com/sqlmap3 >
@@ -246,7 +247,7 @@ function! GetSystemVerilogIndent( line_num )
 			endif
 				if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
 					if indent(ln) == 0
-						return &shiftwidth
+							return 2
 					endif
 					return indent(ln) + &shiftwidth
 			endif
@@ -456,7 +457,14 @@ function! GetSystemVerilogIndent( line_num )
 					let ln = prevnonblank(ln - 1)
 					continue
 				endif
+				if l =~ '^\s*`\s*\cinclude\>'
+					let ln = prevnonblank(ln - 1)
+					continue
+				endif
 				if l =~ '^\s*\c\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|module\|interface\|package\|program\)\>'
+					if this_codeline =~ '^\s*`\s*\cinclude\>'
+						return 2
+					endif
 					return &shiftwidth
 				endif
 				break
