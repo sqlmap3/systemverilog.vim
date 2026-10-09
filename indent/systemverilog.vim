@@ -199,7 +199,6 @@ let b:in_block_comment = 0
 " first indent evaluation in a fresh buffer aborts with E121
 let b:block_comment_change = 0
 let b:block_comment_line = 0
-let b:extra_block_indent = 0
 " memoization for s:ConvertToCodes(): it is a pure function, yet the
 " comment/preprocessor skip loops re-classify the same (joined) lines over
 " and over (O(n^2) on macro-heavy files). The cache is keyed on changedtick,
@@ -337,12 +336,28 @@ function! GetSystemVerilogIndent( line_num )
 
 	let this_codes = s:ConvertToCodes( this_codeline )
 
-	" Tail of a multi-line call, e.g. the closing "UVM_LOW)" line of a
-	" `uvm_info that spans lines without backslash continuation: must not
-	" be treated as a block close - keep the previous line's indent.
-	if this_codeline =~ '^\s*\h\w*\s*)\s*;\?\s*$'
-	  \	&& this_codeline !~ '^\s*\%(end\|endcase\|join\|join_any\|join_none\)\>\s*)'
-		return indent( prev1_line_num )
+	" Tail of a multi-line MACRO call, e.g. the closing "UVM_LOW)" or
+	" "actual, exp),UVM_DEBUG);" line of a `uvm_info that spans lines without
+	" backslash continuation. The macro's open line is wiped to ';' by
+	" ConvertToCodes, so the tail's ')' has no matching '(' and would dedent
+	" spuriously and cascade. Walk back through the continuation chain: if it
+	" reaches a backtick (macro) line, keep the tail flat with that line. A
+	" real multi-line call/declaration (extern function ...( ... );) has no
+	" backtick in the chain and must dedent normally, so it falls through.
+	if this_codeline =~ ')\s*;\?\s*$'
+	  \	&& this_codeline !~ '^\s*[;)}]'
+	  \	&& this_codeline !~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
+		let ln = prevnonblank(a:line_num - 1)
+		while ln > 0
+			let l = getline(ln)
+			if l !~ '[,([{]\s*$'
+				break
+			endif
+			if l =~ '^\s*`'
+				return indent(ln)
+			endif
+			let ln = prevnonblank(ln - 1)
+		endwhile
 	endif
 
 	let indnt = indent( prev1_line_num )
@@ -353,18 +368,17 @@ function! GetSystemVerilogIndent( line_num )
 		let b:in_block_comment = 0
 	endif
 	if this_codes =~ s:BLOCK_COMMENT_STOP
-		return indent (a:line_num) + b:extra_block_indent
+		return indent (a:line_num)
 	endif
 	if this_codes =~ s:BLOCK_COMMENT_START
 		let b:in_block_comment = 1
 		let b:block_comment_line = a:line_num
 		let b:block_comment_change = b:changedtick
-		let b:extra_block_indent = indnt - indent ( a:line_num )
 		return indnt
 	endif
 	if b:in_block_comment
 		let b:block_comment_line = a:line_num
-		return indent (a:line_num) + b:extra_block_indent
+		return indent (a:line_num)
 	endif
 
 	if a:line_num == 1
