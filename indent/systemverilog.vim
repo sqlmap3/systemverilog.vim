@@ -194,6 +194,71 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 	return indnt
 endfunction
 
+" Return the line number of the `ifdef/`ifndef that a `else/`elsif/`endif at
+" a:line_num matches, walking back through nested conditionals (comments and
+" plain code are skipped), or 0 if none (an unbalanced/standalone directive).
+function! s:FindIfdefMatch( line_num )
+	let l:depth = 0
+	let l:ln = prevnonblank(a:line_num - 1)
+	while l:ln > 0
+		let l:line = getline(l:ln)
+		if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		if l:line =~ '^\s*`\s*\cendif\>'
+			let l:depth += 1
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		if l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			if l:depth == 0
+				return l:ln
+			endif
+			let l:depth -= 1
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		" plain code or other preprocessor directive: keep walking up
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
+" Indent for a preprocessor conditional line (`ifdef/`ifndef/`elsif/`else/
+" `endif): align it with the enclosing code, matching the UVM library style
+" where a nested `ifdef sits one level deeper than its enclosing code and
+" `else/`elsif/`endif align with their matching `ifdef. The top-level file
+" guard (`ifndef ..._SVH at column 0) falls through to the base indent (0).
+function! s:GetPreprocIndent( line_num, base_indnt )
+	let l:ln = prevnonblank(a:line_num - 1)
+	if getline(a:line_num) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+		" opener: sit at the code level, one deeper per enclosing ifdef
+		let l:nest = 0
+		while l:ln > 0
+			let l:line = getline(l:ln)
+			if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let l:ln = prevnonblank(l:ln - 1)
+				continue
+			endif
+			if l:line =~ '^\s*`\s*\cendif\>'
+				let l:nest -= 1
+			elseif l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+				let l:nest += 1
+			elseif l:line =~ '^\s*`'
+				" other preprocessor directive - transparent
+			else
+				break
+			endif
+			let l:ln = prevnonblank(l:ln - 1)
+		endwhile
+		return a:base_indnt + (l:nest > 0 ? l:nest * &shiftwidth : 0)
+	endif
+	" closer (`else/`elsif/`endif): align with the matching `ifdef
+	let l:m = s:FindIfdefMatch(a:line_num)
+	return l:m > 0 ? indent(l:m) : a:base_indnt
+endfunction
+
 let b:in_block_comment = 0
 " must exist before GetSystemVerilogIndent() compares them, otherwise the
 " first indent evaluation in a fresh buffer aborts with E121
@@ -250,6 +315,10 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
+				let l:m = s:FindIfdefMatch(ln)
+				if l:m > 0
+					return indent(l:m)
+				endif
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
@@ -271,6 +340,10 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
+				let l:m = s:FindIfdefMatch(ln)
+				if l:m > 0
+					return indent(l:m)
+				endif
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
@@ -288,6 +361,10 @@ function! GetSystemVerilogIndent( line_num )
 				continue
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
+				let l:m = s:FindIfdefMatch(ln)
+				if l:m > 0
+					return indent(l:m)
+				endif
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
@@ -385,7 +462,7 @@ function! GetSystemVerilogIndent( line_num )
 		return 0
 	endif
 	if (this_codes =~ s:PREPROCESSOR)
-		return 0
+		return s:GetPreprocIndent(a:line_num, indnt)
 	endif
 	if (this_codes =~ s:LINE_COMMENT)
 		return indnt
