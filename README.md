@@ -6,7 +6,7 @@
 
 **Language:** English  
 **Maintainer:** [sqlmap3](https://github.com/sqlmap3/systemverilog.vim)  
-**Version:** 0.1  
+**Version:** 0.2  
 **First Change:** 2025-12-06  
 **Last Change:** Wed Feb 11 21:08:29 CST 2026  
 
@@ -36,6 +36,8 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
   - Enum enumerator highlighting, struct field highlighting
   - Instantiation readability: instance name highlighting and named port `.port(...)` highlighting
   - Assertion labels highlighting: `label: assert/assume/cover ...`
+
+- Optional code folding in the style of [vhda/verilog_systemverilog.vim](https://github.com/vhda/verilog_systemverilog.vim): modules, classes, tasks, functions, packages, `` `uvm_*_utils_begin/_end ``, `/* */` comments, `` `ifdef `` blocks, multi-line `` `define `` and (opt-in) `begin/end` blocks or instantiations.
 
 ## Recent Changes (2026-02-11)
 
@@ -89,10 +91,122 @@ Verify:
 
 - Install via vim-plug or Pathogen
 - Enable matchit: `runtime macros/matchit.vim`
+- Optional folding: `let g:systemverilog_syntax_fold = 'default'` (see Folding below)
 - Open an SV/UVM file and verify:
   - `:set ft?` → `filetype=systemverilog`
 - Use `%` to jump between `uvm_*_utils_begin/_end` or `covergroup/endgroup`
 - Indentation respects case labels and single-line `if`
+
+## Folding (optional)
+
+Code folding in the style of [vhda/verilog_systemverilog.vim](https://github.com/vhda/verilog_systemverilog.vim), implemented on this plugin's own construct classification.
+
+Enable it in your `vimrc` **before** opening an SV file:
+
+```vim
+let g:systemverilog_syntax_fold = 'default'
+```
+
+Values:
+
+| Value | Folds |
+|---|---|
+| `'default'` | `block` + `comment` + `conditional` + `define` + `marker` |
+| `'all'` | everything below |
+| `['block', ...]` | a list of individual options |
+
+Individual options (combine freely in a list):
+
+| Option | Folds |
+|---|---|
+| `block` | `module`/`class`/`task`/`function`/`interface`/`package`/`program`/`covergroup`/`property`/`sequence`/`clocking`/... plus `` `uvm_*_utils_begin `` / `` `uvm_*_utils_end `` |
+| `begin_blocks` | `begin`/`end`, `case`/`endcase`, `fork`/`join` (can be noisy) |
+| `comment` | `/* ... */` block comments |
+| `conditional` | `` `ifdef `` / `` `ifndef `` / `` `elsif `` / `` `else `` / `` `endif `` |
+| `define` | multi-line `` `define `` (backslash continuations) |
+| `instance` | multi-line instantiations (heuristic) |
+| `marker` | manual `// {{{` / `// }}}` fold markers |
+
+Manual marker folds coexist with keyword folds in the same buffer — both run
+through the same `foldexpr` engine, so there is no need to switch
+`foldmethod` to `marker` or `syntax`:
+
+```systemverilog
+class my_driver extends uvm_driver;  " zc here folds the whole class
+  ...
+endclass
+
+// {{{ temporary debug logic, remove after bring-up
+always @(posedge clk) begin
+  ...
+end
+// }}}
+```
+
+A collapsed marker fold shows only the description written after `{{{`
+(`+-- 4 lines: temporary debug logic, remove after bring-up`).
+
+Correctness notes:
+
+- `extern`/`pure virtual` function or task prototypes, DPI `import "..." function` declarations and `typedef class` forward declarations never open a fold.
+- `assert property`, `default clocking`, `virtual interface` declarations, `disable fork` / `wait fork` and `covergroup ... with function sample()` are recognized and do not open spurious folds.
+- Single-line `begin ... end` / `case ... endcase` never create an empty fold.
+
+With folding enabled, `za`/`zA`/`zr`/`zm` work as usual, and a collapsed block renders as:
+
+```
++-- 12 lines: class my_class extends uvm_component;
+```
+
+A sample file exercising all of the above is in [test/fold_demo.sv](test/fold_demo.sv).
+
+## UVM version flavor
+
+Syntax highlighting cannot auto-detect which UVM library a project uses —
+the class names are nearly identical across versions — so the version is a
+configuration option. In your `vimrc` (or per-project via an autocmd):
+
+```vim
+let g:systemverilog_uvm_version = '1.1'   " UVM 1.1
+let g:systemverilog_uvm_version = '1.2'   " UVM 1.2 (default)
+```
+
+What it changes:
+
+- **UVM 1.1**: phase callbacks are highlighted with their 1.1 names
+  (`build`, `connect`, `end_of_elaboration`, `run`, `extract`, `check`,
+  `report`, plus the dynamic `configure`/`main`/`shutdown` phases), and the
+  1.1-era globals `uvm_test_done` / `global_stop_request` get their own
+  group.
+- **UVM 1.2** (default): the `*_phase` callback names (already highlighted
+  regardless) are joined by the 1.2 phase-schedule classes (`uvm_domain`,
+  `uvm_topdown_phase`, `uvm_bottomup_phase`, `uvm_task_phase`,
+  `uvm_runtime_phase`, `uvm_tlm_time`).
+
+A buffer-local `b:systemverilog_uvm_version` overrides the global, which is
+handy for monorepos mixing UVM 1.1 and 1.2 testbenches.
+
+Extra project-specific class names (any UVM version, custom VIPs) can be
+highlighted as types:
+
+```vim
+let g:systemverilog_uvm_names = ['my_agent', 'my_scoreboard', 'vip_pkg']
+```
+
+## Syntax highlight notes
+
+- `uvm_config_db#(int)::set(...)` / `uvm_config_db::get(...)`: the class is
+  highlighted as `Structure` and the `::set`/`::get`/`::exists` method as
+  `Label`. Any other `uvm_*[#(params)]::method` static call is highlighted
+  via one generic pattern.
+- All `$`-system calls (`$display`, `$rose`, `$past`, `$clog2`, `$cast`,
+  `$fopen`, `$fscanf`, ...) share one catch-all group instead of a huge
+  hardcoded list — one regex, same color, much faster to load.
+- SVA operators `|->`, `|=>` and `##N` have their own operator group;
+  `disable iff`, `intersect`, `throughout`, `within` are keywords.
+- Built-in methods (`.size()`, `.push_back()`, `.randomize()`, ...) are
+  highlighted when called with parentheses.
+- `virtual my_if vif;` highlights the custom type after `virtual`.
 
 ## Supported Filetypes
 
@@ -139,6 +253,23 @@ setlocal shiftwidth=2
 setlocal tabstop=2
 setlocal expandtab
 ```
+
+Optional module-body indentation — by default `module`/`package`/`program`/
+`interface` contents stay at the same level as the keyword (upstream
+nachumk behavior). Enable one level of body indentation with:
+
+```vim
+let g:systemverilog_indent_modules = 1   " or per-buffer b:systemverilog_indent_modules
+```
+
+Indent notes:
+- `` `uvm_object_utils_begin(foo) `` / `` `uvm_object_utils_end `` indent
+  like `begin`/`end`: `` `uvm_field_* `` entries get one extra level and the
+  closing `_utils_end` macro dedents.
+- `` `elsif `` is treated like `` `else `` / `` `endif `` (no code indent).
+- Known limitation (inherited from upstream): keywords inside strings can
+  disturb the code classification, e.g. `$display("class foo")` — the
+  conversion runs before string stripping.
 
 ## Examples
 

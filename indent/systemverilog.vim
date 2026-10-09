@@ -12,7 +12,7 @@ let b:did_indent = 1
 
 setlocal indentexpr=GetSystemVerilogIndent(v:lnum)
 setlocal indentkeys&
-setlocal indentkeys+==end,=endgenerate,=generate,=join,(,),{,},=`begin_keywords,=`celldefine,=`default_nettype,=`define,=`end_keywords,=`endcelldefine,=`endif,=`ifdef,=`ifndef,=`include,=`nounconnected_drive,=`pragma,=`resetall,=`timescale,=`unconnected_drive,=`undef,=`undefineall;
+setlocal indentkeys+==end,=endgenerate,=generate,=join,(,),{,},=`begin_keywords,=`celldefine,=`default_nettype,=`define,=`else,=`elsif,=`end_keywords,=`endcelldefine,=`endif,=`ifdef,=`ifndef,=`include,=`nounconnected_drive,=`pragma,=`resetall,=`timescale,=`unconnected_drive,=`undef,=`undefineall
 
 if exists("*GetSystemVerilogIndent")
 	finish
@@ -29,6 +29,13 @@ let s:LINE_INDENT = '^.*x$'
 let s:EXEC_LINE = '^.*;$'
 let s:PREPROCESSOR = '^z.*$'
 
+" Indent module/package/program/interface bodies (off by default, matching
+" upstream nachumk behavior; enable like vhda's g:verilog_indent_modules)
+function! s:IndentModules() abort
+	return get(b:, 'systemverilog_indent_modules',
+		\ get(g:, 'systemverilog_indent_modules', 0)) ? 1 : 0
+endfunction
+
 "b - 'begin', '(', '{'
 "e - 'end', ')', '{'
 "f - 'class', 'function', 'task'
@@ -38,9 +45,22 @@ let s:PREPROCESSOR = '^z.*$'
 "p - '*/' -- stop comment
 "x - 'if', 'else', 'for', 'do, 'while', 'always', 'initial', -- execution commands
 function! s:ConvertToCodes( codeline )
-	" keywords that don't affect indent: module endmodule package endpackage interface endinterface
-	let delims = substitute(a:codeline, '\<virtual\>', '', 'g')
-	let delims = substitute(a:codeline, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
+	" keywords that don't affect indent by default: module endmodule
+	" package endpackage interface endinterface (opt-in via
+	" g:systemverilog_indent_modules, mirrors vhda's g:verilog_indent_modules)
+	if s:IndentModules()
+		let delims = substitute(a:codeline, '\<interface\s\+class\>', 'class', 'g')
+		let delims = substitute(delims, '\<virtual\s\+interface\>', '', 'g')
+		let delims = substitute(delims, '\<\(module\|macromodule\|package\|program\|interface\)\>', 'f', 'g')
+		let delims = substitute(delims, '\<\(endmodule\|endpackage\|endprogram\|endinterface\)\>', 'h', 'g')
+	else
+		let delims = a:codeline
+	endif
+	" UVM field-automation macro pairs behave like block open/close so the
+	" `uvm_field_* entries indent one level and `..._utils_end dedents
+	let delims = substitute(delims, '`\h\w*_utils_begin\>', 'b', 'g')
+	let delims = substitute(delims, '`\h\w*_utils_end\>', 'e', 'g')
+	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
 	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
 	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
 	let delims = substitute(delims, 'pure\s\+function', '', 'g')
@@ -52,7 +72,7 @@ function! s:ConvertToCodes( codeline )
 	let delims = substitute(delims, 'assert\s\+\%\[\(property\)\]', '', 'g')
 	let delims = substitute(delims, 'assume\s\+\%\[\(property\)\]', '', 'g')
 	let delims = substitute(delims, 'cover\s\+\%\[\(property\)\]', '', 'g')
-	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
+	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
 	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\)\>', 'b', 'g')
 	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\)\>', 'e', 'g')
 	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>', 'f', 'g')
@@ -143,6 +163,11 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 endfunction
 
 let b:in_block_comment = 0
+" must exist before GetSystemVerilogIndent() compares them, otherwise the
+" first indent evaluation in a fresh buffer aborts with E121
+let b:block_comment_change = 0
+let b:block_comment_line = 0
+let b:extra_block_indent = 0
 
 function! GetSystemVerilogIndent( line_num )
 	let this_codeline = getline( a:line_num )

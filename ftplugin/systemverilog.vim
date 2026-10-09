@@ -70,3 +70,14 @@ if exists("loaded_matchit")
     \ '`uvm_object\%(_param\)\=_utils_begin\>:`uvm_object_utils_end\>,' .
     \ '`uvm_component\%(_param\)\=_utils_begin\>:`uvm_component_utils_end\>'
 endif
+
+" Optional code folding (vhda/verilog_systemverilog.vim style).
+" Enable in your vimrc BEFORE opening an SV file:
+"   let g:systemverilog_syntax_fold = 'default'   " or 'all' / ['block', ...]
+" Values: block, begin_blocks, comment, conditional, define, instance, marker
+if exists("g:systemverilog_syntax_fold")
+  setlocal foldmethod=expr
+  setlocal foldexpr=systemverilog#FoldExpr()
+  setlocal foldtext=systemverilog#FoldText()
+  let b:undo_ftplugin .= "|setlocal foldmethod< foldexpr< foldtext<"
+endif
