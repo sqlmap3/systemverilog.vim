@@ -59,6 +59,13 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
   port, enum and struct regions (`contains=ALLBUT`).
 - Add UVM 1.2 library coverage: base classes, scalar types, and the
   `uvm_report_*` global functions (see below).
+- Highlight `struct`/`enum` members and `task`/`function` names (the
+  `svStructBody`/`svEnumBody` regions now open — the `struct`/`enum`
+  keywords no longer win the region start — and `task`/`function` names use
+  a transparent signature region instead of a dead `\zs` match).
+- Memoize the indent engine's code classification per `changedtick`, cutting
+  the re-classification of macro-heavy files from O(n^2) to near-linear and
+  speeding `gg=G` on a large `define` file up ~5x.
 
 ## Recent Changes (2026-02-11)
 
@@ -240,22 +247,23 @@ let g:systemverilog_uvm_names = ['my_agent', 'my_scoreboard', 'vip_pkg']
 
 ## Known limitations
 
-- `task`/`function` names, `typedef` names, `parameter`/`localparam` names,
-  instance names and `struct`/`enum` members are not highlighted: those
-  rules relied on `\zs` with a leading context, which `:syntax match` does
-  not support (the match is anchored at `\zs`). They are left in place but
-  inert; the common `module`/`interface`/`package`/`class`/`covergroup`
-  names and `::method` calls were moved to `nextgroup`/plain matches.
+- `typedef` names, `parameter`/`localparam` names and instance names are not
+  highlighted: the name sits after a variable-length prefix (an enum/struct
+  body, a type, or `<type> <name>`), and Vim's `:syntax match` has no
+  variable-length look-behind, so there is no clean way to match the name
+  without false positives. `task`/`function`/`struct`/`enum` member names
+  are highlighted (via `nextgroup` and transparent signature/body regions).
 - `uvm_config_db::set/get/exists` and friends are matched as a plain
   `::name` group, so `::set`/`::get` after any class share the `Label`
   color (e.g. `uvm_factory::get()`), rather than only after a UVM config
   class.
-- **Indent performance**: the indent engine re-scans backward through
-  comment and backslash-continuation blocks for every line, so re-indenting
-  a very large macro file (thousands of lines of `` `define `` bodies) takes
-  a long time (minutes / possible OOM on a 3k+ line file). Small and
-  medium files are unaffected. This is why `run_uvm_indent_test.sh` checks
-  a curated subset by default.
+- **Indent performance**: re-indenting a very large macro file (thousands of
+  lines of `` `define `` bodies) is O(n^2) in the comment/continuation
+  back-scan, so the largest files take tens of seconds under `gg=G`.
+  Interactive editing is unaffected (one line at a time). The
+  `s:ConvertToCodes`/`s:GetWholeLine`/`s:GetPrevWholeLineNum` results are
+  memoized per `changedtick`, which removes the redundant re-classification
+  and speeds the common case up ~5x.
 
 ## Supported Filetypes
 

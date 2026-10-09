@@ -30,7 +30,7 @@ syntax match svPreCondit "^\s*`\(else\|endif\)\>"
 
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
-syntax keyword svKeyword fork join join_any join_none begin end endmodule function endfunction task endtask always always_ff always_latch always_comb initial generate endgenerate config endconfig endclass clocking endclocking endinterface endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed unpacked priority program property pure randc randcase randsequence sequence solve tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
+syntax keyword svKeyword fork join join_any join_none begin end endmodule endfunction endtask always always_ff always_latch always_comb initial generate endgenerate config endconfig endclass clocking endclocking endinterface endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed unpacked priority program property pure randc randcase randsequence sequence solve tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
 syntax match svInteger "\<\(\.\)\@<![0-9_]\+\(\s*['.]\)\@!\>"
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(d\|D\)\s*[0-9_ZzXx?]\+"
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+"
@@ -40,10 +40,15 @@ syntax match svInteger "\<'\(d\|D\|h\|H\|o\|O\|b\|B\)\>"
 syntax match svInteger "'[01xXzZ?]\>"
 syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
-syntax keyword svStructure struct union enum
+" struct/union/enum are NOT keywords on purpose: a keyword would win the
+" start position of the svStructBody / svEnumBody regions below and stop
+" them from ever opening, leaving struct fields / enumerators unhighlighted.
+" (They are always followed by a {...} body, so the transparent regions own
+" them.)
+syntax match svStructure "\<\%(struct\|union\|enum\)\>"
 syntax keyword svTypedef typedef parameter localparam
 syntax region svEnumBody start="\<enum\>\_.\{-}{" end="}" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
-syntax match svEnumerator "\%(\s*{\s*\|,\s*\)\zs\h\w*\ze\%(\s*=\|\s*}\|\s*,\)" contained containedin=svEnumBody
+syntax match svEnumerator "\<\h\w*\>\ze\_s*[=,}]" contained containedin=svEnumBody
 syntax region svPortList start="^\s*\%(module\|interface\)\>\_.\{-}\%(\_s*#\_s*(\_.\{-})\)\?\_s*(" end=");" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
 syntax match svPortName "\<\h\w*\>\ze\%(\_s*\(\[[^]]*\]\_s*\)\*\)\_s*\%(,\|)\|=\)" contained containedin=svPortList
 syntax region svInstStmt start="^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\h\w*\_s*\%(\[[^]]*]\_s*\)\?(" end=";" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
@@ -66,12 +71,26 @@ highlight! default link svPackageKw Keyword
 highlight! default link svClassKw Keyword
 " virtual interface declarations: highlight the type in "virtual my_if vif;"
 syntax match svVirtualIfaceType "\<virtual\_s\+\zs\h\w*\ze\_s\+\h\w*\%(\_s*\[[^][]*\]\)*\_s*;"
-syntax match svTaskName "\<task\>\_.\{-}\zs\h\w*\ze\_s*\%((\|;\)"
-syntax match svFunctionName "\<function\>\_.\{-}\zs\h\w*\ze\_s*("
+" task/function names. The keyword is a MATCH (not a :syntax keyword) so the
+" transparent signature region below can start at it - a keyword would win
+" the start position and the region would never open. The name is the word
+" immediately before '(' inside the region body.
+syntax match svTaskKw "\<task\>"
+syntax match svFunctionKw "\<function\>"
+syntax region svTaskSig start="\<task\>" end="(" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svFunctionName
+syntax region svFunctionSig start="\<function\>" end="(" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svTaskName
+syntax match svTaskName "\h\w*\ze\_s*(" contained containedin=svTaskSig
+syntax match svFunctionName "\h\w*\ze\_s*(" contained containedin=svFunctionSig
+highlight! default link svTaskKw Keyword
+highlight! default link svFunctionKw Keyword
 syntax match svParamName "^\s*\%(parameter\|localparam\)\>.\{-}\zs\h\w*\ze\_s*="
 syntax match svTypedefName "\<typedef\>\_.\{-}\zs\h\w*\ze\_s*;"
 syntax region svStructBody start="\<\(struct\|union\)\>\%(\_s\+packed\)\?\_s*{" end="}" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
-syntax match svStructField "\%(\.\|::\)\@<!\<\h\w*\>\ze\%(\s*\(\[[^]]*\]\s*\)\*\)\s*\%(,\|;\|=\)" contained containedin=svStructBody
+" split into two fixed-lookahead patterns: a \?/\* after \ze inside a
+" :syntax match does not make the atom optional, so the field-before-[...]
+" and field-before-;/=/ , cases must be listed separately
+syntax match svStructField "\<\h\w*\>\ze\_s*[;=,]" contained containedin=svStructBody
+syntax match svStructField "\<\h\w*\>\ze\_s*\[[^]]*\]\_s*[;=,]" contained containedin=svStructBody
 syntax match svNamedPort "\%(\s\|[(,]\)\.\zs\h\w*\ze\_s*(" containedin=ALL,svInstStmt
 syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>" containedin=ALL
 " all $-system calls ($display, $rose, $clog2, $cast, $fscanf, ...) share one

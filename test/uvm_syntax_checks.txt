@@ -28,6 +28,8 @@ ns;	svTimeUnitPlain
 \$finish\>	svSystemCall
 \.\zsclk\s*(	svNamedPort
 \<spot_dut\>	svModuleName
+\<addr\>	svStructField
+\<body\>	svTaskName
 super\.new	svCtorCall
 type_id\s*::\s*create	uvmApiMethod|uvmTypeIdCreate
 \<UVM_LOW\>	uvmEnum

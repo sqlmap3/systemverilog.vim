@@ -44,6 +44,16 @@ function! s:ConvertToCodes( codeline, ... )
 	" keywords that don't affect indent: module endmodule package
 	" endpackage interface endinterface (upstream nachumk behavior; their
 	" bodies are not indented - see README)
+	" memoize: the skip loops below re-classify the same (joined) lines many
+	" times. Key on changedtick (constant during gg=G) + input + mode.
+	if b:sv_conv_tick != b:changedtick
+		let b:sv_conv_tick = b:changedtick
+		let b:sv_conv_cache = {}
+	endif
+	let l:key = (a:0 ? '1:' : '0:') . a:codeline
+	if has_key(b:sv_conv_cache, l:key)
+		return b:sv_conv_cache[l:key]
+	endif
 	let delims = a:codeline
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
@@ -105,10 +115,20 @@ function! s:ConvertToCodes( codeline, ... )
 	while (match(delims, '\(s[^sp]*p\)') != -1)
 		let delims = substitute(delims, '\(s[^sp]*p\)', '', 'g')
 	endwhile
+	let b:sv_conv_cache[l:key] = delims
 	return delims
 endfunction
 
 function! s:GetPrevWholeLineNum ( line_num )
+	if b:sv_conv_tick != b:changedtick
+		let b:sv_conv_tick = b:changedtick
+		let b:sv_conv_cache = {}
+		let b:sv_prev_cache = {}
+		let b:sv_whole_cache = {}
+	endif
+	if has_key(b:sv_prev_cache, a:line_num)
+		return b:sv_prev_cache[a:line_num]
+	endif
 	let prev1_line_num = prevnonblank( a:line_num - 1)
 	let prev2_line_num = prev1_line_num - 1
 	let prev2_codeline = getline( prev2_line_num )
@@ -118,10 +138,20 @@ function! s:GetPrevWholeLineNum ( line_num )
 		let prev2_codeline = getline( prev2_line_num )
 	endwhile
 
+	let b:sv_prev_cache[a:line_num] = prev1_line_num
 	return prev1_line_num
 endfunction
 
 function! s:GetWholeLine ( line_num )
+	if b:sv_conv_tick != b:changedtick
+		let b:sv_conv_tick = b:changedtick
+		let b:sv_conv_cache = {}
+		let b:sv_prev_cache = {}
+		let b:sv_whole_cache = {}
+	endif
+	if has_key(b:sv_whole_cache, a:line_num)
+		return b:sv_whole_cache[a:line_num]
+	endif
 	let line_num = a:line_num
 	let codeline = getline( line_num )
 	while ( strpart( codeline , strlen(codeline) - 1 , 1) == '\' )
@@ -129,6 +159,7 @@ function! s:GetWholeLine ( line_num )
 		let codeline = strpart( codeline , 0 , strlen( codeline ) - 2 ) . " " . getline (line_num)
 	endwhile
 
+	let b:sv_whole_cache[a:line_num] = codeline
 	return codeline
 endfunction
 
@@ -169,6 +200,16 @@ let b:in_block_comment = 0
 let b:block_comment_change = 0
 let b:block_comment_line = 0
 let b:extra_block_indent = 0
+" memoization for s:ConvertToCodes(): it is a pure function, yet the
+" comment/preprocessor skip loops re-classify the same (joined) lines over
+" and over (O(n^2) on macro-heavy files). The cache is keyed on changedtick,
+" which does not change during a whole-buffer re-indent (gg=G computes every
+" indent against the same buffer state before applying), so the cache is
+" reused across the whole pass and reset on the next real edit.
+let b:sv_conv_cache = {}
+let b:sv_prev_cache = {}
+let b:sv_whole_cache = {}
+let b:sv_conv_tick = -1
 
 function! GetSystemVerilogIndent( line_num )
 	let this_codeline = getline( a:line_num )
