@@ -1,8 +1,5 @@
 // Fold regression sample for systemverilog.vim folding.
-// Verify with:
-//   vim -Nu NONE -n -es +"let g:systemverilog_syntax_fold='all'" \
-//     +"set rtp+=<plugin dir>" +"filetype plugin on" +"e test/fold_demo.sv" \
-//     +'%p' +qa
+// Fold levels are verified by test/run_fold_test.sh.
 `ifndef FOLD_DEMO_SV
 `define FOLD_DEMO_SV
 

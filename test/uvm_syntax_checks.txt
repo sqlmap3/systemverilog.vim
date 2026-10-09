@@ -1,0 +1,133 @@
+# Syntax spot checks for systemverilog.vim against UVM 1.2 constructs.
+#
+# Format (TAB-separated):	pattern	expected-syntax-group
+#
+# - pattern: a Vim regex (magic mode); search() finds its first match in
+#   test/uvm_syntax_spot.sv from the top, so keep each pattern unique.
+# - expected: the RAW syntax group name (synID trans=0), so assertions are
+#   independent of the colorscheme's re-mapping of standard highlight
+#   groups.  Alternatives are separated with '|'.
+#
+# --- core SystemVerilog ---
+\<logic\>	svType
+\<input\>	svDirection
+\<virtual\>	svStorageClass
+\<typedef\>	svTypedef
+\<module\>	svModuleKw
+\<endclass\>	svKeyword
+\<modport\>	svKeyword
+\<posedge\>	svKeyword
+"plain report info"	svString
+2'b10	svInteger
+'h3F	svInteger
+ns;	svTimeUnitPlain
+|->	svSVAOp
+##1	svSVAOp
+\.size\s*(	svObjectFunctions
+\$display\>	svSystemCall
+\$finish\>	svSystemCall
+\.\zsclk\s*(	svNamedPort
+\<spot_dut\>	svModuleName
+super\.new	svCtorCall
+type_id\s*::\s*create	uvmApiMethod|uvmTypeIdCreate
+\<UVM_LOW\>	uvmEnum
+\<UVM_ALL_ON\>	uvmEnum
+\<UVM_MEDIUM\>	uvmEnum
+\<IS_EQ\>	svUpperIdent
+\<UVM_SYNTAX_SPOT_SV\>	svIfndefName
+\<a_lbl\>	svAssertLabel
+#
+# --- UVM classes (1.2 library, base/seq/comps/tlm1/tlm2/reg/dap) ---
+\<uvm_sequence_base\>	uvmBaseClass
+\<uvm_sequencer_base\>	uvmBaseClass
+\<uvm_transaction\>	uvmBaseClass
+\<uvm_factory\>	uvmBaseClass
+\<uvm_pool\>	uvmBaseClass
+\<uvm_queue\>	uvmBaseClass
+\<uvm_root\>	uvmBaseClass
+\<uvm_report_server\>	uvmBaseClass
+\<uvm_event_base\>	uvmBaseClass
+\<uvm_resource_base\>	uvmBaseClass
+\<uvm_visitor\>	uvmBaseClass
+\<uvm_heartbeat\>	uvmBaseClass
+\<uvm_link_base\>	uvmBaseClass
+\<uvm_simple_lock_dap\>	uvmBaseClass
+\<uvm_vreg\>	uvmBaseClass
+\<uvm_mem_region\>	uvmBaseClass
+#
+# --- UVM scalar types / enums (lowercase typedefs) ---
+\<uvm_verbosity\>	uvmScalarType
+\<uvm_check_e\>	uvmScalarType
+\<uvm_access_e\>	uvmScalarType
+\<uvm_bitstream_t\>	uvmScalarType
+\<uvm_active_passive_enum\>	uvmScalarType
+\<uvm_radix_enum\>	uvmScalarType
+#
+# --- UVM global functions (uvm_globals.svh) ---
+\<uvm_report_info\>	uvmGlobalFn
+\<uvm_report_fatal\>	uvmGlobalFn
+\<uvm_report_enabled\>	uvmGlobalFn
+\<uvm_wait_for_nba_region\>	uvmGlobalFn
+\<run_test\>	uvmRunTest
+#
+# --- UVM macros (backtick form: the leading ` is svMacroRef) ---
+\<uvm_object_utils_begin\>	svMacroRef
+\<uvm_object_utils_end\>	svMacroRef
+\<uvm_component_utils\>	svMacroRef
+\<uvm_field_enum\>	svMacroRef
+\<uvm_field_int\>	svMacroRef
+\<uvm_info\>	svMacroRef
+\<uvm_error\>	svMacroRef
+\<uvm_do\>	svMacroRef
+#
+# --- config/resource db and static calls ---
+\<uvm_config_db\>	uvmConfig
+::\zsset\>	uvmConfigApi
+::\zsget\s*(	uvmConfigApi
+\<uvm_resource_db\>	uvmResource
+::\zsget_by_name\>	uvmConfigApi
+uvm_domain::\zsget_uvm_domain	uvmApiMethod
+#
+# --- ports / TLM / RAL ---
+\<uvm_analysis_port\>	uvmAnalysisClass
+\<uvm_tlm_analysis_fifo\>	uvmAnalysisFifoClass
+\<uvm_tlm_generic_payload\>	uvmGenericPayloadClass
+\<uvm_tlm_time\>	uvmPhaseClass2
+\<uvm_reg_adapter\>	uvmRegAdapterClass
+\<uvm_reg_block\>	uvmReg
+\<uvm_reg_field\>	uvmReg
+\<uvm_objection\>	uvmObjectionClass
+\<uvm_phase\>	uvmPhaseClass
+\<uvm_domain\>	uvmPhaseClass2
+#
+# --- objection / phase / factory methods ---
+\<raise_objection\>	uvmMethodObjection
+\<drop_objection\>	uvmMethodObjection
+\<build_phase\>	uvmPhase
+set_type_override_by_type	uvmMethodFactory
+#
+# --- SVA (sequence/property operators and keywords) ---
+|=>	svSVAOp
+##\[1:3\]	svSVAOp
+\[\*2\]	svSVAOp
+\<throughout\>	svKeyword
+\<within\>	svKeyword
+\<intersect\>	svKeyword
+\<iff\>	svConditional
+\<sequence\>	svKeyword
+\<endsequence\>	svKeyword
+#
+# --- preprocessor: include / define / ifdef / misc directives ---
+`include "	svInclude
+\.svh	svIncludeExt
+<uvm_macros	svIncludeAngle
+\<spot_macro\>	svDefineName
+(a, b)	svMacroArgs
+`undef	svUndef
+`timescale	svPreProc
+`pragma	svPreProc
+`ifdef	svIfdefTok
+\<spot_extra\>	svIfdefName
+`elsif	svPreConditElsif
+`else	svPreCondit
+`endif	svPreCondit

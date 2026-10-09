@@ -1,0 +1,82 @@
+ 0|// Fold regression sample for systemverilog.vim folding.
+ 0|// Fold levels are verified by test/run_fold_test.sh.
+ 1|`ifndef FOLD_DEMO_SV
+ 1|`define FOLD_DEMO_SV
+ 1|
+ 2|/* block comment
+ 2|   spanning lines
+ 2|   gets folded with 'comment' */
+ 1|
+ 2|`define LONG_MACRO(a, b) \
+ 2|  ((a) + \
+ 2|   (b))
+ 1|
+ 2|`ifdef FOOTPT
+ 2|typedef enum { A = 1, B = 2 } mode_e;
+ 2|`else
+ 2|typedef enum { A = 0, B = 1 } mode_e;
+ 2|`endif
+ 1|
+ 2|package demo_pkg;
+ 2|  parameter int W = 8;
+ 2|
+ 3|  function automatic int add(int a, int b);
+ 3|    return a + b;
+ 3|  endfunction : add
+ 2|endpackage : demo_pkg
+ 1|
+ 2|module demo_top #(
+ 2|  parameter int P = 2
+ 2|) (
+ 2|  input  logic clk,
+ 2|  input  logic rst_n,
+ 2|  output logic [P-1:0] dout
+ 2|);
+ 2|  demo_pkg::mode_e mode;
+ 2|  assign dout = (mode == demo_pkg::A) ? '0 : '1;
+ 2|
+ 3|  interface class printable;
+ 3|    pure virtual function void print();
+ 3|  endclass : printable
+ 2|
+ 3|  class printer extends demo_pkg;
+ 4|    `uvm_object_utils_begin(printer)
+ 4|      `uvm_field_int(mode, UVM_ALL_ON)
+ 4|    `uvm_object_utils_end
+ 3|
+ 4|    function void print();
+ 4|      $display("printer");
+ 4|    endfunction
+ 3|  endclass : printer
+ 2|
+ 3|  always_ff @(posedge clk or negedge rst_n) begin : proc_a
+ 4|    if (!rst_n) begin
+ 4|      mode <= demo_pkg::A;
+ 4|    end else if (mode == demo_pkg::B) begin
+ 4|      mode <= demo_pkg::A;
+ 4|    end
+ 3|  end : proc_a
+ 2|
+ 2|  // assert property must NOT open a fold
+ 2|  a_lbl: assert property (@(posedge clk) rst_n |-> mode != demo_pkg::A)
+ 2|    else $error("bad mode");
+ 2|
+ 3|  demo_if u_if (
+ 3|    .clk  (clk),
+ 3|    .rst_n(rst_n)
+ 3|  );
+ 2|endmodule : demo_top
+ 1|
+ 2|interface demo_if (
+ 2|  input logic clk
+ 2|);
+ 2|  modport m (input clk);
+ 2|endinterface : demo_if
+ 1|
+ 2|// {{{ temporary debug logic, remove after bring-up
+ 3|module debug_helper;
+ 3|  always #1ns $display("tick");
+ 3|endmodule
+ 2|// }}}
+ 1|
+ 1|`endif // FOLD_DEMO_SV

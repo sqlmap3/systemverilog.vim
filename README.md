@@ -6,9 +6,9 @@
 
 **Language:** English  
 **Maintainer:** [sqlmap3](https://github.com/sqlmap3/systemverilog.vim)  
-**Version:** 0.2  
+**Version:** 0.3  
 **First Change:** 2025-12-06  
-**Last Change:** Wed Feb 11 21:08:29 CST 2026  
+**Last Change:** Fri Oct 09 2026  
 
 ---
 
@@ -34,10 +34,31 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
   - Time unit highlighting (`fs/ps/ns/us/ms/s/step`, case-insensitive, supports real delays)
   - UVM phase helpers (e.g., `uvm_*_phase::get`)
   - Enum enumerator highlighting, struct field highlighting
-  - Instantiation readability: instance name highlighting and named port `.port(...)` highlighting
+  - Instantiation readability: named port `.port(...)` highlighting
   - Assertion labels highlighting: `label: assert/assume/cover ...`
 
 - Optional code folding in the style of [vhda/verilog_systemverilog.vim](https://github.com/vhda/verilog_systemverilog.vim): modules, classes, tasks, functions, packages, `` `uvm_*_utils_begin/_end ``, `/* */` comments, `` `ifdef `` blocks, multi-line `` `define `` and (opt-in) `begin/end` blocks or instantiations.
+
+## Recent Changes (2026-10-09)
+
+- Fix indent regression: multi-line `` `define `` bodies (backslash
+  continuations) now indent structurally again (`begin`/`if`/`end` inside a
+  macro body), while an expression split across continuation lines stays
+  flat — verified against the golden indent test.
+- Fix syntax items that a `\zs` in a `:syntax match` silently disables (the
+  match is anchored at `\zs`, so a leading keyword/class never matches):
+  - module/interface/package/class/covergroup names via `nextgroup`
+  - `` ::set ``/`` ::get ``/`` ::exists ``/`` ::get_by_name ``/... and generic
+    `uvm_class::method` static calls
+  - `super.new` / `this.new` and `type_id::create`
+- Fix precedence so the specific UVM groups win over the generic catch-alls
+  (`` uvm_reg_adapter ``→`uvmRegAdapterClass`, `` uvm_tlm_generic_payload ``
+  →`uvmGenericPayloadClass`, ...): the `uvm_reg_*`/`uvm_tlm_*`/port/socket
+  catch-alls are now defined before the specific class groups.
+- Stop `` `define ``/`` `ifdef `` name groups from leaking into instance,
+  port, enum and struct regions (`contains=ALLBUT`).
+- Add UVM 1.2 library coverage: base classes, scalar types, and the
+  `uvm_report_*` global functions (see below).
 
 ## Recent Changes (2026-02-11)
 
@@ -196,9 +217,9 @@ let g:systemverilog_uvm_names = ['my_agent', 'my_scoreboard', 'vip_pkg']
 ## Syntax highlight notes
 
 - `uvm_config_db#(int)::set(...)` / `uvm_config_db::get(...)`: the class is
-  highlighted as `Structure` and the `::set`/`::get`/`::exists` method as
-  `Label`. Any other `uvm_*[#(params)]::method` static call is highlighted
-  via one generic pattern.
+  highlighted as `Structure` (`uvm_config_db`) and the `::set`/`::get`/
+  `::exists`/`::get_by_name`/... method as `Label`. Any other
+  `::method` static call is highlighted as `Function`.
 - All `$`-system calls (`$display`, `$rose`, `$past`, `$clog2`, `$cast`,
   `$fopen`, `$fscanf`, ...) share one catch-all group instead of a huge
   hardcoded list — one regex, same color, much faster to load.
@@ -207,6 +228,34 @@ let g:systemverilog_uvm_names = ['my_agent', 'my_scoreboard', 'vip_pkg']
 - Built-in methods (`.size()`, `.push_back()`, `.randomize()`, ...) are
   highlighted when called with parentheses.
 - `virtual my_if vif;` highlights the custom type after `virtual`.
+- UVM 1.2 library coverage (verified against the actual `uvm-1.2` source
+  tree): besides the well-known classes, the factory/registry, base
+  classes (`uvm_sequence_base`, `uvm_sequencer_base`, `uvm_transaction`,
+  `uvm_void`, ...), pools/queues, report plumbing (`uvm_report_server`,
+  `uvm_report_message`), visitors, links, DAPs, RAL memory regions and
+  virtual registers are highlighted as types; the lowercase scalar types
+  (`uvm_verbosity`, `uvm_action`, `uvm_radix_enum`, ...) as types; and the
+  `uvm_report_info/warning/error/fatal/enabled` global functions plus
+  `uvm_wait_for_nba_region` as functions.
+
+## Known limitations
+
+- `task`/`function` names, `typedef` names, `parameter`/`localparam` names,
+  instance names and `struct`/`enum` members are not highlighted: those
+  rules relied on `\zs` with a leading context, which `:syntax match` does
+  not support (the match is anchored at `\zs`). They are left in place but
+  inert; the common `module`/`interface`/`package`/`class`/`covergroup`
+  names and `::method` calls were moved to `nextgroup`/plain matches.
+- `uvm_config_db::set/get/exists` and friends are matched as a plain
+  `::name` group, so `::set`/`::get` after any class share the `Label`
+  color (e.g. `uvm_factory::get()`), rather than only after a UVM config
+  class.
+- **Indent performance**: the indent engine re-scans backward through
+  comment and backslash-continuation blocks for every line, so re-indenting
+  a very large macro file (thousands of lines of `` `define `` bodies) takes
+  a long time (minutes / possible OOM on a 3k+ line file). Small and
+  medium files are unaffected. This is why `run_uvm_indent_test.sh` checks
+  a curated subset by default.
 
 ## Supported Filetypes
 
@@ -254,22 +303,71 @@ setlocal tabstop=2
 setlocal expandtab
 ```
 
-Optional module-body indentation — by default `module`/`package`/`program`/
-`interface` contents stay at the same level as the keyword (upstream
-nachumk behavior). Enable one level of body indentation with:
-
-```vim
-let g:systemverilog_indent_modules = 1   " or per-buffer b:systemverilog_indent_modules
-```
+Module/package/program/interface bodies stay at the same level as the
+keyword (upstream nachumk behavior). Indenting their bodies one level
+requires cross-line context that this engine's per-line code
+classification does not carry — if you need that, use
+[vhda/verilog_systemverilog.vim](https://github.com/vhda/verilog_systemverilog.vim)
+(`g:verilog_indent_modules`) instead.
 
 Indent notes:
 - `` `uvm_object_utils_begin(foo) `` / `` `uvm_object_utils_end `` indent
   like `begin`/`end`: `` `uvm_field_* `` entries get one extra level and the
   closing `_utils_end` macro dedents.
-- `` `elsif `` is treated like `` `else `` / `` `endif `` (no code indent).
+- `else` is treated as a control statement: a statement on the next line
+  indents one level, and `end`/`endfunction`/`endtask` after an else-branch
+  dedent correctly. `` `elsif `` is treated like `` `else `` / `` `endif ``
+  (no code indent).
 - Known limitation (inherited from upstream): keywords inside strings can
   disturb the code classification, e.g. `$display("class foo")` — the
   conversion runs before string stripping.
+
+## Tests
+
+- `sh test/run_indent_test.sh` — golden-file indent regression test:
+  re-indents [test/indent_demo.sv](test/indent_demo.sv) (deliberately
+  mis-indented) with `gg=G` in a headless Vim and diffs against
+  [test/indent_demo.expected.sv](test/indent_demo.expected.sv). Coverage
+  includes UVM field-macro blocks, single-line `if` + macro + `else`
+  chains, `else if`, case labels, `fork`/`join_any`, labeled
+  `generate` blocks (`if`/`else`/`for`/`case`), multi-line
+  instantiations, `` `include `` chains (plain and inside `` `ifdef ``
+  / `` `elsif ``), multi-line `` `define ``, `` `undef `` / `` `timescale ``
+  / `` `pragma ``, `struct`/`enum`, `interface` + `modport`, flat
+  `package` bodies, `function new` / `super.new`, `interface class`,
+  and block comments. Use `VIM=nvim sh test/run_indent_test.sh` for
+  Neovim.
+- `sh test/run_fold_test.sh` — golden-file fold-level regression test:
+  computes the fold level of every line of [test/fold_demo.sv](test/fold_demo.sv)
+  through the `foldexpr` engine (without touching the buffer) and diffs
+  against [test/fold_demo.expected.txt](test/fold_demo.expected.txt).
+  Coverage: block/comment/`` `ifdef ``/`` `define ``/instance folds,
+  `` `else `` branch restarts, `assert property` exclusion,
+  `` `uvm_*_utils_begin/_end `` macro pairs, interface classes and manual
+  `// {{{`/`// }}}` markers. Use `VIM=nvim sh test/run_fold_test.sh` for
+  Neovim.
+- `sh test/run_uvm_syntax_test.sh` — syntax regression test against UVM 1.2:
+  1. spot-checks ~100 representative tokens in
+     [test/uvm_syntax_spot.sv](test/uvm_syntax_spot.sv) (constructs lifted
+     from the UVM 1.2 library: classes, scalar types, `` `include ``/`` `define ``
+     /`` `ifdef `` directives, macros, `uvm_report_*` calls, config/resource
+     db static calls, SVA operators and keywords, numbers, ports) against
+     the expected syntax group — the pairs live in
+     [test/uvm_syntax_checks.txt](test/uvm_syntax_checks.txt);
+  2. loads every `.sv`/`.svh` of a real UVM 1.2 source tree and fails if
+     any file errors out or misses the `systemverilog` filetype/syntax.
+     Tree location defaults to `~/test/uvm-1.2/src`; override with
+     `UVM_SRC=/path/to/uvm-1.2/src` or skip with `UVM_SRC=`.
+- `sh test/run_uvm_indent_test.sh` — indent idempotency test over the real
+  UVM 1.2 library sources (`~/test/uvm-1.2/src`, `UVM_SRC=` to override,
+  skipped when the tree is absent): re-indents every file with `gg=G`
+  twice — the second pass must not change anything, no line may exceed 40
+  columns of indent (runaway check), and the indent engine must not raise.
+  The first pass normalizes to the engine's own style, so the library's
+  original formatting is irrelevant — only the stability of the engine is
+  asserted. This re-indents the whole library twice and takes a few
+  minutes; pass a subdirectory (e.g. `UVM_SRC=~/test/uvm-1.2/src/base`)
+  for a quicker run.
 
 ## Examples
 

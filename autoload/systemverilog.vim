@@ -66,7 +66,7 @@ let s:INST_DENY =
 	\ 'liblist\|instance\|uvm_\w*'
 let s:INST_START =
 	\ '^\s*\%(' . s:INST_DENY . '\>\)\@!' .
-	\ '\s*\h\w*\%(\s*#\s*([^()]*)\)\?\s\+\h\w*\%(\s*\[[^][]*\]\s*\)\?('
+	\ '\s*\h\w*\%(\s*#\s*([^()]*)\)\?\s\+\h\w*\%(\s*\[[^][]*\]\s*\)\?\s*('
 
 function! s:Count(text, pat) abort
 	let l:n = 0

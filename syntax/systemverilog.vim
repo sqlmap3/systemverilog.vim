@@ -30,7 +30,7 @@ syntax match svPreCondit "^\s*`\(else\|endif\)\>"
 
 syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
-syntax keyword svKeyword fork join join_any join_none begin end module endmodule function endfunction task endtask always always_ff always_latch always_comb initial this generate endgenerate config endconfig class endclass clocking endclocking interface endinterface package endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover covergroup coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed unpacked priority program property pure randc randcase randsequence sequence solve super tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
+syntax keyword svKeyword fork join join_any join_none begin end endmodule function endfunction task endtask always always_ff always_latch always_comb initial generate endgenerate config endconfig endclass clocking endclocking endinterface endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local longint matches new null packed unpacked priority program property pure randc randcase randsequence sequence solve tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
 syntax match svInteger "\<\(\.\)\@<![0-9_]\+\(\s*['.]\)\@!\>"
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(d\|D\)\s*[0-9_ZzXx?]\+"
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+"
@@ -42,24 +42,35 @@ syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
 syntax keyword svStructure struct union enum
 syntax keyword svTypedef typedef parameter localparam
-syntax region svEnumBody start="\<enum\>\_.\{-}{" end="}" keepend transparent contains=ALL
+syntax region svEnumBody start="\<enum\>\_.\{-}{" end="}" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
 syntax match svEnumerator "\%(\s*{\s*\|,\s*\)\zs\h\w*\ze\%(\s*=\|\s*}\|\s*,\)" contained containedin=svEnumBody
-syntax region svPortList start="^\s*\%(module\|interface\)\>\_.\{-}\%(\_s*#\_s*(\_.\{-})\)\?\_s*(" end=");" keepend transparent contains=ALL
+syntax region svPortList start="^\s*\%(module\|interface\)\>\_.\{-}\%(\_s*#\_s*(\_.\{-})\)\?\_s*(" end=");" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
 syntax match svPortName "\<\h\w*\>\ze\%(\_s*\(\[[^]]*\]\_s*\)\*\)\_s*\%(,\|)\|=\)" contained containedin=svPortList
-syntax region svInstStmt start="^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\h\w*\_s*\%(\[[^]]*]\_s*\)\?(" end=";" keepend transparent contains=ALL
+syntax region svInstStmt start="^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\h\w*\_s*\%(\[[^]]*]\_s*\)\?(" end=";" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
 syntax match svInstanceName "^\s*\%(\%(module\|interface\|function\|task\|class\|package\|typedef\|property\|sequence\|covergroup\)\>\)\@!\h\w*\%(\_s*#\_s*(\_.\{-})\)\?\_s\+\zs\h\w*\ze\_s*\%(\[[^]]*]\_s*\)\?(" contained containedin=svInstStmt
 syntax match svInstanceName ",\_s*\zs\h\w*\ze\_s*\%(\[[^]]*]\_s*\)\?(" contained containedin=svInstStmt
-syntax match svModuleName "\<module\>\_s\+\%(automatic\_s\+\)\?\zs\h\w*\ze\_s*\%((\|;\)"
-syntax match svInterfaceName "\<interface\>\_s\+\zs\h\w*\ze\_s*\%((\|;\)"
-syntax match svPackageName "\<package\>\_s\+\zs\h\w*\ze\_s*;"
-syntax match svClassName "\<class\>\_s\+\zs\h\w*\ze\_s*\%(#\|extends\|;\)"
+" names after module/interface/package/class. nextgroup-based (not \zs): a
+" \zs in a :syntax match anchors the match there, so the leading keyword
+" never matches. The *_Kw keywords keep the Keyword color.
+syntax keyword svModuleKw module nextgroup=svModuleName skipwhite skipempty
+syntax keyword svInterfaceKw interface nextgroup=svInterfaceName skipwhite skipempty
+syntax keyword svPackageKw package nextgroup=svPackageName skipwhite skipempty
+syntax keyword svClassKw class nextgroup=svClassName skipwhite skipempty
+syntax match svModuleName "\h\w*" contained
+syntax match svInterfaceName "\h\w*" contained
+syntax match svPackageName "\h\w*" contained
+syntax match svClassName "\h\w*" contained
+highlight! default link svModuleKw Keyword
+highlight! default link svInterfaceKw Keyword
+highlight! default link svPackageKw Keyword
+highlight! default link svClassKw Keyword
 " virtual interface declarations: highlight the type in "virtual my_if vif;"
 syntax match svVirtualIfaceType "\<virtual\_s\+\zs\h\w*\ze\_s\+\h\w*\%(\_s*\[[^][]*\]\)*\_s*;"
 syntax match svTaskName "\<task\>\_.\{-}\zs\h\w*\ze\_s*\%((\|;\)"
 syntax match svFunctionName "\<function\>\_.\{-}\zs\h\w*\ze\_s*("
 syntax match svParamName "^\s*\%(parameter\|localparam\)\>.\{-}\zs\h\w*\ze\_s*="
 syntax match svTypedefName "\<typedef\>\_.\{-}\zs\h\w*\ze\_s*;"
-syntax region svStructBody start="\<\(struct\|union\)\>\%(\_s\+packed\)\?\_s*{" end="}" keepend transparent contains=ALL
+syntax region svStructBody start="\<\(struct\|union\)\>\%(\_s\+packed\)\?\_s*{" end="}" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName
 syntax match svStructField "\%(\.\|::\)\@<!\<\h\w*\>\ze\%(\s*\(\[[^]]*\]\s*\)\*\)\s*\%(,\|;\|=\)" contained containedin=svStructBody
 syntax match svNamedPort "\%(\s\|[(,]\)\.\zs\h\w*\ze\_s*(" containedin=ALL,svInstStmt
 syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>" containedin=ALL
@@ -73,7 +84,9 @@ syntax match svDelimiter "\({\|}\|(\|)\)"
 syntax match svSVAOp "\(|->\||=>\|##\d\+\|##\|\[\*\(\d\+\(:\d\+\)\?\)\?\]\)"
 
 " Covergroup / coverpoint / bins names
-syntax match svCovergroupName "\<covergroup\>\s\+\zs\h\w*"
+syntax keyword svCovergroupKw covergroup nextgroup=svCovergroupName skipwhite skipempty
+syntax match svCovergroupName "\h\w*" contained
+highlight! default link svCovergroupKw Keyword
 " Macro guard names
 syntax match svIfndefTok "^\s*`ifndef\>" nextgroup=svIfndefName skipwhite
 syntax match svIfdefTok  "^\s*`ifdef\>"  nextgroup=svIfdefName  skipwhite
@@ -99,6 +112,20 @@ syntax region svCoverWithPred start="\<with\>\s*(" end=")" keepend
 syntax region svCoverIffPred start="\<iff\>\s*(" end=")" keepend
 
 
+
+" generic catch-alls FIRST: later-defined matches win, so these must come
+" before the specific class groups below or they would shadow them (e.g.
+" uvmReg over uvmRegAdapterClass, uvmTLM over uvmGenericPayloadClass)
+syntax match uvmPort "\<uvm_\(non\)\?blocking_\w\+_\(port\|export\|imp\)\>"
+syntax match uvmSocket "\<uvm_\(tlm_\)\?b\?_\(initiator\|target\)_socket\(_base\)\?\>"
+syntax match uvmTLM "\<uvm_tlm_\w\+\>"
+syntax match uvmReg "\<uvm_reg_\w\+\>"
+syntax match uvmEnum "\<UVM_[A-Z0-9_]\+\>"
+highlight! default link uvmPort StorageClass
+highlight! default link uvmSocket Structure
+highlight! default link uvmTLM Structure
+highlight! default link uvmReg Structure
+highlight! default link uvmEnum Constant
 
 " domain/event/barrier/analysis fifo and payload
 syntax match uvmDomainClass "\<uvm_domain\>"
@@ -203,26 +230,16 @@ syntax match uvmResource "\<uvm_resource_db\>"
 highlight! default link uvmConfig Structure
 highlight! default link uvmResource Structure
 
-" ::get / ::set after a (possibly parameterized) UVM class reference:
-"   uvm_config_db#(int)::set(...)   /   uvm_config_db::get(...)
-syntax match uvmConfigApi   "\<uvm_config_db\>\%(\s*#\s*([^()]*)\)\?\s*::\s*\zs\%(set\|get\|exists\)\>"
-syntax match uvmResourceApi "\<uvm_resource_db\>\%(\s*#\s*([^()]*)\)\?\s*::\s*\zs\%(set\|get\|find\|get_by_name\|get_by_type\|set_default\)\>"
-highlight! default link uvmConfigApi Label
-highlight! default link uvmResourceApi Label
-" any other uvm_class[#(params)]::method static call
-syntax match uvmApiMethod "\<uvm_\h\w*\>\%(\s*#\s*([^()]*)\)\?\s*::\s*\zs\h\w*"
+" ::get / ::set / static method calls. Matched as plain "::name" (NOT with
+" a leading class + \zs): \zs in a :syntax match anchors the match at \zs,
+" so the leading class never matches and the rule is dead code. The generic
+" group is defined first so the config/resource API group (below) wins for
+" the overlapping set/get/exists/... names.
+syntax match uvmApiMethod   "::\_s*\h\w*"
+syntax match uvmConfigApi   "::\_s*\%(set\|get\|exists\|find\|get_by_name\|get_by_type\|set_default\)\>"
 highlight! default link uvmApiMethod Function
+highlight! default link uvmConfigApi Label
 
-syntax match uvmPort "\<uvm_\(non\)\?blocking_\w\+_\(port\|export\|imp\)\>"
-syntax match uvmSocket "\<uvm_\(tlm_\)\?b\?_\(initiator\|target\)_socket\(_base\)\?\>"
-syntax match uvmTLM "\<uvm_tlm_\w\+\>"
-syntax match uvmReg "\<uvm_reg_\w\+\>"
-syntax match uvmEnum "\<UVM_[A-Z0-9_]\+\>"
-highlight! default link uvmPort StorageClass
-highlight! default link uvmSocket Structure
-highlight! default link uvmTLM Structure
-highlight! default link uvmReg Structure
-highlight! default link uvmEnum Constant
 
 syntax match uvmMacros "\<uvm_field_\w\+\>"
 syntax match uvmMacros "\<uvm_object_utils\(_begin\|_end\|_param\w*\)\>"
@@ -233,17 +250,37 @@ syntax match uvmMacros "\<uvm_\(error\|warning\|info\|fatal\)\(_context\)\?\>"
 highlight! default link uvmMacros Macro
 
 syntax keyword uvmMethodObjection raise_objection drop_objection global_stop_request
-syntax keyword uvmMethodTrans get put peek try_get try_put try_peek try_next_item b_transport nb_transport_fw nb_transport_bw
+" as a match (not keyword) with a ::-lookbehind: keyword priority would
+" otherwise swallow the method after a class reference, e.g. the `get` of
+" uvm_config_db::get() or uvm_factory::get() (see uvmConfigApi/uvmApiMethod)
+syntax match uvmMethodTrans "\%(::\s*\)\@<!\<\(get\|put\|peek\|try_get\|try_put\|try_peek\|try_next_item\|b_transport\|nb_transport_fw\|nb_transport_bw\)\>"
 syntax keyword uvmMethodSeqCtrl start_item finish_item item_done
 syntax keyword uvmMethodSeqCtrl wait_for_grant send_request wait_for_item_done
 syntax keyword uvmMethodSeqCtrl grab ungrab lock unlock
-syntax keyword uvmMethodFactory create type_id set_type_override_by_type set_inst_override_by_type
+syntax keyword uvmMethodFactory create set_type_override_by_type set_inst_override_by_type
 syntax keyword uvmMethodConfig set_config set_report_verbosity_level set_report_severity_action set_report_id_action set_report_default_file
 highlight! default link uvmMethodObjection Keyword
 highlight! default link uvmMethodTrans Operator
 highlight! default link uvmMethodSeqCtrl Repeat
 highlight! default link uvmMethodFactory Structure
 highlight! default link uvmMethodConfig Label
+
+" UVM 1.2 library classes not covered by the groups above (derived from
+" the uvm-1.2 source tree): base classes, factory/registry, pools, queues,
+" visitors, report/message plumbing, links, DAPs, RAL memory regions and
+" virtual registers, TLM1/comps helpers
+syntax keyword uvmBaseClass uvm_void uvm_transaction uvm_sequence_base uvm_sequence_process_wrapper uvm_sequence_request uvm_sequence_library_cfg uvm_sequencer_base uvm_sequencer_param_base uvm_push_sequencer uvm_random_sequence uvm_exhaustive_sequence uvm_simple_sequence uvm_pool uvm_queue uvm_factory uvm_component_registry uvm_object_registry uvm_root uvm_report_server uvm_default_report_server uvm_report_message uvm_report_message_element_base uvm_report_message_element_container uvm_event_base uvm_resource_base uvm_resource_pool uvm_resource_types uvm_resource_options uvm_callback_iter uvm_callbacks_base uvm_typed_callbacks uvm_derived_callbacks uvm_typeid uvm_typeid_base uvm_visitor uvm_visitor_adapter uvm_structure_proxy uvm_component_proxy uvm_component_name_check_visitor uvm_coreservice_t uvm_default_coreservice_t uvm_spell_chkr uvm_printer_knobs uvm_text_tr_stream uvm_scope_stack uvm_status_container uvm_seed_map uvm_utils uvm_heartbeat uvm_port_base uvm_port_component_base uvm_push_driver uvm_subscriber uvm_pair uvm_policies uvm_random_stimulus uvm_algorithmic_comparator uvm_in_order_comparator uvm_in_order_built_in_comparator uvm_in_order_class_comparator uvm_mem_region uvm_mem_mam_policy uvm_predict_s uvm_vreg uvm_vreg_field uvm_vreg_cbs uvm_vreg_field_cbs uvm_link_base uvm_cause_effect_link uvm_parent_child_link uvm_related_link uvm_simple_lock_dap uvm_set_before_get_dap uvm_get_to_lock_dap uvm_set_get_dap_base
+highlight! default link uvmBaseClass Type
+
+" UVM 1.2 lowercase scalar types / enums (uvm_object_globals.svh etc.)
+syntax keyword uvmScalarType uvm_verbosity uvm_action uvm_severity uvm_radix_enum uvm_active_passive_enum uvm_access_e uvm_check_e uvm_coverage_model_e uvm_bitstream_t uvm_objection_event uvm_phase_state uvm_phase_type
+highlight! default link uvmScalarType Type
+
+" UVM 1.2 global functions (uvm_globals.svh); the class names keep their
+" own groups, the report_* call sites are what gets highlighted here
+syntax match uvmGlobalFn "\<uvm_report_\(info\|warning\|error\|fatal\|enabled\|hook\|separator\)\>"
+syntax match uvmGlobalFn "\<uvm_wait_for_nba_region\>"
+highlight! default link uvmGlobalFn Function
 
 syntax keyword uvmPhase build_phase check_phase configure_phase connect_phase define_domain do_kill end_of_elaboration_phase exec_task extract_phase final_phase main_phase phase_ended phase_ready_to_end phase_started post_configure_phase post_main_phase post_reset_phase post_shutdown_phase pre_configure_phase pre_main_phase pre_reset_phase pre_shutdown_phase report_phase reset_phase run_phase shutdown_phase start_of_simulation_phase
 highlight! default link uvmPhase Type
@@ -255,7 +292,7 @@ syntax match uvmPhase "\<uvm_\(build\|connect\|end_of_elaboration\|start_of_simu
 syntax match uvmPhaseGet "\<uvm_\w\+_phase\>\s*::\s*get\>"
 highlight! default link uvmPhaseGet Function
 
-syntax keyword uvmSeq uvm_reg_bit_hash_seq uvm_reg_hw_reset_seq uvm_reg_mem_built_in_seq
+syntax keyword uvmSeq uvm_reg_bit_hash_seq uvm_reg_hw_reset_seq uvm_reg_mem_built_in_seq uvm_reg_single_access_seq uvm_reg_single_bit_bash_seq uvm_reg_mem_shared_access_seq uvm_reg_mem_hdl_paths_seq uvm_mem_single_access_seq uvm_mem_access_seq uvm_mem_single_walk_seq uvm_mem_walk_seq uvm_mem_shared_access_seq
 highlight! default link uvmSeq Identifier
 
 " UVM version flavor -------------------------------------------------------
