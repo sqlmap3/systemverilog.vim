@@ -25,12 +25,16 @@ let s:GROUP_INDENT_START = 'f'
 let s:GROUP_INDENT_STOP = 'h'
 let s:BLOCK_INDENT_START = 'b'
 let s:BLOCK_INDENT_STOP = 'e'
+let s:PAREN_START = 'c'
+let s:PAREN_STOP = 'd'
 let s:LINE_INDENT = '^.*x$'
 let s:EXEC_LINE = '^.*;$'
 let s:PREPROCESSOR = '^z.*$'
 
-"b - 'begin', '(', '{'
-"e - 'end', ')', '{'
+"b - 'begin', '{'
+"e - 'end', '}'
+"c - '(' , '['
+"d - ')' , ']'
 "f - 'class', 'function', 'task'
 "h - 'endclass', 'endfunction', 'endtask'
 "l - '//' -- at start of line
@@ -55,6 +59,14 @@ function! s:ConvertToCodes( codeline, ... )
 		return b:sv_conv_cache[l:key]
 	endif
 	let delims = a:codeline
+	" '{'/'}' are blocks only as struct/union/enum/constraint bodies; in a
+	" concatenation or literal context (preceded by = ( , ) they must not
+	" indent, otherwise a string concatenation spanning lines indents like a
+	" struct body and its '}' leaves a dangling block-close. Neutralize
+	" those braces (struct body braces are left alone: '{' follows the
+	" struct/packed/... word, '}' follows an identifier or string).
+	let delims = substitute(delims, '\(=\|(\|,\)\s*{', '\1', 'g')
+	let delims = substitute(delims, '}\s*\([,;)]\)', '\1', 'g')
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
 	" They are mapped to braces here on purpose: the keyword filter below
@@ -65,10 +77,10 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
 	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
 	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
-	let delims = substitute(delims, 'pure\s\+function', '', 'g')
-	let delims = substitute(delims, 'extern\s\+function', '', 'g')
-	let delims = substitute(delims, 'pure\s\+task', '', 'g')
-	let delims = substitute(delims, 'extern\s\+task', '', 'g')
+	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
+	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
+	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
+	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
 	" keywords the filter keeps but that map to no code: strip the leftovers,
 	" otherwise the bare word leaks into the codes and its letters accidentally
 	" match the single-letter code patterns (e.g. "extern" contains 'e' and
@@ -107,8 +119,12 @@ function! s:ConvertToCodes( codeline, ... )
 	if a:0
 		let delims = substitute(delims, '[][(){}]', '', 'g')
 	else
-		let delims = substitute(delims, '[({]', 'b', 'g')
-		let delims = substitute(delims, '[)}]', 'e', 'g')
+		let delims = substitute(delims, '(', 'c', 'g')
+		let delims = substitute(delims, ')', 'd', 'g')
+		let delims = substitute(delims, '\[', 'c', 'g')
+		let delims = substitute(delims, '\]', 'd', 'g')
+		let delims = substitute(delims, '{', 'b', 'g')
+		let delims = substitute(delims, '}', 'e', 'g')
 	endif
 	let delims = substitute(delims, '^\s*`.*$', ';', 'g')
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
@@ -119,6 +135,9 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, 'o\+', 'o', 'g')
 	while (match(delims, '\(b[^be]*e\)') != -1)
 		let delims = substitute(delims, '\(b[^be]*e\)', '', 'g')
+	endwhile
+	while (match(delims, '\(c[^cd]*d\)') != -1)
+		let delims = substitute(delims, '\(c[^cd]*d\)', '', 'g')
 	endwhile
 	while (match(delims, '\(f[^fh]*h\)') != -1)
 		let delims = substitute(delims, '\(f[^fh]*h\)', '', 'g')
@@ -192,6 +211,13 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 		let indnt = indnt + &shiftwidth
 	endif
 	if a:this_codes =~ s:BLOCK_INDENT_STOP
+		return indnt - &shiftwidth
+	endif
+
+	if a:prev1_codes =~ s:PAREN_START
+		let indnt = indnt + &shiftwidth
+	endif
+	if a:this_codes =~ s:PAREN_STOP
 		return indnt - &shiftwidth
 	endif
 
@@ -285,6 +311,20 @@ let b:sv_conv_cache = {}
 let b:sv_prev_cache = {}
 let b:sv_whole_cache = {}
 let b:sv_conv_tick = -1
+
+" A function/task whose signature sits on a line after a bare qualifier line
+" (extern / pure / virtual / protected ... with no ';') is a split prototype:
+" its group opener 'f' must not stay open past the signature's closing ');',
+" or every following declaration cascades one level deeper. Strip the 'f'.
+function! s:StripPrototypeF( line_num, codeline, codes )
+	if a:codeline =~ '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\)\s\+\)*\%(function\|task\)\>'
+		let l:prev = getline(prevnonblank(a:line_num - 1))
+		if l:prev =~ '^\s*\%(extern\|virtual\|protected\|pure\|static\|local\)\%(\s\+\%(extern\|virtual\|protected\|pure\|static\|local\)\)*\s*$'
+			return substitute(a:codes, 'f', '', 'g')
+		endif
+	endif
+	return a:codes
+endfunction
 
 function! GetSystemVerilogIndent( line_num )
 	let this_codeline = getline( a:line_num )
@@ -410,7 +450,7 @@ function! GetSystemVerilogIndent( line_num )
 	let prev2_codeline = s:GetWholeLine (prev2_line_num)
 	let prev2_codes = s:ConvertToCodes(prev2_codeline)
 	let in_comment = 0
-	while ( prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR)
+	while ( prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR || (prev2_codes =~ s:PAREN_START && prev2_codes !~ s:EXEC_LINE))
 		if (prev2_codes =~ s:BLOCK_COMMENT_STOP)
 			let in_comment = 1
 		endif
@@ -422,7 +462,11 @@ function! GetSystemVerilogIndent( line_num )
 		let prev2_codes = s:ConvertToCodes(prev2_codeline)
 	endwhile
 
+	let prev1_codes = s:StripPrototypeF(prev1_line_num, prev1_codeline, prev1_codes)
+	let prev2_codes = s:StripPrototypeF(prev2_line_num, prev2_codeline, prev2_codes)
+
 	let this_codes = s:ConvertToCodes( this_codeline )
+	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
 
 	" Tail of a multi-line MACRO call, e.g. the closing "UVM_LOW)" or
 	" "actual, exp),UVM_DEBUG);" line of a `uvm_info that spans lines without
