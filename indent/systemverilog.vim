@@ -69,6 +69,17 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, 'extern\s\+function', '', 'g')
 	let delims = substitute(delims, 'pure\s\+task', '', 'g')
 	let delims = substitute(delims, 'extern\s\+task', '', 'g')
+	" keywords the filter keeps but that map to no code: strip the leftovers,
+	" otherwise the bare word leaks into the codes and its letters accidentally
+	" match the single-letter code patterns (e.g. "extern" contains 'e' and
+	" 'x', acting as a spurious block-stop and mis-dedenting a following
+	" "function ..." declaration that was split onto its own line)
+	let delims = substitute(delims, '\<extern\>', '', 'g')
+	let delims = substitute(delims, '\<pure\>', '', 'g')
+	let delims = substitute(delims, '\<disable\>', '', 'g')
+	let delims = substitute(delims, '\<wait\>', '', 'g')
+	let delims = substitute(delims, '\<alias\>', '', 'g')
+	let delims = substitute(delims, '\<final\>', '', 'g')
 	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
 	let delims = substitute(delims, 'typedef', '', 'g')
 	let delims = substitute(delims, 'assert\s\+\%\[\(property\)\]', '', 'g')
