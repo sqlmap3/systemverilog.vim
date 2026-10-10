@@ -25,16 +25,12 @@ let s:GROUP_INDENT_START = 'f'
 let s:GROUP_INDENT_STOP = 'h'
 let s:BLOCK_INDENT_START = 'b'
 let s:BLOCK_INDENT_STOP = 'e'
-let s:PAREN_START = 'c'
-let s:PAREN_STOP = 'd'
 let s:LINE_INDENT = '^.*x$'
 let s:EXEC_LINE = '^.*;$'
 let s:PREPROCESSOR = '^z.*$'
 
-"b - 'begin', '{'
-"e - 'end', '}'
-"c - '(' , '['
-"d - ')' , ']'
+"b - 'begin', '(', '{'
+"e - 'end', ')', '{'
 "f - 'class', 'function', 'task'
 "h - 'endclass', 'endfunction', 'endtask'
 "l - '//' -- at start of line
@@ -119,12 +115,8 @@ function! s:ConvertToCodes( codeline, ... )
 	if a:0
 		let delims = substitute(delims, '[][(){}]', '', 'g')
 	else
-		let delims = substitute(delims, '(', 'c', 'g')
-		let delims = substitute(delims, ')', 'd', 'g')
-		let delims = substitute(delims, '\[', 'c', 'g')
-		let delims = substitute(delims, '\]', 'd', 'g')
-		let delims = substitute(delims, '{', 'b', 'g')
-		let delims = substitute(delims, '}', 'e', 'g')
+		let delims = substitute(delims, '[({]', 'b', 'g')
+		let delims = substitute(delims, '[)}]', 'e', 'g')
 	endif
 	let delims = substitute(delims, '^\s*`.*$', ';', 'g')
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
@@ -135,9 +127,6 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, 'o\+', 'o', 'g')
 	while (match(delims, '\(b[^be]*e\)') != -1)
 		let delims = substitute(delims, '\(b[^be]*e\)', '', 'g')
-	endwhile
-	while (match(delims, '\(c[^cd]*d\)') != -1)
-		let delims = substitute(delims, '\(c[^cd]*d\)', '', 'g')
 	endwhile
 	while (match(delims, '\(f[^fh]*h\)') != -1)
 		let delims = substitute(delims, '\(f[^fh]*h\)', '', 'g')
@@ -211,13 +200,6 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 		let indnt = indnt + &shiftwidth
 	endif
 	if a:this_codes =~ s:BLOCK_INDENT_STOP
-		return indnt - &shiftwidth
-	endif
-
-	if a:prev1_codes =~ s:PAREN_START
-		let indnt = indnt + &shiftwidth
-	endif
-	if a:this_codes =~ s:PAREN_STOP
 		return indnt - &shiftwidth
 	endif
 
@@ -324,6 +306,34 @@ function! s:StripPrototypeF( line_num, codeline, codes )
 		endif
 	endif
 	return a:codes
+endfunction
+
+" If the line at a:line_num is the tail of a multi-line macro call (a line
+" ending in ')' or ');' whose continuation chain of ', ( [ {'-ending lines
+" reaches a backtick line), return that macro head's line number; otherwise
+" return 0. A real multi-line call/declaration (extern function ...( ... );)
+" has no backtick in the chain and returns 0.
+function! s:MacroTailHead( line_num )
+	let l:line = getline(a:line_num)
+	if l:line !~ ')\s*;\?\s*$'
+		return 0
+	endif
+	if l:line =~ '^\s*[;)}]'
+	  \ || l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
+		return 0
+	endif
+	let l:ln = prevnonblank(a:line_num - 1)
+	while l:ln > 0
+		let l:l = getline(l:ln)
+		if l:l !~ '[,([{]\s*$'
+			return 0
+		endif
+		if l:l =~ '^\s*`'
+			return l:ln
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
 endfunction
 
 function! GetSystemVerilogIndent( line_num )
@@ -450,7 +460,7 @@ function! GetSystemVerilogIndent( line_num )
 	let prev2_codeline = s:GetWholeLine (prev2_line_num)
 	let prev2_codes = s:ConvertToCodes(prev2_codeline)
 	let in_comment = 0
-	while ( prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR || (prev2_codes =~ s:PAREN_START && prev2_codes !~ s:EXEC_LINE))
+	while ( prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR)
 		if (prev2_codes =~ s:BLOCK_COMMENT_STOP)
 			let in_comment = 1
 		endif
@@ -465,6 +475,18 @@ function! GetSystemVerilogIndent( line_num )
 	let prev1_codes = s:StripPrototypeF(prev1_line_num, prev1_codeline, prev1_codes)
 	let prev2_codes = s:StripPrototypeF(prev2_line_num, prev2_codeline, prev2_codes)
 
+	" if prev1 is the tail of a multi-line macro, it is the statement's
+	" terminator: treat it as 'exec' and resolve prev2 to the code before the
+	" macro head, so the "prev2 x + prev1 exec" rule dedents the next line
+	" back to the enclosing control level (e.g. a following if/endfunction)
+	let l:mhead = s:MacroTailHead(prev1_line_num)
+	if l:mhead > 0
+		let prev1_codes = ';'
+		let prev2_line_num = s:GetPrevWholeLineNum(l:mhead)
+		let prev2_codeline = s:GetWholeLine(prev2_line_num)
+		let prev2_codes = s:ConvertToCodes(prev2_codeline)
+	endif
+
 	let this_codes = s:ConvertToCodes( this_codeline )
 	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
 
@@ -472,24 +494,10 @@ function! GetSystemVerilogIndent( line_num )
 	" "actual, exp),UVM_DEBUG);" line of a `uvm_info that spans lines without
 	" backslash continuation. The macro's open line is wiped to ';' by
 	" ConvertToCodes, so the tail's ')' has no matching '(' and would dedent
-	" spuriously and cascade. Walk back through the continuation chain: if it
-	" reaches a backtick (macro) line, keep the tail flat with that line. A
-	" real multi-line call/declaration (extern function ...( ... );) has no
-	" backtick in the chain and must dedent normally, so it falls through.
-	if this_codeline =~ ')\s*;\?\s*$'
-	  \	&& this_codeline !~ '^\s*[;)}]'
-	  \	&& this_codeline !~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
-		let ln = prevnonblank(a:line_num - 1)
-		while ln > 0
-			let l = getline(ln)
-			if l !~ '[,([{]\s*$'
-				break
-			endif
-			if l =~ '^\s*`'
-				return indent(ln)
-			endif
-			let ln = prevnonblank(ln - 1)
-		endwhile
+	" spuriously and cascade. Keep the tail flat with the macro head.
+	let l:mhead = s:MacroTailHead(a:line_num)
+	if l:mhead > 0
+		return indent(l:mhead)
 	endif
 
 	let indnt = indent( prev1_line_num )
