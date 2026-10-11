@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vim
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y vim
+
+      - name: Golden indent tests (demo 1-3)
+        run: sh test/run_indent_test.sh
+
+      - name: Golden fold test
+        run: sh test/run_fold_test.sh
+
+      - name: Syntax spot checks (self-contained)
+        run: UVM_SRC= sh test/run_uvm_syntax_test.sh
+
+      - name: Clone UVM 1.2 reference library
+        run: git clone --depth 1 https://github.com/gchinna/uvm-1.2 "$HOME/uvm-1.2" || true
+
+      - name: UVM library tests (syntax smoke + indent idempotency, full tree)
+        run: |
+          if [ ! -d "$HOME/uvm-1.2/src" ]; then
+            echo "uvm-1.2 clone unavailable - skipping library tests"
+            exit 0
+          fi
+          UVM_SRC="$HOME/uvm-1.2/src" sh test/run_uvm_syntax_test.sh
+          UVM_SRC="$HOME/uvm-1.2/src" sh test/run_uvm_indent_test.sh

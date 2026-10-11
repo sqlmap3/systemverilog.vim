@@ -56,13 +56,36 @@ function! s:ConvertToCodes( codeline, ... )
 	endif
 	let delims = a:codeline
 	" '{'/'}' are blocks only as struct/union/enum/constraint bodies; in a
-	" concatenation or literal context (preceded by = ( , ) they must not
-	" indent, otherwise a string concatenation spanning lines indents like a
-	" struct body and its '}' leaves a dangling block-close. Neutralize
-	" those braces (struct body braces are left alone: '{' follows the
-	" struct/packed/... word, '}' follows an identifier or string).
-	let delims = substitute(delims, '\(=\|(\|,\)\s*{', '\1', 'g')
-	let delims = substitute(delims, '}\s*\([,;)]\)', '\1', 'g')
+	" string-concatenation or literal context they must not indent. A
+	" concatenation '{' sits after = ( , ? : ' (the last is the assignment
+	" pattern '{) or at the start of a continuation line, and is followed by
+	" a string or identifier; its '}' is preceded by a string, identifier or
+	" call close and followed by , ; ) : (a ternary concat "? {a}:{b};" has
+	" both brace pairs in one line). Bins/range literals ({0}, {[0:15]},
+	" {8'hF0}) keep their braces so they stay balanced: their '}' is preceded
+	" by a digit or ] which the prefix class excludes. This must run BEFORE
+	" the string strip (the '"' operand boundary distinguishes a
+	" concatenation from a bins value). NOTE: the classes must be spelled
+	" [A-Za-z_"] etc - inside a [] collection \h means the two literal
+	" characters '\' and 'h', not head-of-word.
+	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"]', '\1', 'g')
+	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"]', '', 'g')
+	let delims = substitute(delims, '\([A-Za-z_")]\)\zs}\ze\s*\([,;):]\)', '', 'g')
+	" strip string literals early: keywords, comment markers and braces
+	" inside strings ("class foo", "/*", "-> {") must not disturb the
+	" classification below (the later strip becomes a no-op)
+	let delims = substitute(delims, '\".\{-}\(\\\)\@<!\"', '', 'g')
+	" set-membership 'inside {...}' is an expression, not a block: drop it
+	" whole (after the string strip, so text inside a string cannot trigger
+	" it and eat a real brace beyond the closing quote)
+	let delims = substitute(delims, '\<inside\s\+{[^}]*}', '', 'g')
+	" context strips that must run BEFORE the keyword filter (their leading
+	" word - import/default - is not in the keep-list and is removed by the
+	" filter): a DPI import's function/task is the imported symbol kind, not
+	" a definition; a default clocking's clocking is a reference, not a block
+	let delims = substitute(delims, 'import[^\n]*function', '', 'g')
+	let delims = substitute(delims, 'import[^\n]*task', '', 'g')
+	let delims = substitute(delims, 'default\s\+clocking', '', 'g')
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
 	" They are mapped to braces here on purpose: the keyword filter below
@@ -77,6 +100,9 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
 	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
+	" a DPI import's function/task is the imported symbol kind, not a
+	" definition: neutralize it so "import "DPI-C" function f(...);" does
+	" not open a group
 	" keywords the filter keeps but that map to no code: strip the leftovers,
 	" otherwise the bare word leaks into the codes and its letters accidentally
 	" match the single-letter code patterns (e.g. "extern" contains 'e' and
@@ -90,9 +116,10 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<final\>', '', 'g')
 	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
 	let delims = substitute(delims, 'typedef', '', 'g')
-	let delims = substitute(delims, 'assert\s\+\%\[\(property\)\]', '', 'g')
-	let delims = substitute(delims, 'assume\s\+\%\[\(property\)\]', '', 'g')
-	let delims = substitute(delims, 'cover\s\+\%\[\(property\)\]', '', 'g')
+	" 'property' in assert/assume/cover/restrict is a reference, not a
+	" sequence/property definition (assert and property are both in the
+	" keep-list, so this can run after the filter)
+	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s\+\%(\[\s*\)\?property', '', 'g')
 	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
 	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\)\>', 'b', 'g')
 	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\)\>', 'e', 'g')
