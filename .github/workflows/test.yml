@@ -21,6 +21,9 @@ jobs:
       - name: Golden fold test
         run: sh test/run_fold_test.sh
 
+      - name: Colorscheme test (dark + light distinction)
+        run: sh test/run_colors_test.sh
+
       - name: Syntax spot checks (self-contained)
         run: UVM_SRC= sh test/run_uvm_syntax_test.sh
 

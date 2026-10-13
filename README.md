@@ -39,6 +39,19 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
 
 - Optional code folding in the style of [vhda/verilog_systemverilog.vim](https://github.com/vhda/verilog_systemverilog.vim): modules, classes, tasks, functions, packages, `` `uvm_*_utils_begin/_end ``, `/* */` comments, `` `ifdef `` blocks, multi-line `` `define `` and (opt-in) `begin/end` blocks or instantiations.
 
+- A companion color scheme, `colors/systemverilog_uvm.vim`, tuned to the
+  plugin's own syntax groups (rather than the generic Keyword/Type/
+  Function/... they normally map to). It gives each SV/UVM semantic
+  category a distinct color — keywords, types, storage/direction, macros,
+  assertion labels, SVA operators, `this`/`super`, and the UVM hierarchy
+  (base classes, global functions, enums, ports, TLM, RAL, config and
+  resource DB) — in a dark and a light variant:
+
+  ```vim
+  set background=dark        " or light
+  colorscheme systemverilog_uvm
+  ```
+
 ## Recent Changes (2026-10-09)
 
 - Fix indent regression: multi-line `` `define `` bodies (backslash
