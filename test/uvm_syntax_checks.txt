@@ -190,3 +190,4 @@ set_type_override_by_type	uvmMethodFactory
 \<bins\>	svKeyword
 this\.rf	svThisSuper
 super\.rf	svThisSuper
+\<export\>	svStorageClass

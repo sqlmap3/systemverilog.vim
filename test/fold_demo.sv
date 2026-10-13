@@ -79,4 +79,62 @@ module debug_helper;
 endmodule
 // }}}
 
+// --- additional fold units ---
+clocking cb @(posedge clk);
+  input rst_n;
+endclocking
+
+checker demo_chk (logic clk, logic rst_n);
+  a_cov: cover property (clk |=> rst_n);
+endchecker
+
+program demo_prog (input logic clk);
+  initial begin
+    $display("prog");
+  end
+endprogram
+
+property demo_prop;
+  @(posedge clk) rst_n |-> ##1 rst_n;
+endproperty
+
+sequence demo_seq;
+  rst_n ##1 rst_n;
+endsequence
+
+covergroup cg @(posedge clk);
+  cp: coverpoint mode {
+    bins lo = {0};
+  }
+endgroup
+
+config cfg_demo;
+  design work.demo_top;
+  instance demo_top.u_if use work.demo_if;
+endconfig
+
+module with_specify;
+  specify
+    specparam t_rise = 1;
+    (a => b) = (t_rise);
+  endspecify
+endmodule
+
+primitive udp_and (out, a, b);
+  output out;
+  input a, b;
+  table
+    0 0 : 0;
+    0 1 : 0;
+    1 0 : 0;
+    1 1 : 1;
+  endtable
+endprimitive
+
+randsequence (main)
+  main : first second;
+  first : { $display("first"); };
+  second : { $display("second"); };
+endsequence
+
 `endif // FOLD_DEMO_SV

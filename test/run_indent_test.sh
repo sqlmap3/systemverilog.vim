@@ -20,6 +20,10 @@
 #   indent_demo9.sv  macro calls with a multi-line constraint/block argument
 #   indent_demo10.sv .sv top-level units: package, program, clocking blocks,
 #                    generate, always_ff/always_latch, checker
+#   indent_demo11.sv complex covergroups (option/type_option/iff/cross with
+#                    binsof/with), config, specify, primitive/table
+#   indent_demo12.sv randsequence, deferred asserts (assert #0/#final),
+#                    casting/streaming, parameterized interface
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \

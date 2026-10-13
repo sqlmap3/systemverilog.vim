@@ -254,4 +254,6 @@ class spot_this_super extends spot_seq;
   endfunction
 endclass
 
+export "DPI-C" task spot_dpi_task;
+
 `endif

@@ -70,6 +70,10 @@ function! s:ConvertToCodes( codeline, ... )
 	" characters '\' and 'h', not head-of-word.
 	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"]', '\1', 'g')
 	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"]', '', 'g')
+	" based literals (8'hFF, 4'b10X1, 'd42) are number digits, not an
+	" identifier that ends a concatenation: drop the radix+digits so the
+	" closing '}' of a bins value set sees a plain digit and stays
+	let delims = substitute(delims, '''[sSdDbBhHoO]\h\+', '', 'g')
 	let delims = substitute(delims, '\([A-Za-z_")]\)\s*\zs}\ze\s*\([,;):]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
@@ -93,7 +97,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" converted to b/e by the [({]/[)}] rules further down.
 	let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
 	let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
-	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
+	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
 	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
 	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
@@ -131,10 +135,10 @@ function! s:ConvertToCodes( codeline, ... )
 	if delims !~ '^\s*`'
 		let delims = substitute(delims, '`\h\w*\>', ';', 'g')
 	endif
-	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\)\>', 'b', 'g')
-	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\)\>', 'e', 'g')
-	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>', 'f', 'g')
-	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\)\>', 'h', 'g')
+	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\|table\)\>', 'b', 'g')
+	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', 'e', 'g')
+	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|primitive\|randsequence\)\>', 'f', 'g')
+	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', 'h', 'g')
 	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\)\>', 'x', 'g')
 	" 'else' is a control statement ('x') so a statement on the next line
 	" indents one level, and the dedent rule (prev2 x + prev1 exec) can also
