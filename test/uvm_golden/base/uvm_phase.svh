@@ -150,7 +150,7 @@ class uvm_phase extends uvm_object;
   //
   extern function new(string name="uvm_phase",
     uvm_phase_type phase_type=UVM_PHASE_SCHEDULE,
-  uvm_phase parent=null);
+    uvm_phase parent=null);
 
   // Function: get_phase_type
   //
@@ -261,7 +261,7 @@ class uvm_phase extends uvm_object;
   extern function void add(uvm_phase phase,
     uvm_phase with_phase=null,
     uvm_phase after_phase=null,
-  uvm_phase before_phase=null);
+    uvm_phase before_phase=null);
 
 
   // Function: get_parent
@@ -348,7 +348,7 @@ class uvm_phase extends uvm_object;
   extern function void m_report_null_objection(uvm_object obj,
     string description,
     int count,
-  string action);
+    string action);
 
   // Function: get_objection
   //
@@ -371,7 +371,7 @@ class uvm_phase extends uvm_object;
   //
   extern virtual function void raise_objection (uvm_object obj, 
     string description="",
-  int count=1);
+    int count=1);
 
   // Function: drop_objection
   //
@@ -381,7 +381,7 @@ class uvm_phase extends uvm_object;
   //
   extern virtual function void drop_objection (uvm_object obj, 
     string description="",
-  int count=1);
+    int count=1);
 
 
   // Function: get_objection_count
@@ -433,7 +433,7 @@ class uvm_phase extends uvm_object;
   //
   extern function void sync(uvm_domain target,
     uvm_phase phase=null,
-  uvm_phase with_phase=null);
+    uvm_phase with_phase=null);
 
   // Function: unsync
   //
@@ -447,7 +447,7 @@ class uvm_phase extends uvm_object;
   //
   extern function void unsync(uvm_domain target,
     uvm_phase phase=null,
-  uvm_phase with_phase=null);
+    uvm_phase with_phase=null);
 
 
   // Function: wait_for_state
@@ -602,7 +602,7 @@ uvm_phase phase);
   extern function void clear(uvm_phase_state state = UVM_PHASE_DORMANT);
   extern function void clear_successors(
     uvm_phase_state state = UVM_PHASE_DORMANT,
-  uvm_phase end_state=null);
+    uvm_phase end_state=null);
 
   // Implementation - Overall Control
   //---------------------------------

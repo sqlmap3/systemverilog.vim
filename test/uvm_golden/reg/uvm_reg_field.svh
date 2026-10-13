@@ -117,7 +117,7 @@ class uvm_reg_field extends uvm_object;
     uvm_reg_data_t reset,
     bit            has_reset,
     bit            is_rand,
-  bit            individually_accessible); 
+    bit            individually_accessible); 
 
 
   //---------------------
@@ -332,7 +332,7 @@ class uvm_reg_field extends uvm_object;
   //
   extern virtual function void set(uvm_reg_data_t  value,
     string          fname = "",
-  int             lineno = 0);
+    int             lineno = 0);
 
   // Function: get
   //
@@ -354,7 +354,7 @@ class uvm_reg_field extends uvm_object;
   // the returned value is the actual content.
   //
   extern virtual function uvm_reg_data_t get(string fname = "",
-  int    lineno = 0);
+    int    lineno = 0);
 
 
   // Function: get_mirrored_value
@@ -371,7 +371,7 @@ class uvm_reg_field extends uvm_object;
   // the returned value is the actual content.
   //
   extern virtual function uvm_reg_data_t get_mirrored_value(string fname = "",
-  int    lineno = 0);
+    int    lineno = 0);
 
   // Function: reset
   //
@@ -412,7 +412,7 @@ class uvm_reg_field extends uvm_object;
   // If ~delete~ is TRUE, removes the reset value, if any.
   //
   extern virtual function bit has_reset(string kind = "HARD",
-  bit    delete = 0);
+    bit    delete = 0);
 
 
   // Function: set_reset
@@ -423,7 +423,7 @@ class uvm_reg_field extends uvm_object;
   // to the cause specified by ~kind~.
   //
   extern virtual function void set_reset(uvm_reg_data_t value,
-  string kind = "HARD");
+    string kind = "HARD");
 
 
   // Function: needs_update
@@ -482,7 +482,7 @@ class uvm_reg_field extends uvm_object;
     input  int                prior = -1,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: read
@@ -522,7 +522,7 @@ class uvm_reg_field extends uvm_object;
     input  int                prior = -1,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: poke
@@ -544,7 +544,7 @@ class uvm_reg_field extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: peek
@@ -568,7 +568,7 @@ class uvm_reg_field extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: mirror
@@ -603,7 +603,7 @@ class uvm_reg_field extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Function: set_compare
@@ -630,7 +630,7 @@ class uvm_reg_field extends uvm_object;
   // affecting other fields in the containing register.
   //
   extern function bit is_indv_accessible (uvm_path_e  path,
-  uvm_reg_map local_map);
+    uvm_reg_map local_map);
 
 
   // Function: predict
@@ -664,14 +664,14 @@ class uvm_reg_field extends uvm_object;
     uvm_path_e        path = UVM_FRONTDOOR,
     uvm_reg_map       map = null,
     string            fname = "",
-  int               lineno = 0);
+    int               lineno = 0);
 
 
 
   /*local*/
   extern virtual function uvm_reg_data_t XpredictX (uvm_reg_data_t cur_val,
     uvm_reg_data_t wr_val,
-  uvm_reg_map    map);
+    uvm_reg_map    map);
 
   /*local*/
   extern virtual function uvm_reg_data_t XupdateX();
@@ -679,7 +679,7 @@ class uvm_reg_field extends uvm_object;
   /*local*/
   extern function bit Xcheck_accessX (input uvm_reg_item rw,
     output uvm_reg_map_info map_info,
-  input string caller);
+    input string caller);
 
   extern virtual task do_write(uvm_reg_item rw);
   extern virtual task do_read(uvm_reg_item rw);
@@ -773,7 +773,7 @@ class uvm_reg_field extends uvm_object;
   extern virtual function uvm_object clone();
   extern virtual function void do_copy   (uvm_object rhs);
   extern virtual function bit  do_compare (uvm_object  rhs,
-  uvm_comparer comparer);
+    uvm_comparer comparer);
   extern virtual function void do_pack (uvm_packer packer);
   extern virtual function void do_unpack (uvm_packer packer);
 

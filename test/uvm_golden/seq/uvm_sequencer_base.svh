@@ -193,7 +193,7 @@ class uvm_sequencer_base extends uvm_component;
 
   extern virtual task wait_for_grant(uvm_sequence_base sequence_ptr,
     int item_priority = -1,
-  bit lock_request = 0);
+    bit lock_request = 0);
 
 
   // Task: wait_for_item_done
@@ -210,7 +210,7 @@ class uvm_sequencer_base extends uvm_component;
   // will hang waiting for that specific transaction_id.
   //
   extern virtual task wait_for_item_done(uvm_sequence_base sequence_ptr,
-  int transaction_id);
+    int transaction_id);
 
 
   // Function: is_blocked
@@ -359,7 +359,7 @@ class uvm_sequencer_base extends uvm_component;
 
   extern virtual function void send_request(uvm_sequence_base sequence_ptr,
     uvm_sequence_item t,
-  bit rerandomize = 0);
+    bit rerandomize = 0);
 
   // Function: set_max_zero_time_wait_relevant_count
   //

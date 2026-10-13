@@ -507,19 +507,19 @@ virtual class uvm_object extends uvm_void;
   // information is collected. See uvm_comparer for more details.
 
   extern virtual function bit do_compare (uvm_object  rhs,
-  uvm_comparer comparer);
+    uvm_comparer comparer);
 
   // Group: Packing
 
   // Function: pack
 
   extern function int pack (ref bit bitstream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
   // Function: pack_bytes
 
   extern function int pack_bytes (ref byte unsigned bytestream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
   // Function: pack_ints
   //
@@ -537,7 +537,7 @@ virtual class uvm_object extends uvm_void;
   // consumed during the packing process.
 
   extern function int pack_ints (ref int unsigned intstream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
 
   // Function: do_pack
@@ -600,12 +600,12 @@ virtual class uvm_object extends uvm_void;
   // Function: unpack
 
   extern function int unpack (ref   bit        bitstream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
   // Function: unpack_bytes
 
   extern function int unpack_bytes (ref byte unsigned bytestream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
   // Function: unpack_ints
   //
@@ -627,7 +627,7 @@ virtual class uvm_object extends uvm_void;
   // The return value is the actual number of bits unpacked from the given array.
 
   extern function int unpack_ints (ref   int unsigned intstream[],
-  input uvm_packer packer=null);
+    input uvm_packer packer=null);
 
 
   // Function: do_unpack
@@ -680,13 +680,13 @@ virtual class uvm_object extends uvm_void;
 
   extern virtual function void  set_int_local    (string      field_name,
     uvm_bitstream_t value,
-  bit         recurse=1);
+    bit         recurse=1);
 
   // Function: set_string_local
 
   extern virtual function void  set_string_local (string field_name,
     string value,
-  bit    recurse=1);
+    bit    recurse=1);
 
   // Function: set_object_local
   //
@@ -754,7 +754,7 @@ virtual class uvm_object extends uvm_void;
   extern virtual function void  set_object_local (string      field_name,
     uvm_object  value,
     bit         clone=1,
-  bit         recurse=1);
+    bit         recurse=1);
 
 
 
@@ -779,7 +779,7 @@ virtual class uvm_object extends uvm_void;
 
   extern virtual function void __m_uvm_field_automation (uvm_object tmp_data__,  
     int        what__, 
-  string     str__);
+    string     str__);
 
   extern protected virtual function uvm_report_object m_get_report_object();
 

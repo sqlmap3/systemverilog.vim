@@ -84,7 +84,7 @@ class uvm_vreg_field extends uvm_object;
   //
   extern function void configure(uvm_vreg parent,
     int unsigned size,
-  int unsigned lsb_pos);
+    int unsigned lsb_pos);
 
 
   //
@@ -182,7 +182,7 @@ class uvm_vreg_field extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
   //
   // TASK: read
@@ -212,7 +212,7 @@ class uvm_vreg_field extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
 
   //
@@ -235,7 +235,7 @@ class uvm_vreg_field extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
   //
   // TASK: peek
@@ -263,7 +263,7 @@ class uvm_vreg_field extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
   //
   // Group: Callbacks
@@ -361,7 +361,7 @@ ref uvm_status_e  status);
    extern virtual function uvm_object clone();
    extern virtual function void do_copy   (uvm_object rhs);
    extern virtual function bit do_compare (uvm_object  rhs,
-   uvm_comparer comparer);
+     uvm_comparer comparer);
    extern virtual function void do_pack (uvm_packer packer);
    extern virtual function void do_unpack (uvm_packer packer);
 

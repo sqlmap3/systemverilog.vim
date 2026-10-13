@@ -126,7 +126,7 @@ class uvm_mem_mam;
   //
   extern function new(string name,
     uvm_mem_mam_cfg cfg,
-  uvm_mem mem=null);
+    uvm_mem mem=null);
 
 
   // Function: reconfigure
@@ -170,7 +170,7 @@ class uvm_mem_mam;
   extern function uvm_mem_region reserve_region(bit [63:0]   start_offset,
     int unsigned n_bytes,
     string       fname = "",
-  int          lineno = 0);
+    int          lineno = 0);
 
 
   // Function: request_region
@@ -199,7 +199,7 @@ class uvm_mem_mam;
   extern function uvm_mem_region request_region(int unsigned   n_bytes,
     uvm_mem_mam_policy alloc = null,
     string         fname = "",
-  int            lineno = 0);
+    int            lineno = 0);
 
 
   // Function: release_region
@@ -292,7 +292,7 @@ class uvm_mem_region;
     bit [63:0]   end_offset,
     int unsigned len,
     int unsigned n_bytes,
-  uvm_mem_mam      parent);
+    uvm_mem_mam      parent);
 
   // Function: get_start_offset
   //
@@ -387,7 +387,7 @@ class uvm_mem_region;
     input  int                prior = -1,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: read
@@ -410,7 +410,7 @@ class uvm_mem_region;
     input  int                prior = -1,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: burst_write
@@ -433,7 +433,7 @@ class uvm_mem_region;
     input  int                prior  = -1,
     input  uvm_object         extension = null,
     input  string             fname  = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: burst_read
@@ -456,7 +456,7 @@ class uvm_mem_region;
     input  int                prior  = -1,
     input  uvm_object         extension = null,
     input  string             fname  = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: poke
@@ -477,7 +477,7 @@ class uvm_mem_region;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: peek
@@ -497,7 +497,7 @@ class uvm_mem_region;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   extern function string convert2string();

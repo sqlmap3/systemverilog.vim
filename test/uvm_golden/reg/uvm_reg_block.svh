@@ -97,7 +97,7 @@ virtual class uvm_reg_block extends uvm_object;
   // to the hierarchical HDL path of any contained registers or memories.
   //
   extern function void configure(uvm_reg_block parent=null,
-  string hdl_path="");
+    string hdl_path="");
 
 
   // Function: create_map
@@ -125,7 +125,7 @@ virtual class uvm_reg_block extends uvm_object;
     uvm_reg_addr_t base_addr,
     int unsigned n_bytes,
     uvm_endianness_e endian,
-  bit byte_addressing = 1);
+    bit byte_addressing = 1);
 
 
   // Function: check_data_width
@@ -256,7 +256,7 @@ virtual class uvm_reg_block extends uvm_object;
   extern static function int find_blocks(input string        name,
     ref   uvm_reg_block blks[$],
     input uvm_reg_block root = null,
-  input uvm_object    accessor = null);
+    input uvm_object    accessor = null);
 
 
   // Function: find_block
@@ -271,7 +271,7 @@ virtual class uvm_reg_block extends uvm_object;
   //
   extern static function uvm_reg_block find_block(input string        name,
     input uvm_reg_block root = null,
-  input uvm_object    accessor = null);
+    input uvm_object    accessor = null);
 
 
   // Function: get_blocks
@@ -282,7 +282,7 @@ virtual class uvm_reg_block extends uvm_object;
   // If ~hier~ is TRUE, recursively includes any sub-blocks.
   //
   extern virtual function void get_blocks (ref uvm_reg_block  blks[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_maps
@@ -307,7 +307,7 @@ virtual class uvm_reg_block extends uvm_object;
   // use the <uvm_reg_map::get_registers()> method.
   //
   extern virtual function void get_registers (ref uvm_reg regs[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_fields
@@ -319,7 +319,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the sub-blocks.
   //
   extern virtual function void get_fields (ref uvm_reg_field  fields[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_memories
@@ -335,7 +335,7 @@ virtual class uvm_reg_block extends uvm_object;
   // use the <uvm_reg_map::get_memories()> method.
   //
   extern virtual function void get_memories (ref uvm_mem mems[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_registers
@@ -347,7 +347,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the sub-blocks.
   //
   extern virtual function void get_virtual_registers(ref uvm_vreg regs[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_fields
@@ -360,7 +360,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the virtual registers in the sub-blocks.
   //
   extern virtual function void get_virtual_fields (ref uvm_vreg_field fields[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_block_by_name
@@ -598,7 +598,7 @@ extern virtual function void sample_values();
 
 /*local*/ extern function void XsampleX(uvm_reg_addr_t addr,
   bit            is_read,
-uvm_reg_map    map);
+  uvm_reg_map    map);
 
 
 //--------------
@@ -662,7 +662,7 @@ extern virtual task update(output uvm_status_e       status,
   input  int                prior = -1,
   input  uvm_object         extension = null,
   input  string             fname = "",
-input  int                lineno = 0);
+  input  int                lineno = 0);
 
 
 // Task: mirror
@@ -685,7 +685,7 @@ extern virtual task mirror(output uvm_status_e       status,
   input  int                prior = -1,
   input  uvm_object         extension = null,
   input  string             fname = "",
-input  int                lineno = 0);
+  input  int                lineno = 0);
 
 
 // Task: write_reg_by_name
@@ -704,7 +704,7 @@ extern virtual task write_reg_by_name(
   input  int                 prior = -1,
   input  uvm_object          extension = null,
   input  string              fname = "",
-input  int                 lineno = 0);
+  input  int                 lineno = 0);
 
 
 // Task: read_reg_by_name
@@ -723,7 +723,7 @@ extern virtual task read_reg_by_name(
   input  int                prior = -1,
   input  uvm_object         extension = null,
   input  string             fname = "",
-input  int                lineno = 0);
+  input  int                lineno = 0);
 
 
 // Task: write_mem_by_name
@@ -743,7 +743,7 @@ extern virtual task write_mem_by_name(
   input  int                prior = -1,
   input  uvm_object         extension = null,
   input  string             fname = "",
-input  int                lineno = 0);
+  input  int                lineno = 0);
 
 
 // Task: read_mem_by_name
@@ -763,7 +763,7 @@ extern virtual task read_mem_by_name(
   input  int                prior = -1,
   input  uvm_object         extension = null,
   input  string             fname = "",
-input  int                lineno = 0);
+  input  int                lineno = 0);
 
 
 extern virtual task readmemh(string filename);
@@ -799,7 +799,7 @@ extern function uvm_reg_backdoor get_backdoor(bit inherited = 1);
 //
 extern function void set_backdoor (uvm_reg_backdoor bkdr,
   string fname = "",
-int lineno = 0);
+  int lineno = 0);
 
 
 // Function:  clear_hdl_path
@@ -867,7 +867,7 @@ extern function void get_hdl_path (ref string paths[$], input string kind = "");
 //
 extern function void get_full_hdl_path (ref string paths[$],
   input string kind = "",
-string separator = ".");
+  string separator = ".");
 
 
 // Function: set_default_hdl_path
@@ -921,7 +921,7 @@ extern function bit is_hdl_path_root (string kind = "");
 extern virtual function void   do_print      (uvm_printer printer);
 extern virtual function void   do_copy       (uvm_object rhs);
 extern virtual function bit    do_compare    (uvm_object  rhs,
-uvm_comparer comparer);
+  uvm_comparer comparer);
 extern virtual function void   do_pack       (uvm_packer packer);
 extern virtual function void   do_unpack     (uvm_packer packer);
 extern virtual function string convert2string ();

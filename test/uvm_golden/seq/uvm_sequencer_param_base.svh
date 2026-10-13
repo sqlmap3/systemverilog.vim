@@ -64,7 +64,7 @@ class uvm_sequencer_param_base #(type REQ = uvm_sequence_item,
   //
   extern virtual function void send_request(uvm_sequence_base sequence_ptr,
     uvm_sequence_item t,
-  bit rerandomize = 0);
+    bit rerandomize = 0);
 
 
   // Function: get_current_item

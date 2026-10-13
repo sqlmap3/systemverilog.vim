@@ -798,13 +798,13 @@ virtual class uvm_component extends uvm_report_object;
 
     extern virtual function void set_config_int (string inst_name,  
       string field_name,
-    uvm_bitstream_t value);
+      uvm_bitstream_t value);
 
     // Function- set_config_string
 
     extern virtual function void set_config_string (string inst_name,  
       string field_name,
-    string value);
+      string value);
 
     // Function- set_config_object
     //
@@ -851,18 +851,18 @@ virtual class uvm_component extends uvm_report_object;
     extern virtual function void set_config_object (string inst_name,  
       string field_name,
       uvm_object value,  
-    bit clone=1);
+      bit clone=1);
 
 
     // Function- get_config_int
 
     extern virtual function bit get_config_int (string field_name,
-    inout uvm_bitstream_t value);
+      inout uvm_bitstream_t value);
 
     // Function- get_config_string
 
     extern virtual function bit get_config_string (string field_name,
-    inout string value);
+      inout string value);
 
     // Function- get_config_object
     //
@@ -915,7 +915,7 @@ virtual class uvm_component extends uvm_report_object;
 
     extern virtual function bit get_config_object (string field_name,
       inout uvm_object value,  
-    input bit clone=1);
+      input bit clone=1);
   `endif
 
 
@@ -986,7 +986,7 @@ virtual class uvm_component extends uvm_report_object;
 
   extern function void print_config_settings (string field="", 
     uvm_component comp=null, 
-  bit recurse=0);
+    bit recurse=0);
 
   // Function: print_config
   //
@@ -1103,7 +1103,7 @@ endtask
 // details on factory operation.
 
 extern function uvm_component create_component (string requested_type_name, 
-string name);
+  string name);
 
 
 // Function: create_object
@@ -1122,7 +1122,7 @@ string name);
 // <uvm_factory> for details on factory operation.
 
 extern function uvm_object create_object (string requested_type_name,
-string name="");
+  string name="");
 
 
 // Function: set_type_override_by_type
@@ -1203,7 +1203,7 @@ bit replace=1);
 
 extern function void set_inst_override_by_type(string relative_inst_path,  
   uvm_object_wrapper original_type,
-uvm_object_wrapper override_type);
+  uvm_object_wrapper override_type);
 
 
 // Function: set_type_override
@@ -1224,7 +1224,7 @@ uvm_object_wrapper override_type);
 
 extern static function void set_type_override(string original_type_name, 
   string override_type_name,
-bit    replace=1);
+  bit    replace=1);
 
 
 // Function: set_inst_override
@@ -1248,7 +1248,7 @@ bit    replace=1);
 
 extern function void set_inst_override(string relative_inst_path,  
   string original_type_name,
-string override_type_name);
+  string override_type_name);
 
 
 // Function: print_override_info
@@ -1259,7 +1259,7 @@ string override_type_name);
 // provided arguments.
 
 extern function void print_override_info(string requested_type_name,
-string name="");
+  string name="");
 
 
 //----------------------------------------------------------------------------
@@ -1277,7 +1277,7 @@ string name="");
 // Function: set_report_id_verbosity_hier
 
 extern function void set_report_id_verbosity_hier (string id,
-int verbosity);
+  int verbosity);
 
 // Function: set_report_severity_id_verbosity_hier
 //
@@ -1292,19 +1292,19 @@ int verbosity);
 
 extern function void set_report_severity_id_verbosity_hier(uvm_severity severity,
   string id,
-int verbosity);
+  int verbosity);
 
 
 // Function: set_report_severity_action_hier
 
 extern function void set_report_severity_action_hier (uvm_severity severity,
-uvm_action action);
+  uvm_action action);
 
 
 // Function: set_report_id_action_hier
 
 extern function void set_report_id_action_hier (string id,
-uvm_action action);
+  uvm_action action);
 
 // Function: set_report_severity_id_action_hier
 //
@@ -1319,7 +1319,7 @@ uvm_action action);
 
 extern function void set_report_severity_id_action_hier(uvm_severity severity,
   string id,
-uvm_action action);
+  uvm_action action);
 
 
 
@@ -1330,12 +1330,12 @@ extern function void set_report_default_file_hier (UVM_FILE file);
 // Function: set_report_severity_file_hier
 
 extern function void set_report_severity_file_hier (uvm_severity severity,
-UVM_FILE file);
+  UVM_FILE file);
 
 // Function: set_report_id_file_hier
 
 extern function void set_report_id_file_hier (string id,
-UVM_FILE file);
+  UVM_FILE file);
 
 // Function: set_report_severity_id_file_hier
 //
@@ -1350,7 +1350,7 @@ UVM_FILE file);
 
 extern function void set_report_severity_id_file_hier(uvm_severity severity,
   string id,
-UVM_FILE file);
+  UVM_FILE file);
 
 
 // Function: set_report_verbosity_level_hier
@@ -1452,7 +1452,7 @@ extern function integer begin_tr (uvm_transaction tr,
   string label="",
   string desc="",
   time begin_time=0,
-integer parent_handle=0);
+  integer parent_handle=0);
 
 
 // Function: begin_child_tr
@@ -1467,7 +1467,7 @@ extern function integer begin_child_tr (uvm_transaction tr,
   string stream_name="main",
   string label="",
   string desc="",
-time begin_time=0);
+  time begin_time=0);
 
 
 // Function: do_begin_tr
@@ -1508,7 +1508,7 @@ integer tr_handle);
 
 extern function void end_tr (uvm_transaction tr,
   time end_time=0,
-bit free_handle=1);
+  bit free_handle=1);
 
 
 // Function: do_end_tr
@@ -1518,7 +1518,7 @@ bit free_handle=1);
 // correct operation.
 
 extern virtual protected function void do_end_tr (uvm_transaction tr,
-integer tr_handle);
+  integer tr_handle);
 
 
 // Function: record_error_tr
@@ -1540,7 +1540,7 @@ extern function integer record_error_tr (string stream_name="main",
   string label="error_tr",
   string desc="",
   time   error_time=0,
-bit    keep_active=0);
+  bit    keep_active=0);
 
 
 // Function: record_event_tr
@@ -1560,7 +1560,7 @@ extern function integer record_event_tr (string stream_name="main",
   string label="event_tr",
   string desc="",
   time   event_time=0,
-bit    keep_active=0);
+  bit    keep_active=0);
 
 // Function: get_tr_stream
 // Returns a tr stream with ~this~ component's full name as a scope.
@@ -1576,7 +1576,7 @@ bit    keep_active=0);
 // name - Name for the stream
 // stream_type_name - Type name for the stream (Default = "")
 extern virtual function uvm_tr_stream get_tr_stream(string name,
-string stream_type_name="");
+  string stream_type_name="");
 
 // Function: free_tr_stream
 // Frees the internal references associated with ~stream~.
@@ -1632,7 +1632,7 @@ protected process    m_phase_process;
 
 extern                   function void set_int_local(string field_name, 
   uvm_bitstream_t value,
-bit recurse=1);
+  bit recurse=1);
 
 /*protected*/ uvm_component m_parent;
 protected     uvm_component m_children[string];
@@ -1647,7 +1647,7 @@ extern virtual           function void flush ();
 
 extern local             function void m_extract_name(string name ,
   output string leaf ,
-output string remainder );
+  output string remainder );
 
 // overridden to disable
 extern virtual function uvm_object create (string name=""); 
@@ -1659,7 +1659,7 @@ local uvm_recorder m_tr_h[uvm_transaction];
 extern protected function integer m_begin_tr (uvm_transaction tr,
   integer parent_handle=0,
   string stream_name="main", string label="",
-string desc="", time begin_time=0);
+  string desc="", time begin_time=0);
 
 string m_name;
 

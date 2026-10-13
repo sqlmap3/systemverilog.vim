@@ -95,7 +95,7 @@ class uvm_vreg extends uvm_object;
   // This value is usually a multiple of 8.
   //
   extern function new(string       name,
-  int unsigned n_bits);
+    int unsigned n_bits);
 
 
   //
@@ -117,7 +117,7 @@ class uvm_vreg extends uvm_object;
     uvm_mem       mem    = null,
     longint unsigned  size   = 0,
     uvm_reg_addr_t    offset = 0,
-  int unsigned      incr   = 0);
+    int unsigned      incr   = 0);
 
   //
   // FUNCTION: implement
@@ -154,7 +154,7 @@ class uvm_vreg extends uvm_object;
   extern virtual function bit implement(longint unsigned  n,
     uvm_mem       mem    = null,
     uvm_reg_addr_t    offset = 0,
-  int unsigned      incr   = 0);
+    int unsigned      incr   = 0);
 
   //
   // FUNCTION: allocate
@@ -182,7 +182,7 @@ class uvm_vreg extends uvm_object;
   // 
   extern virtual function uvm_mem_region allocate(longint unsigned   n,
     uvm_mem_mam        mam,
-  uvm_mem_mam_policy alloc = null);
+    uvm_mem_mam_policy alloc = null);
 
   //
   // FUNCTION: get_region
@@ -389,7 +389,7 @@ class uvm_vreg extends uvm_object;
   // address map, an error message is issued.
   //
   extern virtual function uvm_reg_addr_t  get_address(longint unsigned idx,
-  uvm_reg_map map = null);
+    uvm_reg_map map = null);
 
   //
   // Group: HDL Access
@@ -421,7 +421,7 @@ class uvm_vreg extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
   //
   // TASK: read
@@ -449,7 +449,7 @@ class uvm_vreg extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
   //
   // TASK: poke
@@ -469,7 +469,7 @@ class uvm_vreg extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
   //
   // TASK: peek
@@ -490,7 +490,7 @@ class uvm_vreg extends uvm_object;
     input  uvm_sequence_base   parent = null,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
   //
   // Function: reset
@@ -599,7 +599,7 @@ ref uvm_status_e  status);
    extern virtual function uvm_object clone();
    extern virtual function void do_copy   (uvm_object rhs);
    extern virtual function bit do_compare (uvm_object  rhs,
-   uvm_comparer comparer);
+     uvm_comparer comparer);
    extern virtual function void do_pack (uvm_packer packer);
    extern virtual function void do_unpack (uvm_packer packer);
 

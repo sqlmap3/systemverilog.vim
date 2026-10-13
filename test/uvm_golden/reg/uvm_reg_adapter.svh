@@ -95,7 +95,7 @@ virtual class uvm_reg_adapter extends uvm_object;
   // where the bus response must be returned in the original request.
 
   pure virtual function void bus2reg(uvm_sequence_item bus_item,
-  ref uvm_reg_bus_op rw);
+    ref uvm_reg_bus_op rw);
 
 
   local uvm_reg_item m_item;

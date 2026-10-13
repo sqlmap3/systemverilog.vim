@@ -24,6 +24,7 @@
 #                    binsof/with), config, specify, primitive/table
 #   indent_demo12.sv randsequence, deferred asserts (assert #0/#final),
 #                    casting/streaming, parameterized interface
+#   indent_demo13.sv multi-line function/task prototype signatures
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \

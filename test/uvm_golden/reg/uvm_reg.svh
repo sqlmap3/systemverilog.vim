@@ -83,7 +83,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern function new (string name="",
     int unsigned n_bits,
-  int has_coverage);
+    int has_coverage);
 
 
   // Function: configure
@@ -102,7 +102,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern function void configure (uvm_reg_block blk_parent,
     uvm_reg_file regfile_parent = null,
-  string hdl_path = "");
+    string hdl_path = "");
 
 
   // Function: set_offset
@@ -118,10 +118,10 @@ virtual class uvm_reg extends uvm_object;
   //
   extern virtual function void set_offset (uvm_reg_map    map,
     uvm_reg_addr_t offset,
-  bit            unmapped = 0);
+    bit            unmapped = 0);
 
   /*local*/ extern virtual function void set_parent (uvm_reg_block blk_parent,
-  uvm_reg_file regfile_parent);
+    uvm_reg_file regfile_parent);
   /*local*/ extern virtual function void add_field  (uvm_reg_field field);
   /*local*/ extern virtual function void add_map    (uvm_reg_map map);
 
@@ -188,7 +188,7 @@ virtual class uvm_reg extends uvm_object;
 
 
   /*local*/ extern virtual function uvm_reg_map get_local_map   (uvm_reg_map map,
-  string caller = "");
+    string caller = "");
   /*local*/ extern virtual function uvm_reg_map get_default_map (string caller = "");
 
 
@@ -317,7 +317,7 @@ virtual class uvm_reg extends uvm_object;
   // address map, an error message is issued.
   //
   extern virtual function int get_addresses (uvm_reg_map map = null,
-  ref uvm_reg_addr_t addr[]);
+    ref uvm_reg_addr_t addr[]);
 
 
 
@@ -353,7 +353,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern virtual function void set (uvm_reg_data_t  value,
     string          fname = "",
-  int             lineno = 0);
+    int             lineno = 0);
 
 
   // Function: get
@@ -377,7 +377,7 @@ virtual class uvm_reg extends uvm_object;
   // the returned value is the actual content.
   //
   extern virtual function uvm_reg_data_t  get(string  fname = "",
-  int     lineno = 0);
+    int     lineno = 0);
 
   // Function: get_mirrored_value
   //
@@ -393,7 +393,7 @@ virtual class uvm_reg extends uvm_object;
   // for these fields, the returned value is the actual content.
   //
   extern virtual function uvm_reg_data_t  get_mirrored_value(string  fname = "",
-  int     lineno = 0);
+    int     lineno = 0);
 
 
   // Function: needs_update
@@ -441,7 +441,7 @@ virtual class uvm_reg extends uvm_object;
   // If ~delete~ is TRUE, removes the reset value, if any.
   //
   extern virtual function bit has_reset(string kind = "HARD",
-  bit    delete = 0);
+    bit    delete = 0);
 
 
   // Function: set_reset
@@ -481,7 +481,7 @@ virtual class uvm_reg extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: read
@@ -509,7 +509,7 @@ virtual class uvm_reg extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: poke
@@ -530,7 +530,7 @@ virtual class uvm_reg extends uvm_object;
     input  uvm_sequence_base parent = null,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: peek
@@ -552,7 +552,7 @@ virtual class uvm_reg extends uvm_object;
     input  uvm_sequence_base parent = null,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: update
@@ -578,7 +578,7 @@ virtual class uvm_reg extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: mirror
@@ -614,7 +614,7 @@ virtual class uvm_reg extends uvm_object;
     input int                prior = -1,
     input  uvm_object        extension = null,
     input string             fname = "",
-  input int                lineno = 0);
+    input int                lineno = 0);
 
 
   // Function: predict
@@ -635,7 +635,7 @@ virtual class uvm_reg extends uvm_object;
     uvm_path_e        path = UVM_FRONTDOOR,
     uvm_reg_map       map = null,
     string            fname = "",
-  int               lineno = 0);
+    int               lineno = 0);
 
 
   // Function: is_busy
@@ -656,7 +656,7 @@ virtual class uvm_reg extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
   /*local*/ extern task XatomicX(bit on);
 
@@ -670,7 +670,7 @@ virtual class uvm_reg extends uvm_object;
 
   extern virtual function bit do_check(uvm_reg_data_t expected,
     uvm_reg_data_t actual,
-  uvm_reg_map    map);
+    uvm_reg_map    map);
 
   extern virtual task do_write(uvm_reg_item rw);
 
@@ -701,7 +701,7 @@ virtual class uvm_reg extends uvm_object;
   extern function void set_frontdoor(uvm_reg_frontdoor ftdr,
     uvm_reg_map       map = null,
     string            fname = "",
-  int               lineno = 0);
+    int               lineno = 0);
 
 
   // Function: get_frontdoor
@@ -743,7 +743,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern function void set_backdoor(uvm_reg_backdoor bkdr,
     string          fname = "",
-  int             lineno = 0);
+    int             lineno = 0);
 
 
   // Function: get_backdoor
@@ -800,7 +800,7 @@ virtual class uvm_reg extends uvm_object;
   //| r1.add_hdl_path('{ '{"r1", -1, -1} });
   //
   extern function void add_hdl_path (uvm_hdl_path_slice slices[],
-  string kind = "RTL");
+    string kind = "RTL");
 
 
   // Function: add_hdl_path_slice
@@ -814,7 +814,7 @@ virtual class uvm_reg extends uvm_object;
     int offset,
     int size,
     bit first = 0,
-  string kind = "RTL");
+    string kind = "RTL");
 
 
   // Function: has_hdl_path
@@ -841,7 +841,7 @@ virtual class uvm_reg extends uvm_object;
   // for the parent block is used.
   //
   extern function void get_hdl_path (ref uvm_hdl_path_concat paths[$],
-  input string kind = "");
+    input string kind = "");
 
 
   // Function:  get_hdl_path_kinds
@@ -867,7 +867,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern function void get_full_hdl_path (ref uvm_hdl_path_concat paths[$],
     input string kind = "",
-  input string separator = ".");
+    input string separator = ".");
 
 
   // Function: backdoor_read
@@ -947,7 +947,7 @@ virtual class uvm_reg extends uvm_object;
   //
   extern static function void include_coverage(string scope,
     uvm_reg_cvr_t models,
-  uvm_object accessor = null);
+    uvm_object accessor = null);
 
   // Function: build_coverage
   //
@@ -1154,7 +1154,7 @@ sample(data, byte_en, is_read, map);
    extern virtual function uvm_object      clone      ();
    extern virtual function void            do_copy    (uvm_object rhs);
    extern virtual function bit             do_compare (uvm_object  rhs,
-   uvm_comparer comparer);
+     uvm_comparer comparer);
    extern virtual function void            do_pack    (uvm_packer packer);
    extern virtual function void            do_unpack  (uvm_packer packer);
 

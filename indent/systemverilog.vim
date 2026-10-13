@@ -582,6 +582,13 @@ function! GetSystemVerilogIndent( line_num )
 		let prev2_line_num = s:GetPrevWholeLineNum(l:mhead)
 		let prev2_codeline = s:GetWholeLine(prev2_line_num)
 		let prev2_codes = s:ConvertToCodes(prev2_codeline)
+	elseif l:mhead > 0 && getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
+		" prev1 is the tail of a function/task PROTOTYPE: the signature is
+		" one statement, so the line after the tail dedents back to the
+		" declaration level (synthetic 'x' makes the "prev2 x + prev1 exec"
+		" rule fire)
+		let prev1_codes = ';'
+		let prev2_codes = 'x'
 	endif
 
 	let this_codes = s:ConvertToCodes( this_codeline )
@@ -594,6 +601,12 @@ function! GetSystemVerilogIndent( line_num )
 	" Keep the tail flat with the statement head.
 	let l:mhead = s:StatementTailHead(a:line_num)
 	if l:mhead > 0
+		" a function/task PROTOTYPE's tail closes the signature one level
+		" deeper than the declaration, so the last argument aligns with the
+		" continuation lines above it (a definition keeps the plain flat tail)
+		if getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
+			return indent(l:mhead) + &shiftwidth
+		endif
 		return indent(l:mhead)
 	endif
 

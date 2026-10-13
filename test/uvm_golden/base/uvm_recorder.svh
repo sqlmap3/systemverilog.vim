@@ -571,7 +571,7 @@ do_record_field_int(name, value, size, radix);
    pure virtual protected function void do_record_field(string name,
      uvm_bitstream_t value,
      int size,
-   uvm_radix_enum radix);
+     uvm_radix_enum radix);
 
    // Function: do_record_field_int
    // Records an integral field (less than or equal to 64 bits).
@@ -580,35 +580,35 @@ do_record_field_int(name, value, size, radix);
    pure virtual protected function void do_record_field_int(string name,
      uvm_integral_t value,
      int          size,
-   uvm_radix_enum radix);
+     uvm_radix_enum radix);
 
    // Function: do_record_field_real
    // Records a real field.
    //
    // ~Mandatory~ Backend implementation of <record_field_real>
    pure virtual protected function void do_record_field_real(string name,
-   real value);
+     real value);
 
    // Function: do_record_object
    // Records an object field.
    //
    // ~Mandatory~ Backend implementation of <record_object>
    pure virtual protected function void do_record_object(string name,
-   uvm_object value);
+     uvm_object value);
 
    // Function: do_record_string
    // Records a string field.
    //
    // ~Mandatory~ Backend implementation of <record_string>
    pure virtual protected function void do_record_string(string name,
-   string value);
+     string value);
 
    // Function: do_record_time
    // Records a time field.
    //
    // ~Mandatory~ Backend implementation of <record_time>
    pure virtual protected function void do_record_time(string name,
-   time value);
+     time value);
 
    // Function: do_record_generic
    // Records a name/value pair, where ~value~ has been converted to a string.
@@ -616,7 +616,7 @@ do_record_field_int(name, value, size, radix);
    // ~Mandatory~ Backend implementation of <record_generic>
    pure virtual protected function void do_record_generic(string name,
      string value,
-   string type_name);
+     string type_name);
 
 
    // The following code is primarily for backwards compat. purposes.  "Transaction

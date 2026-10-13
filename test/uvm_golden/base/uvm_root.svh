@@ -189,7 +189,7 @@ class uvm_root extends uvm_component;
 
   extern function void find_all (string comp_match,
     ref uvm_component comps[$],
-  input uvm_component comp=null);
+    input uvm_component comp=null);
 
 
   // Function: print_topology
@@ -221,7 +221,7 @@ class uvm_root extends uvm_component;
   // PRIVATE members
   extern function void m_find_all_recurse(string comp_match,
     ref uvm_component comps[$],
-  input uvm_component comp=null); 
+    input uvm_component comp=null); 
 
   extern protected function new ();
   extern protected virtual function bit m_add_child (uvm_component child);

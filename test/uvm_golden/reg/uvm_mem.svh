@@ -86,7 +86,7 @@ class uvm_mem extends uvm_object;
     longint unsigned size,
     int unsigned     n_bits,
     string           access = "RW",
-  int              has_coverage = UVM_NO_COVERAGE);
+    int              has_coverage = UVM_NO_COVERAGE);
 
 
   // Function: configure
@@ -103,7 +103,7 @@ class uvm_mem extends uvm_object;
   // <add_hdl_path_slice()> method.
   //
   extern function void configure (uvm_reg_block parent,
-  string        hdl_path = "");
+    string        hdl_path = "");
 
 
   // Function: set_offset
@@ -119,7 +119,7 @@ class uvm_mem extends uvm_object;
   //
   extern virtual function void set_offset (uvm_reg_map    map,
     uvm_reg_addr_t offset,
-  bit            unmapped = 0);
+    bit            unmapped = 0);
 
 
   /*local*/ extern virtual function void set_parent(uvm_reg_block parent);
@@ -193,7 +193,7 @@ class uvm_mem extends uvm_object;
 
 
   /*local*/ extern function uvm_reg_map get_local_map   (uvm_reg_map map,
-  string caller = "");
+    string caller = "");
 
   /*local*/ extern function uvm_reg_map get_default_map (string caller = "");
 
@@ -322,7 +322,7 @@ class uvm_mem extends uvm_object;
   // If no virtual register at the offset is found, returns ~null~. 
   //
   extern virtual function uvm_vreg get_vreg_by_offset(uvm_reg_addr_t offset,
-  uvm_reg_map    map = null);
+    uvm_reg_map    map = null);
 
 
   // Function: get_offset
@@ -342,7 +342,7 @@ class uvm_mem extends uvm_object;
   // address map, an error message is issued.
   //
   extern virtual function uvm_reg_addr_t  get_offset (uvm_reg_addr_t offset = 0,
-  uvm_reg_map    map = null);
+    uvm_reg_map    map = null);
 
 
   // Function: get_address
@@ -362,7 +362,7 @@ class uvm_mem extends uvm_object;
   // address map, an error message is issued.
   //
   extern virtual function uvm_reg_addr_t  get_address(uvm_reg_addr_t  offset = 0,
-  uvm_reg_map   map = null);
+    uvm_reg_map   map = null);
 
 
   // Function: get_addresses
@@ -385,7 +385,7 @@ class uvm_mem extends uvm_object;
   //
   extern virtual function int get_addresses(uvm_reg_addr_t     offset = 0,
     uvm_reg_map        map=null,
-  ref uvm_reg_addr_t addr[]);
+    ref uvm_reg_addr_t addr[]);
 
 
   //------------------
@@ -415,7 +415,7 @@ class uvm_mem extends uvm_object;
     input  int                prior = -1,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: read
@@ -438,7 +438,7 @@ class uvm_mem extends uvm_object;
     input  int                 prior = -1,
     input  uvm_object          extension = null,
     input  string              fname = "",
-  input  int                 lineno = 0);
+    input  int                 lineno = 0);
 
 
   // Task: burst_write
@@ -462,7 +462,7 @@ class uvm_mem extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: burst_read
@@ -486,7 +486,7 @@ class uvm_mem extends uvm_object;
     input  int               prior = -1,
     input  uvm_object        extension = null,
     input  string            fname = "",
-  input  int               lineno = 0);
+    input  int               lineno = 0);
 
 
   // Task: poke
@@ -506,7 +506,7 @@ class uvm_mem extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
   // Task: peek
@@ -527,13 +527,13 @@ class uvm_mem extends uvm_object;
     input  uvm_sequence_base  parent = null,
     input  uvm_object         extension = null,
     input  string             fname = "",
-  input  int                lineno = 0);
+    input  int                lineno = 0);
 
 
 
   extern protected function bit Xcheck_accessX (input uvm_reg_item rw,
     output uvm_reg_map_info map_info,
-  input string caller);
+    input string caller);
 
 
   extern virtual task do_write (uvm_reg_item rw);
@@ -561,7 +561,7 @@ class uvm_mem extends uvm_object;
   extern function void set_frontdoor(uvm_reg_frontdoor ftdr,
     uvm_reg_map map = null,
     string fname = "",
-  int lineno = 0);
+    int lineno = 0);
 
 
   // Function: get_frontdoor
@@ -597,7 +597,7 @@ class uvm_mem extends uvm_object;
   //
   extern function void set_backdoor (uvm_reg_backdoor bkdr,
     string fname = "",
-  int lineno = 0);
+    int lineno = 0);
 
 
   // Function: get_backdoor
@@ -634,7 +634,7 @@ class uvm_mem extends uvm_object;
   // in the design abstraction
   //
   extern function void add_hdl_path (uvm_hdl_path_slice slices[],
-  string kind = "RTL");
+    string kind = "RTL");
 
 
   // Function: add_hdl_path_slice
@@ -648,7 +648,7 @@ class uvm_mem extends uvm_object;
     int offset,
     int size,
     bit first = 0,
-  string kind = "RTL");
+    string kind = "RTL");
 
 
   // Function: has_hdl_path
@@ -675,7 +675,7 @@ class uvm_mem extends uvm_object;
   // for the parent block is used.
   //
   extern function void get_hdl_path (ref uvm_hdl_path_concat paths[$],
-  input string kind = "");
+    input string kind = "");
 
 
   // Function: get_full_hdl_path
@@ -694,7 +694,7 @@ class uvm_mem extends uvm_object;
   //
   extern function void get_full_hdl_path (ref uvm_hdl_path_concat paths[$],
     input string kind = "",
-  input string separator = ".");
+    input string separator = ".");
 
   // Function: get_hdl_path_kinds
   //
@@ -915,7 +915,7 @@ sample(addr, is_read, map);
    extern virtual function uvm_object clone();
    extern virtual function void do_copy   (uvm_object rhs);
    extern virtual function bit do_compare (uvm_object  rhs,
-   uvm_comparer comparer);
+     uvm_comparer comparer);
    extern virtual function void do_pack (uvm_packer packer);
    extern virtual function void do_unpack (uvm_packer packer);
 

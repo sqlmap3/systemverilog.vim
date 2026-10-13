@@ -73,7 +73,7 @@ virtual class uvm_reg_file extends uvm_object;
   //
   extern function void     configure  (uvm_reg_block blk_parent,
     uvm_reg_file regfile_parent,
-  string hdl_path = "");
+    string hdl_path = "");
 
   //---------------------
   // Group: Introspection
@@ -184,7 +184,7 @@ virtual class uvm_reg_file extends uvm_object;
   //
   extern function void get_full_hdl_path (ref string paths[$],
     input string kind = "",
-  input string separator = ".");
+    input string separator = ".");
 
   //
   // Function:    set_default_hdl_path
@@ -212,7 +212,7 @@ virtual class uvm_reg_file extends uvm_object;
   extern virtual function uvm_object    clone      ();
   extern virtual function void          do_copy    (uvm_object rhs);
   extern virtual function bit           do_compare (uvm_object  rhs,
-  uvm_comparer comparer);
+    uvm_comparer comparer);
   extern virtual function void          do_pack    (uvm_packer packer);
   extern virtual function void          do_unpack  (uvm_packer packer);
 

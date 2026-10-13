@@ -147,7 +147,7 @@ virtual class uvm_report_server extends uvm_object;
   // Expert users can overload this method to customize action processing.
 
   pure virtual function void execute_report_message(uvm_report_message report_message,
-  string composed_message);
+    string composed_message);
 
 
   // Function: compose_report_message
@@ -158,7 +158,7 @@ virtual class uvm_report_server extends uvm_object;
   // Expert users can overload this method to customize report formatting.
 
   pure virtual function string compose_report_message(uvm_report_message report_message,
-  string report_object_name = "");
+    string report_object_name = "");
 
 
   // Function: report_summarize

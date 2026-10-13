@@ -104,7 +104,7 @@ virtual class uvm_printer;
     int    size, 
     uvm_radix_enum radix=UVM_NORADIX,
     byte   scope_separator=".",
-  string type_name="");
+    string type_name="");
 
   // backward compatibility
   virtual function void print_int (string          name, 
@@ -133,7 +133,7 @@ extern virtual function void print_field_int (string name,
   int    size, 
   uvm_radix_enum radix=UVM_NORADIX,
   byte   scope_separator=".",
-string type_name="");
+  string type_name="");
 
 // Function: print_object
 //
@@ -147,12 +147,12 @@ string type_name="");
 
 extern virtual function void print_object (string     name,
   uvm_object value, 
-byte       scope_separator=".");
+  byte       scope_separator=".");
 
 
 extern virtual function void print_object_header (string name,
   uvm_object value,
-byte scope_separator=".");
+  byte scope_separator=".");
 
 
 // Function: print_string
@@ -161,7 +161,7 @@ byte scope_separator=".");
 
 extern virtual function void print_string (string name,
   string value, 
-byte   scope_separator=".");
+  byte   scope_separator=".");
 
 
 // Function: print_time
@@ -174,7 +174,7 @@ byte   scope_separator=".");
 
 extern virtual function void print_time (string name,
   time   value, 
-byte   scope_separator=".");
+  byte   scope_separator=".");
 
 
 // Function: print_real
@@ -183,7 +183,7 @@ byte   scope_separator=".");
 
 extern virtual function void print_real (string  name, 
   real    value,
-byte    scope_separator=".");
+  byte    scope_separator=".");
 
 // Function: print_generic
 //
@@ -193,7 +193,7 @@ extern virtual function void print_generic (string  name,
   string  type_name, 
   int     size, 
   string  value,
-byte    scope_separator=".");
+  byte    scope_separator=".");
 
 // Group: Methods for printer subtyping
 
@@ -236,7 +236,7 @@ endfunction
 // printer if configured to print only the leaf name of the identifier. 
 
 extern virtual protected function string adjust_name (string id, 
-byte scope_separator=".");
+  byte scope_separator=".");
 
 // Function: print_array_header
 //
@@ -247,7 +247,7 @@ byte scope_separator=".");
 extern virtual  function void print_array_header(string name,
   int    size,     
   string arraytype="array",
-byte   scope_separator=".");
+  byte   scope_separator=".");
 
 // Function: print_array_range
 //

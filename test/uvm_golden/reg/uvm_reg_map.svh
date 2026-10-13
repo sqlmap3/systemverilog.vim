@@ -154,7 +154,7 @@ class uvm_reg_map extends uvm_object;
     uvm_reg_addr_t    base_addr,
     int unsigned      n_bytes,
     uvm_endianness_e  endian,
-  bit byte_addressing = 1);
+    bit byte_addressing = 1);
 
   // Function: add_reg
   //
@@ -188,7 +188,7 @@ class uvm_reg_map extends uvm_object;
     uvm_reg_addr_t    offset,
     string            rights = "RW",
     bit               unmapped=0,
-  uvm_reg_frontdoor frontdoor=null);
+    uvm_reg_frontdoor frontdoor=null);
 
 
   // Function: add_mem
@@ -215,7 +215,7 @@ class uvm_reg_map extends uvm_object;
     uvm_reg_addr_t offset,
     string         rights = "RW",
     bit            unmapped=0,
-  uvm_reg_frontdoor frontdoor=null);
+    uvm_reg_frontdoor frontdoor=null);
 
 
   // Function: add_submap
@@ -237,7 +237,7 @@ class uvm_reg_map extends uvm_object;
   // in the grand-parent block of the address submap.
   //
   extern virtual function void add_submap (uvm_reg_map    child_map,
-  uvm_reg_addr_t offset);
+    uvm_reg_addr_t offset);
 
 
   // Function: set_sequencer
@@ -246,7 +246,7 @@ class uvm_reg_map extends uvm_object;
   // ~must~ be called before starting any sequences based on uvm_reg_sequence.
 
   extern virtual function void set_sequencer (uvm_sequencer_base sequencer,
-  uvm_reg_adapter    adapter=null);
+    uvm_reg_adapter    adapter=null);
 
 
 
@@ -255,7 +255,7 @@ class uvm_reg_map extends uvm_object;
   // Set the offset of the given ~submap~ to ~offset~.
 
   extern virtual function void set_submap_offset (uvm_reg_map submap,
-  uvm_reg_addr_t offset);
+    uvm_reg_addr_t offset);
 
 
   // Function: get_submap_offset
@@ -290,17 +290,17 @@ class uvm_reg_map extends uvm_object;
 
 
   /*local*/ extern virtual function void add_parent_map(uvm_reg_map  parent_map,
-  uvm_reg_addr_t offset);
+    uvm_reg_addr_t offset);
 
   /*local*/ extern virtual function void Xverify_map_configX();
 
   /*local*/ extern virtual function void m_set_reg_offset(uvm_reg   rg,
     uvm_reg_addr_t offset,
-  bit unmapped);
+    bit unmapped);
 
   /*local*/ extern virtual function void m_set_mem_offset(uvm_mem mem,
     uvm_reg_addr_t offset,
-  bit unmapped);
+    bit unmapped);
 
 
   //---------------------
@@ -419,7 +419,7 @@ class uvm_reg_map extends uvm_object;
   // in the sub-maps.
   //
   extern virtual function void  get_submaps (ref uvm_reg_map maps[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_registers
@@ -431,7 +431,7 @@ class uvm_reg_map extends uvm_object;
   // in the sub-maps.
   //
   extern virtual function void  get_registers (ref uvm_reg regs[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_fields
@@ -443,7 +443,7 @@ class uvm_reg_map extends uvm_object;
   // in the sub-maps.
   //
   extern virtual function void  get_fields (ref uvm_reg_field fields[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_memories
@@ -455,7 +455,7 @@ class uvm_reg_map extends uvm_object;
   // in the sub-maps.
   //
   extern virtual function void  get_memories (ref uvm_mem mems[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_registers
@@ -467,7 +467,7 @@ class uvm_reg_map extends uvm_object;
   // in the sub-maps.
   //
   extern virtual function void  get_virtual_registers (ref uvm_vreg regs[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_fields
@@ -480,7 +480,7 @@ class uvm_reg_map extends uvm_object;
   // in the virtual registers in the sub-maps.
   //
   extern virtual function void  get_virtual_fields (ref uvm_vreg_field fields[$],
-  input uvm_hier_e hier=UVM_HIER);
+    input uvm_hier_e hier=UVM_HIER);
 
 
   extern virtual function uvm_reg_map_info get_reg_map_info(uvm_reg rg,  bit error=1);
@@ -508,7 +508,7 @@ class uvm_reg_map extends uvm_object;
   extern virtual function int get_physical_addresses(uvm_reg_addr_t        base_addr,
     uvm_reg_addr_t        mem_offset,
     int unsigned          n_bytes,
-  ref uvm_reg_addr_t    addr[]);
+    ref uvm_reg_addr_t    addr[]);
 
 
   // Function: get_reg_by_offset
@@ -523,7 +523,7 @@ class uvm_reg_map extends uvm_object;
   // to enable this functionality.
   //
   extern virtual function uvm_reg get_reg_by_offset(uvm_reg_addr_t offset,
-  bit            read = 1);
+    bit            read = 1);
 
   //
   // Function: get_mem_by_offset
@@ -619,7 +619,7 @@ class uvm_reg_map extends uvm_object;
   //
   extern virtual task do_bus_write (uvm_reg_item rw,
     uvm_sequencer_base sequencer,
-  uvm_reg_adapter adapter);
+    uvm_reg_adapter adapter);
 
 
   // Task: do_bus_read
@@ -628,7 +628,7 @@ class uvm_reg_map extends uvm_object;
   //
   extern virtual task do_bus_read (uvm_reg_item rw,
     uvm_sequencer_base sequencer,
-  uvm_reg_adapter adapter);
+    uvm_reg_adapter adapter);
 
 
   // Task: do_write
@@ -648,7 +648,7 @@ class uvm_reg_map extends uvm_object;
     output uvm_reg_map_info map_info,
     output int size,
     output int lsb,
-  output int addr_skip);
+    output int addr_skip);
 
   extern virtual function string      convert2string();
   extern virtual function uvm_object  clone();
