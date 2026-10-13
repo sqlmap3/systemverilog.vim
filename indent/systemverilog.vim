@@ -60,8 +60,8 @@ function! s:ConvertToCodes( codeline, ... )
 	" concatenation '{' sits after = ( , ? : ' (the last is the assignment
 	" pattern '{) or at the start of a continuation line, and is followed by
 	" a string or identifier; its '}' is preceded by a string, identifier or
-	" call close and followed by , ; ) : (a ternary concat "? {a}:{b};" has
-	" both brace pairs in one line). Bins/range literals ({0}, {[0:15]},
+	" call close (spaces allowed) and followed by , ; ) : (a ternary concat
+	" "? {a}:{b};" has both brace pairs in one line). Bins/range literals ({0}, {[0:15]},
 	" {8'hF0}) keep their braces so they stay balanced: their '}' is preceded
 	" by a digit or ] which the prefix class excludes. This must run BEFORE
 	" the string strip (the '"' operand boundary distinguishes a
@@ -70,7 +70,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" characters '\' and 'h', not head-of-word.
 	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"]', '\1', 'g')
 	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"]', '', 'g')
-	let delims = substitute(delims, '\([A-Za-z_")]\)\zs}\ze\s*\([,;):]\)', '', 'g')
+	let delims = substitute(delims, '\([A-Za-z_")]\)\s*\zs}\ze\s*\([,;):]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)
@@ -121,6 +121,16 @@ function! s:ConvertToCodes( codeline, ... )
 	" keep-list, so this can run after the filter)
 	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s\+\%(\[\s*\)\?property', '', 'g')
 	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
+	" a macro call in the MIDDLE of a line ("else `uvm_error(...)",
+	" "if (x) `uvm_info(...)") is a complete statement to the indent
+	" engine: its expansion ends with one. Inject a ';' where the macro
+	" name sits, so the line classifies as exec instead of a bare control
+	" keyword and the next statement does not indent one level too deep.
+	" Line-LEADING macros keep the `^\s*`.*$ -> ';' rule further down
+	" (which wipes the whole line, braces included).
+	if delims !~ '^\s*`'
+		let delims = substitute(delims, '`\h\w*\>', ';', 'g')
+	endif
 	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\)\>', 'b', 'g')
 	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\)\>', 'e', 'g')
 	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\)\>', 'f', 'g')
@@ -372,6 +382,19 @@ function! GetSystemVerilogIndent( line_num )
 
 	let indnt = indent( prev1_line_num )
 
+	" codes for this line, computed early: the preprocessor-continuation
+	" rules below must know whether this line CLOSES a group/block.
+	" end/endcase/endfunction... right after an `endif close something that
+	" opened OUTSIDE the conditional region - they must resolve through the
+	" region instead of aligning with it, or endfunction after a trailing
+	" `ifndef...`endif block lands one level too deep. Memoized, so the
+	" later s:ConvertToCodes call for the same text is free.
+	let l:this_codes_early = s:ConvertToCodes( this_codeline )
+	" where previous-line resolution starts: normally this line; when a
+	" group/block close follows a conditional region, the matching `ifdef
+	" line, so prev1 resolves to the code before the whole region
+	let l:prev_start = a:line_num
+
 	if ( strpart( prev1_codeline , strlen(prev1_codeline) - 1 , 1) == '\' )
 		if ( strpart( prev2_codeline , strlen(prev2_codeline) - 1 , 1) == '\' )
 			" middle of a backslash continuation block (a multi-line
@@ -419,7 +442,11 @@ function! GetSystemVerilogIndent( line_num )
 			break
 		endwhile
 	endif
-	if this_codeline !~ '^\s*`'
+	" loop over previous lines for the preprocessor-continuation rules. A
+	" macro CALL line (leading `name(...)) is ordinary code for this: it
+	" takes the ifdef-body +1 and the endif-alignment like any statement.
+	" Only the directives themselves (the `z` codes) are excluded.
+	if this_codeline !~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>'
 		let ln = prevnonblank(a:line_num - 1)
 		while ln > 0
 			let l = getline(ln)
@@ -430,11 +457,25 @@ function! GetSystemVerilogIndent( line_num )
 			if l =~ '^\s*`\s*\cendif\>'
 				let l:m = s:FindIfdefMatch(ln)
 				if l:m > 0
-					return indent(l:m)
+					if l:this_codes_early =~ '^[he]$'
+						" a bare group/block close (end, endcase,
+						" endfunction, ...) after an `endif: it closes
+						" something that opened before the conditional
+						" region. Make the region transparent: resolve
+						" the previous code from before the matching
+						" `ifdef instead of aligning with it
+						let l:prev_start = l:m
+					else
+						return indent(l:m)
+					endif
 				endif
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+				if l:this_codes_early =~ '^[he]$'
+					let l:prev_start = ln
+					break
+				endif
 				return indent(ln) + &shiftwidth
 			endif
 			break
@@ -466,7 +507,7 @@ function! GetSystemVerilogIndent( line_num )
 		endwhile
 	endif
 
-	let prev1_line_num = s:GetPrevWholeLineNum (a:line_num)
+	let prev1_line_num = s:GetPrevWholeLineNum (l:prev_start)
 	let prev1_for_comment_line = prev1_line_num
 	let prev1_codeline = s:GetWholeLine (prev1_line_num)
 	let prev1_codes = s:ConvertToCodes(prev1_codeline)

@@ -8,6 +8,11 @@
 #   indent_demo.sv   core constructs (case labels, macros, ifdef, define...)
 #   indent_demo2.sv  uvm_component::new constructs (bare begin blocks,
 #                    multi-line calls under if, concatenations, macros)
+#   indent_demo3.sv  SVA, constraints, covergroups, checkers, DPI imports
+#   indent_demo4.sv  group/block closes after `endif (`ifndef-wrapped tails)
+#   indent_demo5.sv  UVM 1.2 excerpt braces: concatenations, ternary concat,
+#                    assignment patterns, inside-sets, multi-line call args
+#   indent_demo6.sv  labeled join/endcase/endclass after `endif, nested ifdefs
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \

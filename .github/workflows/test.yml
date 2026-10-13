@@ -15,7 +15,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y vim
 
-      - name: Golden indent tests (demo 1-3)
+      - name: Golden indent tests (demos 1-6)
         run: sh test/run_indent_test.sh
 
       - name: Golden fold test
