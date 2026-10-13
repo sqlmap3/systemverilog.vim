@@ -242,6 +242,10 @@ syntax match uvmRunTest "\<run_test\>"
 syntax match uvmTestDone "\<uvm_test_done\>"
 
 syntax match svCtorCall "\<\(super\|this\)\>\s*\.\s*new\>"
+" `this' and `super' are keywords everywhere EXCEPT the constructor call
+" `this.new' / `super.new' (svCtorCall above, a later match, still wins for
+" those); the lookahead keeps them separate without a keyword-vs-match fight
+syntax match svThisSuper "\<\%(this\|super\)\>\%(\.\s*new\>\)\@!"
 syntax match uvmTypeIdCreate "\<type_id\>\s*::\s*create\>"
 syntax keyword svRandCallback pre_randomize post_randomize
 syntax match uvmConfig "\<uvm_config_db\>"
@@ -473,6 +477,7 @@ highlight! default link uvmRegSeqName Identifier
 highlight! default link uvmRunTest Function
 highlight! default link uvmTestDone Global
 highlight! default link svCtorCall Function
+highlight! default link svThisSuper Keyword
 highlight! default link uvmTypeIdCreate Function
 highlight! default link svRandCallback Function
 

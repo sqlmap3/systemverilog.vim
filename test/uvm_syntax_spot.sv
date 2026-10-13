@@ -214,4 +214,44 @@ checker spot_chk (logic clk, logic rst_n);
   a_cov2: cover property (req |=> ack);
 endchecker
 
+// --- storage/direction keywords, structures, covergroups, this/super ---
+module spot_cg;
+  localparam int LP = 2;
+  const int CV = 1;
+  var logic lv;
+  static int si;
+  automatic int ai;
+
+  logic [3:0] cpa, cpb;
+
+  covergroup cg @(posedge clk);
+    cp_a: coverpoint cpa {
+      bins zero = {0};
+      bins lo[] = {[1:3]};
+      ignore_bins hi = {8'hF0};
+    }
+    cp_b: coverpoint cpb;
+    cr_ab: cross cp_a, cp_b;
+  endgroup
+
+  function automatic void worker(ref int ri);
+    lv = ri;
+  endfunction
+
+  union tagged {
+    int i;
+    bit b;
+  } ut;
+
+  enum { ON, OFF } st;
+endmodule
+
+class spot_this_super extends spot_seq;
+  rand int rf;
+  local int li;
+  function void use_this_super();
+    this.rf = super.rf;
+  endfunction
+endclass
+
 `endif

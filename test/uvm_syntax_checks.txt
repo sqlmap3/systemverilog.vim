@@ -167,3 +167,26 @@ set_type_override_by_type	uvmMethodFactory
 \[->2\]	svSVAOp
 #-#	svSVAOp
 #=#	svSVAOp
+#
+# --- storage/direction keywords, structures, covergroups, this/super ---
+\<const\>	svStorageClass
+\<ref\>	svDirection
+\<var\>	svStorageClass
+\<local\>	svKeyword
+\<localparam\>	svTypedef
+\<rand\>	svStorageClass
+\<static\>	svStorageClass
+\<automatic\>	svStorageClass
+\<union\>	svStructure
+\<tagged\>	svKeyword
+\<struct\>	svStructure
+\<packed\>	svKeyword
+\<class\>	svClassKw
+\<task\>	svTaskKw
+\<function\>	svFunctionKw
+\<covergroup\>	svCovergroupKw
+\<coverpoint\>	svKeyword
+\<cross\>	svKeyword
+\<bins\>	svKeyword
+this\.rf	svThisSuper
+super\.rf	svThisSuper
