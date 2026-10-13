@@ -149,6 +149,13 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\*\/', 'p', 'g')
 	let delims = substitute(delims, '\[[^:\[\]]*:[^:\[\]]*\]', '', 'g')
 	let delims = substitute(delims, '\@', 'x', 'g')
+	" a macro call whose argument is a multi-line constraint/block
+	" ('`uvm_do_with(x, {' ... '})') keeps its open brace: map the whole
+	" line to '{' so the body indents one level and the closing '})'
+	" returns to the macro line instead of dedenting past it. The '{'
+	" replaces the backtick, so the ^\s*`.*$ rule below leaves it alone;
+	" in no-parens mode the brace is dropped with the other delimiters.
+	let delims = substitute(delims, '^\s*`.*{\s*$', '{', '')
 	if a:0
 		let delims = substitute(delims, '[][(){}]', '', 'g')
 	else
