@@ -13,6 +13,11 @@
 #   indent_demo5.sv  UVM 1.2 excerpt braces: concatenations, ternary concat,
 #                    assignment patterns, inside-sets, multi-line call args
 #   indent_demo6.sv  labeled join/endcase/endclass after `endif, nested ifdefs
+#   indent_demo7.sv  advanced SVA: labeled asserts with action blocks, cover
+#                    property, expect, multi-line sequence ops, bind
+#   indent_demo8.sv  SVA mixed with macros: macro fail actions, multi-line
+#                    bind port lists, `ifdef'd bind macros
+#   indent_demo9.sv  macro calls with a multi-line constraint/block argument
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \

@@ -15,7 +15,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y vim
 
-      - name: Golden indent tests (demos 1-6)
+      - name: Golden indent tests (demos 1-9)
         run: sh test/run_indent_test.sh
 
       - name: Golden fold test
@@ -24,8 +24,10 @@ jobs:
       - name: Syntax spot checks (self-contained)
         run: UVM_SRC= sh test/run_uvm_syntax_test.sh
 
-      - name: Clone UVM 1.2 reference library
-        run: git clone --depth 1 https://github.com/gchinna/uvm-1.2 "$HOME/uvm-1.2" || true
+      - name: Clone UVM 1.2 reference library (pinned to the golden snapshot)
+        run: |
+          git clone https://github.com/gchinna/uvm-1.2 "$HOME/uvm-1.2" || true
+          git -C "$HOME/uvm-1.2" checkout a3cb911 2>/dev/null || true
 
       - name: UVM library tests (syntax smoke + indent idempotency, full tree)
         run: |
@@ -35,3 +37,11 @@ jobs:
           fi
           UVM_SRC="$HOME/uvm-1.2/src" sh test/run_uvm_syntax_test.sh
           UVM_SRC="$HOME/uvm-1.2/src" sh test/run_uvm_indent_test.sh
+
+      - name: UVM indent golden snapshot (strict, byte-identical)
+        run: |
+          if [ ! -d "$HOME/uvm-1.2/src" ]; then
+            echo "uvm-1.2 clone unavailable - skipping golden snapshot test"
+            exit 0
+          fi
+          UVM_SRC="$HOME/uvm-1.2/src" sh test/run_uvm_golden_test.sh
