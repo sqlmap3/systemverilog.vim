@@ -352,12 +352,17 @@ function! s:StripPrototypeF( line_num, codeline, codes )
 	return a:codes
 endfunction
 
-" If the line at a:line_num is the tail of a multi-line macro call (a line
-" ending in ')' or ');' whose continuation chain of ', ( [ {'-ending lines
-" reaches a backtick line), return that macro head's line number; otherwise
-" return 0. A real multi-line call/declaration (extern function ...( ... );)
-" has no backtick in the chain and returns 0.
-function! s:MacroTailHead( line_num )
+" If the line at a:line_num ends a multi-line statement - a macro call
+" ('`uvm_info(a, ...') or an ordinary method/function call whose arguments
+" span lines (top.uvm_report_error("m", $sformatf(...), ...)) - return the
+" statement head's line number; otherwise 0. The head is the line that
+" opened the statement: walk back from the tail, balancing round
+" parentheses (strings and //-comments ignored); the first line that brings
+" the running balance back to >= 0 is the head (the tail itself closes more
+" parens than it opens, so the balance starts negative). A ');'-ending line
+" whose preceding line is not a ', ( [ {'-continuation is a self-contained
+" statement, not a tail.
+function! s:StatementTailHead( line_num )
 	let l:line = getline(a:line_num)
 	if l:line !~ ')\s*;\?\s*$'
 		return 0
@@ -366,13 +371,25 @@ function! s:MacroTailHead( line_num )
 	  \ || l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
 		return 0
 	endif
+	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+		return 0
+	endif
+	let l:bal = 0
+	" the tail must close more parens than it opens (it closes the head's
+	" open paren); a balanced or opening line is not a closing tail
+	let l:l = substitute(l:line, '\".\{-}\"', '', 'g')
+	let l:l = substitute(l:l, '\/\/.*', '', '')
+	let l:bal = len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
+	if l:bal >= 0
+		return 0
+	endif
 	let l:ln = prevnonblank(a:line_num - 1)
 	while l:ln > 0
 		let l:l = getline(l:ln)
-		if l:l !~ '[,([{]\s*$'
-			return 0
-		endif
-		if l:l =~ '^\s*`'
+		let l:l = substitute(l:l, '\".\{-}\"', '', 'g')
+		let l:l = substitute(l:l, '\/\/.*', '', '')
+		let l:bal = l:bal + len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
+		if l:bal >= 0
 			return l:ln
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
@@ -550,12 +567,13 @@ function! GetSystemVerilogIndent( line_num )
 	let prev1_codes = s:StripPrototypeF(prev1_line_num, prev1_codeline, prev1_codes)
 	let prev2_codes = s:StripPrototypeF(prev2_line_num, prev2_codeline, prev2_codes)
 
-	" if prev1 is the tail of a multi-line macro, it is the statement's
+	" if prev1 is the tail of a multi-line MACRO call, it is that statement's
 	" terminator: treat it as 'exec' and resolve prev2 to the code before the
-	" macro head, so the "prev2 x + prev1 exec" rule dedents the next line
-	" back to the enclosing control level (e.g. a following if/endfunction)
-	let l:mhead = s:MacroTailHead(prev1_line_num)
-	if l:mhead > 0
+	" head, so the "prev2 x + prev1 exec" rule dedents the next line back to
+	" the enclosing control level. Method-call tails keep their natural codes
+	" (their open line already carries a 'b' that the normal rules balance).
+	let l:mhead = s:StatementTailHead(prev1_line_num)
+	if l:mhead > 0 && getline(l:mhead) =~ '^\s*`'
 		let prev1_codes = ';'
 		let prev2_line_num = s:GetPrevWholeLineNum(l:mhead)
 		let prev2_codeline = s:GetWholeLine(prev2_line_num)
@@ -565,12 +583,12 @@ function! GetSystemVerilogIndent( line_num )
 	let this_codes = s:ConvertToCodes( this_codeline )
 	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
 
-	" Tail of a multi-line MACRO call, e.g. the closing "UVM_LOW)" or
-	" "actual, exp),UVM_DEBUG);" line of a `uvm_info that spans lines without
-	" backslash continuation. The macro's open line is wiped to ';' by
-	" ConvertToCodes, so the tail's ')' has no matching '(' and would dedent
-	" spuriously and cascade. Keep the tail flat with the macro head.
-	let l:mhead = s:MacroTailHead(a:line_num)
+	" Tail of a multi-line statement (macro or method call), e.g. the closing
+	" "UVM_LOW)" of a `uvm_info, or "cfg.n_bytes, ...), UVM_LOW);" of a
+	" uvm_report_error whose args span lines. The open line's '(' has no
+	" matching ')' here, so the tail would dedent spuriously and cascade.
+	" Keep the tail flat with the statement head.
+	let l:mhead = s:StatementTailHead(a:line_num)
 	if l:mhead > 0
 		return indent(l:mhead)
 	endif
