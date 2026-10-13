@@ -32,6 +32,7 @@ ns;	svTimeUnitPlain
 \<body\>	svTaskName
 super\.new	svCtorCall
 type_id\s*::\s*create	uvmApiMethod|uvmTypeIdCreate
+\<parent\>	svArgName
 \<UVM_LOW\>	uvmEnum
 \<UVM_ALL_ON\>	uvmEnum
 \<UVM_MEDIUM\>	uvmEnum

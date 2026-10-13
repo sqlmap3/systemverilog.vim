@@ -77,10 +77,15 @@ syntax match svVirtualIfaceType "\<virtual\_s\+\zs\h\w*\ze\_s\+\h\w*\%(\_s*\[[^]
 " immediately before '(' inside the region body.
 syntax match svTaskKw "\<task\>"
 syntax match svFunctionKw "\<function\>"
-syntax region svTaskSig start="\<task\>" end="(" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svFunctionName
-syntax region svFunctionSig start="\<function\>" end="(" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svTaskName
+" the signature spans from the keyword through the argument list: the name
+" sits before the first '(' and the argument names before , ) or = (defaults).
+" A task/function WITHOUT parentheses never opens the region.
+syntax region svTaskSig start="\<task\>.\{-}(" end=")" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svFunctionName,svStructField,svEnumerator,svPortName,svBinsName
+syntax region svFunctionSig start="\<function\>.\{-}(" end=")" keepend transparent contains=ALLBUT,svDefineName,svMacroArgs,svIfdefName,svIfndefName,svModuleName,svInterfaceName,svPackageName,svClassName,svCovergroupName,svTaskName,svStructField,svEnumerator,svPortName,svBinsName
 syntax match svTaskName "\h\w*\ze\_s*(" contained containedin=svTaskSig
 syntax match svFunctionName "\h\w*\ze\_s*(" contained containedin=svFunctionSig
+syntax match svArgName "\<\h\w*\>\ze\_s*\%(,\|)\|=\)" contained containedin=svTaskSig,svFunctionSig
+highlight! default link svArgName Identifier
 highlight! default link svTaskKw Keyword
 highlight! default link svFunctionKw Keyword
 syntax match svParamName "^\s*\%(parameter\|localparam\)\>.\{-}\zs\h\w*\ze\_s*="
