@@ -158,4 +158,60 @@ interface spot_if (input logic clk);
   modport m (input clk, rst_n);
 endinterface
 
+// --- .sv top-level units ---
+program spot_prog (input logic clk);
+  initial begin
+    #5ns;
+    $display("prog start");
+  end
+endprogram
+
+package spot_pkg;
+  parameter int PKG_W = 4;
+endpackage
+
+module spot_sva_tb;
+  logic clk, rst_n, req, ack, done;
+  logic [3:0] w;
+
+  clocking cb @(posedge clk);
+    input req;
+    output ack;
+  endclocking
+
+  always_ff @(posedge clk) begin
+    done <= req;
+  end
+
+  always_latch begin
+    if (rst_n)
+      done <= 0;
+  end
+
+  genvar gi;
+  generate
+    for (gi = 0; gi < 4; gi = gi + 1) begin : g_w
+      assign w[gi] = 1'b0;
+    end
+  endgenerate
+
+  // remaining SVA operators and keywords
+  a_assume: assume property (a ##2 b);
+  a_restrict: restrict property (a[=2] b);
+  a_expect: expect (a[->2] b) else $error("x");
+  a_first: assert property (first_match(a) until b);
+  a_cover: cover property (a #-# b);
+  a_equiv: cover property (a #=# b);
+  a_let: let spot_let(x) = x;
+  a_implies: assert property (a implies b);
+  a_eventually: assert property (s_eventually a);
+  a_accept: assert property (accept_on(b) a);
+  a_weak: assert property (weak(a) and strong(b));
+endmodule
+
+checker spot_chk (logic clk, logic rst_n);
+  default clocking cb2 @(posedge clk);
+  a_cov2: cover property (req |=> ack);
+endchecker
+
 `endif

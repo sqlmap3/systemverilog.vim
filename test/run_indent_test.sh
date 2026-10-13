@@ -18,6 +18,8 @@
 #   indent_demo8.sv  SVA mixed with macros: macro fail actions, multi-line
 #                    bind port lists, `ifdef'd bind macros
 #   indent_demo9.sv  macro calls with a multi-line constraint/block argument
+#   indent_demo10.sv .sv top-level units: package, program, clocking blocks,
+#                    generate, always_ff/always_latch, checker
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \

@@ -100,7 +100,7 @@ syntax match svObjectFunctions "\.\(randomize\|srandomize\|num\|size\|delete\|ex
 syntax match svOperator "\(\~\|&\|||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
 syntax match svDelimiter "\({\|}\|(\|)\)"
 
-syntax match svSVAOp "\(|->\||=>\|##\d\+\|##\|\[\*\(\d\+\(:\d\+\)\?\)\?\]\)"
+syntax match svSVAOp "\(|->\||=>\|#[-=]#\|##\(\d\+\|\[\d\+\(:\d\+\)\?\]\)\?\|\[\%(\*\|+\|=\|->\)\d*\(:\d\+\)\?\]\)"
 
 " Covergroup / coverpoint / bins names
 syntax keyword svCovergroupKw covergroup nextgroup=svCovergroupName skipwhite skipempty
@@ -115,7 +115,7 @@ syntax match svDefineName "\h\%(\w\|\$\)*" contained nextgroup=svMacroArgs skipw
 syntax region svMacroArgs start="(" end=")" contained contains=NONE
 syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
 syntax match svUpperIdent  "\<\(UVM_\)\@![A-Z][A-Z0-9_]*\>"
-syntax match svHashNumber  "#[0-9_]\+" containedin=ALL
+syntax match svHashNumber  "\(\#\)\@<!#[0-9_]\+" containedin=ALL
 syntax match svTimeUnitHash     "#[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
 syntax match svTimeUnitHash     "#[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
 syntax match svTimeUnitPlain    "\<[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL

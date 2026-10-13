@@ -85,7 +85,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" a definition; a default clocking's clocking is a reference, not a block
 	let delims = substitute(delims, 'import[^\n]*function', '', 'g')
 	let delims = substitute(delims, 'import[^\n]*task', '', 'g')
-	let delims = substitute(delims, 'default\s\+clocking', '', 'g')
+	let delims = substitute(delims, 'default\s\+clocking\ze\s*[@;]', '', 'g')
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
 	" They are mapped to braces here on purpose: the keyword filter below

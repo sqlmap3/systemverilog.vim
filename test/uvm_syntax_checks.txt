@@ -133,3 +133,37 @@ set_type_override_by_type	uvmMethodFactory
 `elsif	svPreConditElsif
 `else	svPreCondit
 `endif	svPreCondit
+#
+# --- .sv top-level units (program/package/clocking/checker/generate) ---
+\<program\>	svKeyword
+\<endprogram\>	svKeyword
+\<package\>	svPackageKw
+\<endpackage\>	svKeyword
+\<clocking\>	svKeyword
+\<endclocking\>	svKeyword
+\<checker\>	svKeyword
+\<endchecker\>	svKeyword
+\<always_ff\>	svKeyword
+\<always_latch\>	svKeyword
+\<genvar\>	svType
+\<default\>	svKeyword
+#
+# --- remaining SVA keywords ---
+\<assume\>	svKeyword
+\<restrict\>	svKeyword
+\<expect\>	svKeyword
+\<first_match\>	svKeyword
+\<until\>	svKeyword
+\<cover\>	svKeyword
+\<let\>	svKeyword
+\<implies\>	svKeyword
+\<s_eventually\>	svKeyword
+\<accept_on\>	svKeyword
+\<strong\>	svKeyword
+\<weak\>	svKeyword
+#
+# --- remaining SVA operators (non-consecutive/goto repetition, #-#, #=#) ---
+\[=2\]	svSVAOp
+\[->2\]	svSVAOp
+#-#	svSVAOp
+#=#	svSVAOp
