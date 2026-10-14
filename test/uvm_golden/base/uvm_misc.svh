@@ -481,71 +481,71 @@ endfunction
 //
 //
 function string uvm_bitstream_to_string (uvm_bitstream_t value, int size,
-    uvm_radix_enum radix=UVM_NORADIX,
-string radix_str="");
-// sign extend & don't show radix for negative values
-if (radix == UVM_DEC && value[size-1] === 1)
-  return $sformatf("%0d", value);
+                                         uvm_radix_enum radix=UVM_NORADIX,
+                                         string radix_str="");
+  // sign extend & don't show radix for negative values
+  if (radix == UVM_DEC && value[size-1] === 1)
+    return $sformatf("%0d", value);
 
-// TODO $countbits(value,'z) would be even better
-if($isunknown(value)) begin
-  uvm_bitstream_t _t;
-  _t=0;
-  for(int idx=0;idx<size;idx++)
-    _t[idx]=value[idx];
-  value=_t;
-end
-else 
-  value &= (1 << size)-1;
+  // TODO $countbits(value,'z) would be even better
+  if($isunknown(value)) begin
+    uvm_bitstream_t _t;
+    _t=0;
+    for(int idx=0;idx<size;idx++)
+      _t[idx]=value[idx];
+    value=_t;
+  end
+  else 
+    value &= (1 << size)-1;
 
-case(radix)
-  UVM_BIN:      return $sformatf("%0s%0b", radix_str, value);
-  UVM_OCT:      return $sformatf("%0s%0o", radix_str, value);
-  UVM_UNSIGNED: return $sformatf("%0s%0d", radix_str, value);
-  UVM_STRING:   return $sformatf("%0s%0s", radix_str, value);
-  UVM_TIME:     return $sformatf("%0s%0t", radix_str, value);
-  UVM_DEC:      return $sformatf("%0s%0d", radix_str, value);
-  default:      return $sformatf("%0s%0x", radix_str, value);
-endcase
+  case(radix)
+    UVM_BIN:      return $sformatf("%0s%0b", radix_str, value);
+    UVM_OCT:      return $sformatf("%0s%0o", radix_str, value);
+    UVM_UNSIGNED: return $sformatf("%0s%0d", radix_str, value);
+    UVM_STRING:   return $sformatf("%0s%0s", radix_str, value);
+    UVM_TIME:     return $sformatf("%0s%0t", radix_str, value);
+    UVM_DEC:      return $sformatf("%0s%0d", radix_str, value);
+    default:      return $sformatf("%0s%0x", radix_str, value);
+  endcase
 endfunction
 
 // Function- uvm_integral_to_string
 //
 //
 function string uvm_integral_to_string (uvm_integral_t value, int size,
-    uvm_radix_enum radix=UVM_NORADIX,
-string radix_str="");
-// sign extend & don't show radix for negative values
-if (radix == UVM_DEC && value[size-1] === 1)
-  return $sformatf("%0d", value);
+                                        uvm_radix_enum radix=UVM_NORADIX,
+                                        string radix_str="");
+  // sign extend & don't show radix for negative values
+  if (radix == UVM_DEC && value[size-1] === 1)
+    return $sformatf("%0d", value);
 
-// TODO $countbits(value,'z) would be even better
-if($isunknown(value)) begin
-  uvm_integral_t _t;
-  _t=0;
-  for(int idx=0;idx<size;idx++)
-    _t[idx]=value[idx];
-  value=_t;
-end
-else 
-  value &= (1 << size)-1;
+  // TODO $countbits(value,'z) would be even better
+  if($isunknown(value)) begin
+    uvm_integral_t _t;
+    _t=0;
+    for(int idx=0;idx<size;idx++)
+      _t[idx]=value[idx];
+    value=_t;
+  end
+  else 
+    value &= (1 << size)-1;
 
-case(radix)
-  UVM_BIN:      return $sformatf("%0s%0b", radix_str, value);
-  UVM_OCT:      return $sformatf("%0s%0o", radix_str, value);
-  UVM_UNSIGNED: return $sformatf("%0s%0d", radix_str, value);
-  UVM_STRING:   return $sformatf("%0s%0s", radix_str, value);
-  UVM_TIME:     return $sformatf("%0s%0t", radix_str, value);
-  UVM_DEC:      return $sformatf("%0s%0d", radix_str, value);
-  default:      return $sformatf("%0s%0x", radix_str, value);
-endcase
+  case(radix)
+    UVM_BIN:      return $sformatf("%0s%0b", radix_str, value);
+    UVM_OCT:      return $sformatf("%0s%0o", radix_str, value);
+    UVM_UNSIGNED: return $sformatf("%0s%0d", radix_str, value);
+    UVM_STRING:   return $sformatf("%0s%0s", radix_str, value);
+    UVM_TIME:     return $sformatf("%0s%0t", radix_str, value);
+    UVM_DEC:      return $sformatf("%0s%0d", radix_str, value);
+    default:      return $sformatf("%0s%0x", radix_str, value);
+  endcase
 endfunction
 
 // Backwards compat
 function string uvm_vector_to_string(uvm_bitstream_t value, int size,
-    uvm_radix_enum radix=UVM_NORADIX,
-string radix_str="");
-return uvm_bitstream_to_string(value,size,radix,radix_str);
+                                     uvm_radix_enum radix=UVM_NORADIX,
+                                     string radix_str="");
+  return uvm_bitstream_to_string(value,size,radix,radix_str);
 endfunction // uvm_vector_to_string
 
 // Function- uvm_get_array_index_int

@@ -17,6 +17,16 @@ class demo_protos;
                                           uvm_comparer comparer);
   pure virtual function void print();
 
+  virtual function void raised (uvm_objection objection,
+                                uvm_object source_obj,
+                                string description, int count);
+    $display("raised: %s", description);
+  endfunction
+
+  virtual function void dropped (uvm_objection objection,
+                                 string description, int count);
+  endfunction
+
 endclass
 
 `endif

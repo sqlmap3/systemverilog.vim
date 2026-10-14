@@ -201,89 +201,89 @@ class uvm_tlm_req_rsp_channel #(type REQ=int, type RSP=REQ) extends uvm_componen
   // values of 1.
 
   function new (string name, uvm_component parent=null, 
-      int request_fifo_size=1,
-  int response_fifo_size=1);
+                int request_fifo_size=1,
+                int response_fifo_size=1);
 
-  super.new (name, parent);
+    super.new (name, parent);
 
-  m_request_fifo  = new ("request_fifo",  this, request_fifo_size);
-  m_response_fifo = new ("response_fifo", this, response_fifo_size);
+    m_request_fifo  = new ("request_fifo",  this, request_fifo_size);
+    m_response_fifo = new ("response_fifo", this, response_fifo_size);
 
-  request_ap      = new ("request_ap",  this);
-  response_ap     = new ("response_ap", this);
+    request_ap      = new ("request_ap",  this);
+    response_ap     = new ("response_ap", this);
 
-  put_request_export       = new ("put_request_export",       this);
-  get_peek_request_export  = new ("get_peek_request_export",  this);
+    put_request_export       = new ("put_request_export",       this);
+    get_peek_request_export  = new ("get_peek_request_export",  this);
 
-  put_response_export      = new ("put_response_export",      this); 
-  get_peek_response_export = new ("get_peek_response_export", this);
+    put_response_export      = new ("put_response_export",      this); 
+    get_peek_response_export = new ("get_peek_response_export", this);
 
-  master_export   = new ("master_export", this, m_request_fifo, m_response_fifo);
-  slave_export    = new ("slave_export",  this, m_request_fifo, m_response_fifo);
+    master_export   = new ("master_export", this, m_request_fifo, m_response_fifo);
+    slave_export    = new ("slave_export",  this, m_request_fifo, m_response_fifo);
 
-  create_aliased_exports();
+    create_aliased_exports();
 
-  set_report_id_action_hier(s_connection_error_id, UVM_NO_ACTION);
+    set_report_id_action_hier(s_connection_error_id, UVM_NO_ACTION);
 
-endfunction
+  endfunction
 
-virtual function void connect_phase(uvm_phase phase);
-  put_request_export.connect       (m_request_fifo.put_export);
-  get_peek_request_export.connect  (m_request_fifo.get_peek_export);
-  m_request_fifo.put_ap.connect    (request_ap);
-  put_response_export.connect      (m_response_fifo.put_export);
-  get_peek_response_export.connect (m_response_fifo.get_peek_export);
-  m_response_fifo.put_ap.connect   (response_ap);
-endfunction
+  virtual function void connect_phase(uvm_phase phase);
+    put_request_export.connect       (m_request_fifo.put_export);
+    get_peek_request_export.connect  (m_request_fifo.get_peek_export);
+    m_request_fifo.put_ap.connect    (request_ap);
+    put_response_export.connect      (m_response_fifo.put_export);
+    get_peek_response_export.connect (m_response_fifo.get_peek_export);
+    m_response_fifo.put_ap.connect   (response_ap);
+  endfunction
 
-function void create_aliased_exports();
-  // request
-  blocking_put_request_export         = put_request_export;
-  nonblocking_put_request_export      = put_request_export;
-  get_request_export                  = get_peek_request_export;
-  blocking_get_request_export         = get_peek_request_export;
-  nonblocking_get_request_export      = get_peek_request_export;
-  peek_request_export                 = get_peek_request_export;
-  blocking_peek_request_export        = get_peek_request_export;
-  nonblocking_peek_request_export     = get_peek_request_export;
-  blocking_get_peek_request_export    = get_peek_request_export;
-  nonblocking_get_peek_request_export = get_peek_request_export;
+  function void create_aliased_exports();
+    // request
+    blocking_put_request_export         = put_request_export;
+    nonblocking_put_request_export      = put_request_export;
+    get_request_export                  = get_peek_request_export;
+    blocking_get_request_export         = get_peek_request_export;
+    nonblocking_get_request_export      = get_peek_request_export;
+    peek_request_export                 = get_peek_request_export;
+    blocking_peek_request_export        = get_peek_request_export;
+    nonblocking_peek_request_export     = get_peek_request_export;
+    blocking_get_peek_request_export    = get_peek_request_export;
+    nonblocking_get_peek_request_export = get_peek_request_export;
 
-  // response
-  blocking_put_response_export         = put_response_export;
-  nonblocking_put_response_export      = put_response_export;
-  get_response_export                  = get_peek_response_export;
-  blocking_get_response_export         = get_peek_response_export;
-  nonblocking_get_response_export      = get_peek_response_export;
-  peek_response_export                 = get_peek_response_export;
-  blocking_peek_response_export        = get_peek_response_export;
-  nonblocking_peek_response_export     = get_peek_response_export;
-  blocking_get_peek_response_export    = get_peek_response_export;
-  nonblocking_get_peek_response_export = get_peek_response_export;
+    // response
+    blocking_put_response_export         = put_response_export;
+    nonblocking_put_response_export      = put_response_export;
+    get_response_export                  = get_peek_response_export;
+    blocking_get_response_export         = get_peek_response_export;
+    nonblocking_get_response_export      = get_peek_response_export;
+    peek_response_export                 = get_peek_response_export;
+    blocking_peek_response_export        = get_peek_response_export;
+    nonblocking_peek_response_export     = get_peek_response_export;
+    blocking_get_peek_response_export    = get_peek_response_export;
+    nonblocking_get_peek_response_export = get_peek_response_export;
 
-  // master/slave
-  blocking_master_export    = master_export; 
-  nonblocking_master_export = master_export;
-  blocking_slave_export     = slave_export;
-  nonblocking_slave_export  = slave_export;
-endfunction
+    // master/slave
+    blocking_master_export    = master_export; 
+    nonblocking_master_export = master_export;
+    blocking_slave_export     = slave_export;
+    nonblocking_slave_export  = slave_export;
+  endfunction
 
-// get_type_name
-// -------------
+  // get_type_name
+  // -------------
 
-function string get_type_name ();
-  return type_name;
-endfunction
+  function string get_type_name ();
+    return type_name;
+  endfunction
 
 
-// create
-// ------
+  // create
+  // ------
 
-function uvm_object create (string name=""); 
-  this_type v;
-  v=new(name);
-  return v;
-endfunction
+  function uvm_object create (string name=""); 
+    this_type v;
+    v=new(name);
+    return v;
+  endfunction
 
 
 endclass

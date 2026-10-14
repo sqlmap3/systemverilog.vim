@@ -75,59 +75,59 @@ virtual class uvm_task_phase extends uvm_phase;
   // starting order is not deterministic.
   //
   virtual function void traverse(uvm_component comp,
-      uvm_phase phase,
-  uvm_phase_state state);
-  phase.m_num_procs_not_yet_returned = 0;
-  m_traverse(comp, phase, state);
-endfunction
+                                 uvm_phase phase,
+                                 uvm_phase_state state);
+    phase.m_num_procs_not_yet_returned = 0;
+    m_traverse(comp, phase, state);
+  endfunction
 
-function void m_traverse(uvm_component comp,
-    uvm_phase phase,
-uvm_phase_state state);
-string name;
-uvm_domain phase_domain =phase.get_domain();
-uvm_domain comp_domain = comp.get_domain();
-uvm_sequencer_base seqr;
+  function void m_traverse(uvm_component comp,
+                           uvm_phase phase,
+                           uvm_phase_state state);
+    string name;
+    uvm_domain phase_domain =phase.get_domain();
+    uvm_domain comp_domain = comp.get_domain();
+    uvm_sequencer_base seqr;
 
-if (comp.get_first_child(name))
-do
-  m_traverse(comp.get_child(name), phase, state);
-while(comp.get_next_child(name));
+    if (comp.get_first_child(name))
+    do
+      m_traverse(comp.get_child(name), phase, state);
+    while(comp.get_next_child(name));
 
-if (m_phase_trace)
-  `uvm_info("PH_TRACE",$sformatf("topdown-phase phase=%s state=%s comp=%s comp.domain=%s phase.domain=%s",
-          phase.get_name(), state.name(), comp.get_full_name(),comp_domain.get_name(),phase_domain.get_name()),
-  UVM_DEBUG)
+    if (m_phase_trace)
+      `uvm_info("PH_TRACE",$sformatf("topdown-phase phase=%s state=%s comp=%s comp.domain=%s phase.domain=%s",
+  phase.get_name(), state.name(), comp.get_full_name(),comp_domain.get_name(),phase_domain.get_name()),
+      UVM_DEBUG)
 
-if (phase_domain == uvm_domain::get_common_domain() ||
-phase_domain == comp_domain) begin
-  case (state)
-    UVM_PHASE_STARTED: begin
-      comp.m_current_phase = phase;
-      comp.m_apply_verbosity_settings(phase);
-      comp.phase_started(phase);
-      if ($cast(seqr, comp))
-        seqr.start_phase_sequence(phase);
+    if (phase_domain == uvm_domain::get_common_domain() ||
+    phase_domain == comp_domain) begin
+      case (state)
+        UVM_PHASE_STARTED: begin
+          comp.m_current_phase = phase;
+          comp.m_apply_verbosity_settings(phase);
+          comp.phase_started(phase);
+          if ($cast(seqr, comp))
+            seqr.start_phase_sequence(phase);
+        end
+        UVM_PHASE_EXECUTING: begin
+          uvm_phase ph = this; 
+          if (comp.m_phase_imps.exists(this))
+            ph = comp.m_phase_imps[this];
+          ph.execute(comp, phase);
+        end
+        UVM_PHASE_READY_TO_END: begin
+          comp.phase_ready_to_end(phase);
+        end
+        UVM_PHASE_ENDED: begin
+          if ($cast(seqr, comp))
+            seqr.stop_phase_sequence(phase);
+          comp.phase_ended(phase);
+          comp.m_current_phase = null;
+        end
+        default:
+        `uvm_fatal("PH_BADEXEC","task phase traverse internal error")
+      endcase
     end
-    UVM_PHASE_EXECUTING: begin
-      uvm_phase ph = this; 
-      if (comp.m_phase_imps.exists(this))
-        ph = comp.m_phase_imps[this];
-      ph.execute(comp, phase);
-    end
-    UVM_PHASE_READY_TO_END: begin
-      comp.phase_ready_to_end(phase);
-    end
-    UVM_PHASE_ENDED: begin
-      if ($cast(seqr, comp))
-        seqr.stop_phase_sequence(phase);
-      comp.phase_ended(phase);
-      comp.m_current_phase = null;
-    end
-    default:
-    `uvm_fatal("PH_BADEXEC","task phase traverse internal error")
-  endcase
-end
 
   endfunction
 
@@ -137,25 +137,25 @@ end
   // Fork the task-based phase ~phase~ for the component ~comp~. 
   //
   virtual function void execute(uvm_component comp,
-  uvm_phase phase);
+                                uvm_phase phase);
 
-  fork
-    begin
-      process proc;
+    fork
+      begin
+        process proc;
 
-      // reseed this process for random stability
-      proc = process::self();
-      proc.srandom(uvm_create_random_seed(phase.get_type_name(), comp.get_full_name()));
+        // reseed this process for random stability
+        proc = process::self();
+        proc.srandom(uvm_create_random_seed(phase.get_type_name(), comp.get_full_name()));
 
-      phase.m_num_procs_not_yet_returned++;
+        phase.m_num_procs_not_yet_returned++;
 
-      exec_task(comp,phase);
+        exec_task(comp,phase);
 
-      phase.m_num_procs_not_yet_returned--;
+        phase.m_num_procs_not_yet_returned--;
 
-    end
-  join_none
+      end
+    join_none
 
-endfunction
+  endfunction
 endclass
 

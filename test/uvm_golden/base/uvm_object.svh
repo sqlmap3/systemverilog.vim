@@ -922,20 +922,20 @@ endfunction
 // -------------
 
 function void  uvm_object::set_int_local (string      field_name,
-    uvm_bitstream_t value,
-bit         recurse=1);
-__m_uvm_status_container.cycle_check.delete();
-__m_uvm_status_container.m_uvm_cycle_scopes.delete();
+                                          uvm_bitstream_t value,
+                                          bit         recurse=1);
+  __m_uvm_status_container.cycle_check.delete();
+  __m_uvm_status_container.m_uvm_cycle_scopes.delete();
 
-this.__m_uvm_status_container.status = 0;
-this.__m_uvm_status_container.bitstream = value;
+  this.__m_uvm_status_container.status = 0;
+  this.__m_uvm_status_container.bitstream = value;
 
-__m_uvm_field_automation(null, UVM_SETINT, field_name);
+  __m_uvm_field_automation(null, UVM_SETINT, field_name);
 
-if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
-  uvm_report_error("NOMTC", $sformatf("did not find a match for field %s", field_name),UVM_NONE);
-end
-__m_uvm_status_container.cycle_check.delete();
+  if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
+    uvm_report_error("NOMTC", $sformatf("did not find a match for field %s", field_name),UVM_NONE);
+  end
+  __m_uvm_status_container.cycle_check.delete();
 endfunction
 
 
@@ -943,29 +943,29 @@ endfunction
 // ----------------
 
 function void  uvm_object::set_object_local (string     field_name,
-    uvm_object value,
-    bit        clone=1,
-bit        recurse=1);
-uvm_object cc;
-__m_uvm_status_container.cycle_check.delete();
-__m_uvm_status_container.m_uvm_cycle_scopes.delete();
+                                             uvm_object value,
+                                             bit        clone=1,
+                                             bit        recurse=1);
+  uvm_object cc;
+  __m_uvm_status_container.cycle_check.delete();
+  __m_uvm_status_container.m_uvm_cycle_scopes.delete();
 
-if(clone && (value!=null)) begin 
-  cc = value.clone();
-  if(cc != null) cc.set_name(field_name); 
-  value = cc; 
-end 
+  if(clone && (value!=null)) begin 
+    cc = value.clone();
+    if(cc != null) cc.set_name(field_name); 
+    value = cc; 
+  end 
 
-this.__m_uvm_status_container.status = 0;
-this.__m_uvm_status_container.object = value;
-__m_uvm_status_container.clone = clone;
+  this.__m_uvm_status_container.status = 0;
+  this.__m_uvm_status_container.object = value;
+  __m_uvm_status_container.clone = clone;
 
-__m_uvm_field_automation(null, UVM_SETOBJ, field_name);
+  __m_uvm_field_automation(null, UVM_SETOBJ, field_name);
 
-if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
-  uvm_report_error("NOMTC", $sformatf("did not find a match for field %s", field_name), UVM_NONE);
-end
-__m_uvm_status_container.cycle_check.delete();  
+  if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
+    uvm_report_error("NOMTC", $sformatf("did not find a match for field %s", field_name), UVM_NONE);
+  end
+  __m_uvm_status_container.cycle_check.delete();  
 
 endfunction
 
@@ -973,21 +973,21 @@ endfunction
 // set_string_local
 // ----------------
 function void  uvm_object::set_string_local (string field_name,
-    string value,
-bit    recurse=1);
+                                             string value,
+                                             bit    recurse=1);
 
-__m_uvm_status_container.cycle_check.delete();
-__m_uvm_status_container.m_uvm_cycle_scopes.delete();
+  __m_uvm_status_container.cycle_check.delete();
+  __m_uvm_status_container.m_uvm_cycle_scopes.delete();
 
-this.__m_uvm_status_container.status = 0;
-this.__m_uvm_status_container.stringv = value;
+  this.__m_uvm_status_container.status = 0;
+  this.__m_uvm_status_container.stringv = value;
 
-__m_uvm_field_automation(null, UVM_SETSTR, field_name);
+  __m_uvm_field_automation(null, UVM_SETSTR, field_name);
 
-if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
-  uvm_report_error("NOMTC", $sformatf("did not find a match for field %s (@%0d)", field_name, this.get_inst_id()), UVM_NONE);
-end
-__m_uvm_status_container.cycle_check.delete();
+  if(__m_uvm_status_container.warning && !this.__m_uvm_status_container.status) begin
+    uvm_report_error("NOMTC", $sformatf("did not find a match for field %s (@%0d)", field_name, this.get_inst_id()), UVM_NONE);
+  end
+  __m_uvm_status_container.cycle_check.delete();
 endfunction
 
 
@@ -1045,69 +1045,69 @@ endfunction
 // -------
 
 function bit  uvm_object::compare (uvm_object rhs,
-uvm_comparer comparer=null);
-bit t, dc;
-static int style;
-bit done;
-done = 0;
-if(comparer != null) 
-  __m_uvm_status_container.comparer = comparer;
-else 
-  __m_uvm_status_container.comparer = uvm_default_comparer;
-comparer = __m_uvm_status_container.comparer;
+                                   uvm_comparer comparer=null);
+  bit t, dc;
+  static int style;
+  bit done;
+  done = 0;
+  if(comparer != null) 
+    __m_uvm_status_container.comparer = comparer;
+  else 
+    __m_uvm_status_container.comparer = uvm_default_comparer;
+  comparer = __m_uvm_status_container.comparer;
 
-if(!__m_uvm_status_container.scope.depth()) begin
-  comparer.compare_map.delete();
-  comparer.result = 0;
-  comparer.miscompares = "";
-  comparer.scope = __m_uvm_status_container.scope;
-  if(get_name() == "")
-    __m_uvm_status_container.scope.down("<object>");
-  else
-    __m_uvm_status_container.scope.down(this.get_name());
-end
-if(!done && (rhs == null)) begin
-  if(__m_uvm_status_container.scope.depth()) begin
-    comparer.print_msg_object(this, rhs);
+  if(!__m_uvm_status_container.scope.depth()) begin
+    comparer.compare_map.delete();
+    comparer.result = 0;
+    comparer.miscompares = "";
+    comparer.scope = __m_uvm_status_container.scope;
+    if(get_name() == "")
+      __m_uvm_status_container.scope.down("<object>");
+    else
+      __m_uvm_status_container.scope.down(this.get_name());
   end
-  else begin
-    comparer.print_msg_object(this, rhs);
-    uvm_report_info("MISCMP",
-      $sformatf("%0d Miscompare(s) for object %s@%0d vs. null", 
-        comparer.result, 
-        __m_uvm_status_container.scope.get(),
-      this.get_inst_id()),
-    __m_uvm_status_container.comparer.verbosity);
-    done = 1;
+  if(!done && (rhs == null)) begin
+    if(__m_uvm_status_container.scope.depth()) begin
+      comparer.print_msg_object(this, rhs);
+    end
+    else begin
+      comparer.print_msg_object(this, rhs);
+      uvm_report_info("MISCMP",
+        $sformatf("%0d Miscompare(s) for object %s@%0d vs. null", 
+          comparer.result, 
+          __m_uvm_status_container.scope.get(),
+        this.get_inst_id()),
+      __m_uvm_status_container.comparer.verbosity);
+      done = 1;
+    end
   end
-end
 
-if(!done && comparer.compare_map.exists(rhs)) begin
-  if(comparer.compare_map[rhs] != this) begin
-    comparer.print_msg_object(this, comparer.compare_map[rhs]);
-  end 
-  done = 1;  //don't do any more work after this case, but do cleanup
-end
+  if(!done && comparer.compare_map.exists(rhs)) begin
+    if(comparer.compare_map[rhs] != this) begin
+      comparer.print_msg_object(this, comparer.compare_map[rhs]);
+    end 
+    done = 1;  //don't do any more work after this case, but do cleanup
+  end
 
-if(!done && comparer.check_type && (rhs != null) && (get_type_name() != rhs.get_type_name())) begin
-  __m_uvm_status_container.stringv = { "lhs type = \"", get_type_name(), 
-  "\" : rhs type = \"", rhs.get_type_name(), "\""};
-  comparer.print_msg(__m_uvm_status_container.stringv);
-end
+  if(!done && comparer.check_type && (rhs != null) && (get_type_name() != rhs.get_type_name())) begin
+    __m_uvm_status_container.stringv = { "lhs type = \"", get_type_name(), 
+    "\" : rhs type = \"", rhs.get_type_name(), "\""};
+    comparer.print_msg(__m_uvm_status_container.stringv);
+  end
 
-if(!done) begin
-  comparer.compare_map[rhs]= this;
-  __m_uvm_field_automation(rhs, UVM_COMPARE, "");
-  dc = do_compare(rhs, comparer);
-end
+  if(!done) begin
+    comparer.compare_map[rhs]= this;
+    __m_uvm_field_automation(rhs, UVM_COMPARE, "");
+    dc = do_compare(rhs, comparer);
+  end
 
-if(__m_uvm_status_container.scope.depth()==1)  begin
-  __m_uvm_status_container.scope.up();
-end
+  if(__m_uvm_status_container.scope.depth()==1)  begin
+    __m_uvm_status_container.scope.up();
+  end
 
-if(rhs != null)
-  comparer.print_rollup(this, rhs);
-return (comparer.result == 0 && dc == 1);
+  if(rhs != null)
+    comparer.print_rollup(this, rhs);
+  return (comparer.result == 0 && dc == 1);
 endfunction
 
 
@@ -1115,8 +1115,8 @@ endfunction
 // ----------
 
 function bit  uvm_object::do_compare (uvm_object rhs,
-uvm_comparer comparer);
-return 1;
+                                      uvm_comparer comparer);
+  return 1;
 endfunction
 
 
@@ -1124,9 +1124,9 @@ endfunction
 // ------------------
 
 function void uvm_object::__m_uvm_field_automation (uvm_object tmp_data__,
-    int        what__,
-string     str__ );
-return;
+                                                    int        what__,
+                                                    string     str__ );
+  return;
 endfunction
 
 
@@ -1167,20 +1167,20 @@ endfunction
 // ---- 
 
 function int uvm_object::pack (ref bit bitstream [],
-input uvm_packer packer =null );
-m_pack(packer);
-packer.get_bits(bitstream);
-return packer.get_packed_size();
+                               input uvm_packer packer =null );
+  m_pack(packer);
+  packer.get_bits(bitstream);
+  return packer.get_packed_size();
 endfunction
 
 // pack_bytes
 // ----------
 
 function int uvm_object::pack_bytes (ref byte unsigned bytestream [],
-input uvm_packer packer=null );
-m_pack(packer);
-packer.get_bytes(bytestream);
-return packer.get_packed_size();
+                                     input uvm_packer packer=null );
+  m_pack(packer);
+  packer.get_bytes(bytestream);
+  return packer.get_packed_size();
 endfunction
 
 
@@ -1188,10 +1188,10 @@ endfunction
 // ---------
 
 function int uvm_object::pack_ints (ref int unsigned intstream [],
-input uvm_packer packer=null );
-m_pack(packer);
-packer.get_ints(intstream);
-return packer.get_packed_size();
+                                    input uvm_packer packer=null );
+  m_pack(packer);
+  packer.get_ints(intstream);
+  return packer.get_packed_size();
 endfunction
 
 
@@ -1246,12 +1246,12 @@ endfunction
 // ------
 
 function int uvm_object::unpack (ref    bit        bitstream [],
-input  uvm_packer packer=null);
-m_unpack_pre(packer);
-packer.put_bits(bitstream);
-m_unpack_post(packer);
-packer.set_packed_size();
-return packer.get_packed_size();
+                                 input  uvm_packer packer=null);
+  m_unpack_pre(packer);
+  packer.put_bits(bitstream);
+  m_unpack_post(packer);
+  packer.set_packed_size();
+  return packer.get_packed_size();
 endfunction
 
 
@@ -1259,12 +1259,12 @@ endfunction
 // ------------
 
 function int uvm_object::unpack_bytes (ref    byte unsigned bytestream [],
-input  uvm_packer packer=null);
-m_unpack_pre(packer);
-packer.put_bytes(bytestream);
-m_unpack_post(packer);
-packer.set_packed_size();
-return packer.get_packed_size();
+                                       input  uvm_packer packer=null);
+  m_unpack_pre(packer);
+  packer.put_bytes(bytestream);
+  m_unpack_post(packer);
+  packer.set_packed_size();
+  return packer.get_packed_size();
 endfunction
 
 
@@ -1272,12 +1272,12 @@ endfunction
 // -----------
 
 function int uvm_object::unpack_ints (ref    int unsigned intstream [],
-input  uvm_packer packer=null);
-m_unpack_pre(packer);
-packer.put_ints(intstream);
-m_unpack_post(packer);
-packer.set_packed_size();
-return packer.get_packed_size();
+                                      input  uvm_packer packer=null);
+  m_unpack_pre(packer);
+  packer.put_ints(intstream);
+  m_unpack_post(packer);
+  packer.set_packed_size();
+  return packer.get_packed_size();
 endfunction
 
 

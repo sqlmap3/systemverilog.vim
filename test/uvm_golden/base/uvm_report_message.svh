@@ -118,282 +118,282 @@ class uvm_report_message_int_element extends uvm_report_message_element_base;
   //
 
   virtual function uvm_bitstream_t get_value(output int size, 
-  output uvm_radix_enum radix);
-  size = _size;
-  radix = _radix;
-  return _val;
-endfunction
+                                             output uvm_radix_enum radix);
+    size = _size;
+    radix = _radix;
+    return _val;
+  endfunction
 
 
-// Function: set_value
+  // Function: set_value
+  //
+  // Get or set the value (integral type) of the element, with size and radix
+  //
+
+  virtual function void set_value(uvm_bitstream_t value,
+                                  int size, 
+                                  uvm_radix_enum radix);
+    _size = size;
+    _radix = radix;
+    _val = value;
+  endfunction
+
+
+  virtual function void do_print(uvm_printer printer);
+    printer.print_int(_name, _val, _size, _radix);
+  endfunction : do_print
+
+  virtual function void do_record(uvm_recorder recorder);
+    recorder.record_field(_name, _val, _size, _radix);
+  endfunction : do_record
+
+  virtual function void do_copy(uvm_report_message_element_base rhs);
+    this_type _rhs;
+    $cast(_rhs, rhs);
+    _name = _rhs._name;
+    _val = _rhs._val;
+    _size = _rhs._size;
+    _radix = _rhs._radix;
+    _action = rhs._action;
+  endfunction : do_copy
+
+  virtual function uvm_report_message_element_base do_clone(); 
+    this_type tmp = new; 
+    tmp.copy(this); 
+    return tmp; 
+  endfunction : do_clone
+endclass : uvm_report_message_int_element
+
+
+//------------------------------------------------------------------------------
 //
-// Get or set the value (integral type) of the element, with size and radix
+// CLASS: uvm_report_message_string_element
 //
+// Message element class for string type
+//
+//------------------------------------------------------------------------------
 
-virtual function void set_value(uvm_bitstream_t value,
-    int size, 
-uvm_radix_enum radix);
-_size = size;
-_radix = radix;
-_val = value;
-   endfunction
-
-
-   virtual function void do_print(uvm_printer printer);
-     printer.print_int(_name, _val, _size, _radix);
-   endfunction : do_print
-
-   virtual function void do_record(uvm_recorder recorder);
-     recorder.record_field(_name, _val, _size, _radix);
-   endfunction : do_record
-
-   virtual function void do_copy(uvm_report_message_element_base rhs);
-     this_type _rhs;
-     $cast(_rhs, rhs);
-     _name = _rhs._name;
-     _val = _rhs._val;
-     _size = _rhs._size;
-     _radix = _rhs._radix;
-     _action = rhs._action;
-   endfunction : do_copy
-
-   virtual function uvm_report_message_element_base do_clone(); 
-     this_type tmp = new; 
-     tmp.copy(this); 
-     return tmp; 
-   endfunction : do_clone
- endclass : uvm_report_message_int_element
+class uvm_report_message_string_element extends uvm_report_message_element_base;
+  typedef uvm_report_message_string_element this_type;
+  protected string  _val;
 
 
- //------------------------------------------------------------------------------
- //
- // CLASS: uvm_report_message_string_element
- //
- // Message element class for string type
- //
- //------------------------------------------------------------------------------
+  // Function: get_value
+  //
 
- class uvm_report_message_string_element extends uvm_report_message_element_base;
-   typedef uvm_report_message_string_element this_type;
-   protected string  _val;
+  virtual function string get_value();
+    return _val;
+  endfunction
 
+  // Function: set_value
+  //
+  // Get or set the value (string type) of the element
+  //
 
-   // Function: get_value
-   //
-
-   virtual function string get_value();
-     return _val;
-   endfunction
-
-   // Function: set_value
-   //
-   // Get or set the value (string type) of the element
-   //
-
-   virtual function void set_value(string value);
-     _val = value;
-   endfunction
+  virtual function void set_value(string value);
+    _val = value;
+  endfunction
 
 
-   virtual function void do_print(uvm_printer printer);
-     printer.print_string(_name, _val);
-   endfunction : do_print
+  virtual function void do_print(uvm_printer printer);
+    printer.print_string(_name, _val);
+  endfunction : do_print
 
-   virtual function void do_record(uvm_recorder recorder);
-     recorder.record_string(_name, _val);
-   endfunction : do_record
+  virtual function void do_record(uvm_recorder recorder);
+    recorder.record_string(_name, _val);
+  endfunction : do_record
 
-   virtual function void do_copy(uvm_report_message_element_base rhs);
-     this_type _rhs;
-     $cast(_rhs, rhs);
-     _name = _rhs._name;
-     _val = _rhs._val;
-     _action = rhs._action;
-   endfunction : do_copy
+  virtual function void do_copy(uvm_report_message_element_base rhs);
+    this_type _rhs;
+    $cast(_rhs, rhs);
+    _name = _rhs._name;
+    _val = _rhs._val;
+    _action = rhs._action;
+  endfunction : do_copy
 
-   virtual function uvm_report_message_element_base do_clone(); 
-     this_type tmp = new; 
-     tmp.copy(this); 
-     return tmp; 
-   endfunction : do_clone
- endclass : uvm_report_message_string_element
-
-
- //------------------------------------------------------------------------------
- //
- // CLASS: uvm_report_message_object_element
- //
- // Message element class for object type
- //
- //------------------------------------------------------------------------------
-
- class uvm_report_message_object_element extends uvm_report_message_element_base;
-   typedef uvm_report_message_object_element this_type;
-   protected uvm_object _val;
+  virtual function uvm_report_message_element_base do_clone(); 
+    this_type tmp = new; 
+    tmp.copy(this); 
+    return tmp; 
+  endfunction : do_clone
+endclass : uvm_report_message_string_element
 
 
-   // Function: get_value
-   //
-   // Get the value (object reference) of the element
-   //
+//------------------------------------------------------------------------------
+//
+// CLASS: uvm_report_message_object_element
+//
+// Message element class for object type
+//
+//------------------------------------------------------------------------------
 
-   virtual function uvm_object get_value();
-     return _val;
-   endfunction
-
-   // Function: set_value
-   //
-   // Get or set the value (object reference) of the element
-   //
-
-   virtual function void set_value(uvm_object value);
-     _val = value;
-   endfunction
+class uvm_report_message_object_element extends uvm_report_message_element_base;
+  typedef uvm_report_message_object_element this_type;
+  protected uvm_object _val;
 
 
-   virtual function void do_print(uvm_printer printer);
-     printer.print_object(_name, _val);
-   endfunction : do_print
+  // Function: get_value
+  //
+  // Get the value (object reference) of the element
+  //
 
-   virtual function void do_record(uvm_recorder recorder);
-     recorder.record_object(_name, _val);
-   endfunction : do_record
+  virtual function uvm_object get_value();
+    return _val;
+  endfunction
 
-   virtual function void do_copy(uvm_report_message_element_base rhs);
-     this_type _rhs;
-     $cast(_rhs, rhs);
-     _name = _rhs._name;
-     _val = _rhs._val;
-     _action = rhs._action;
-   endfunction : do_copy
+  // Function: set_value
+  //
+  // Get or set the value (object reference) of the element
+  //
 
-   virtual function uvm_report_message_element_base do_clone(); 
-     this_type tmp = new; 
-     tmp.copy(this); 
-     return tmp; 
-   endfunction : do_clone
- endclass : uvm_report_message_object_element
-
- //------------------------------------------------------------------------------
- //
- // CLASS: uvm_report_message_element_container
- //
- // A container used by report message to contain the dynamically added elements,
- // with APIs to add and delete the elements.
- //
- //------------------------------------------------------------------------------
-
- class uvm_report_message_element_container extends uvm_object;
-
-   protected uvm_report_message_element_base elements[$];
-
-   `uvm_object_utils(uvm_report_message_element_container)
-
-   // Function: new
-   //
-   // Create a new uvm_report_message_element_container object
-   //
-
-   function new(string name = "element_container");
-     super.new(name);
-   endfunction
+  virtual function void set_value(uvm_object value);
+    _val = value;
+  endfunction
 
 
-   // Function: size
-   //
-   // Returns the size of the container, i.e. the number of elements
-   //
+  virtual function void do_print(uvm_printer printer);
+    printer.print_object(_name, _val);
+  endfunction : do_print
 
-   virtual function int size();
-     return elements.size();
-   endfunction
+  virtual function void do_record(uvm_recorder recorder);
+    recorder.record_object(_name, _val);
+  endfunction : do_record
 
+  virtual function void do_copy(uvm_report_message_element_base rhs);
+    this_type _rhs;
+    $cast(_rhs, rhs);
+    _name = _rhs._name;
+    _val = _rhs._val;
+    _action = rhs._action;
+  endfunction : do_copy
 
-   // Function: delete
-   //
-   // Delete the ~index~-th element in the container
-   //
+  virtual function uvm_report_message_element_base do_clone(); 
+    this_type tmp = new; 
+    tmp.copy(this); 
+    return tmp; 
+  endfunction : do_clone
+endclass : uvm_report_message_object_element
 
-   virtual function void delete(int index);
-     elements.delete(index);
-   endfunction
+//------------------------------------------------------------------------------
+//
+// CLASS: uvm_report_message_element_container
+//
+// A container used by report message to contain the dynamically added elements,
+// with APIs to add and delete the elements.
+//
+//------------------------------------------------------------------------------
 
+class uvm_report_message_element_container extends uvm_object;
 
-   // Function: delete_elements
-   //
-   // Delete all the elements in the container
-   //
+  protected uvm_report_message_element_base elements[$];
 
-   virtual function void delete_elements();
-     elements.delete();
-   endfunction
+  `uvm_object_utils(uvm_report_message_element_container)
 
+  // Function: new
+  //
+  // Create a new uvm_report_message_element_container object
+  //
 
-   // Function: get_elements
-   //
-   // Get all the elements from the container and put them in a queue
-   //
-
-   typedef uvm_report_message_element_base queue_of_element[$];
-   virtual function queue_of_element get_elements();
-     return elements;
-   endfunction
-
-
-   // Function: add_int
-   // 
-   // This method adds an integral type of the name ~name~ and value ~value~ to
-   // the container.  The required ~size~ field indicates the size of ~value~. 
-   // The required ~radix~ field determines how to display and 
-   // record the field. The optional print/record bit is to specify whether 
-   // the element will be printed/recorded.
-   //
-
-   virtual function void add_int(string name, uvm_bitstream_t value, 
-       int size, uvm_radix_enum radix,
-   uvm_action action = (UVM_LOG|UVM_RM_RECORD));
-   process p;
-   string rand_state;
-   uvm_report_message_int_element urme;
-
-   p = process::self();
-   if (p != null)
-     rand_state = p.get_randstate();
-   urme = new();
-   if (p != null)
-     p.set_randstate(rand_state);
-
-   urme.set_name(name);
-   urme.set_value(value, size, radix);
-   urme.set_action(action);
-   elements.push_back(urme);
- endfunction
+  function new(string name = "element_container");
+    super.new(name);
+  endfunction
 
 
- // Function: add_string
- // 
- // This method adds a string of the name ~name~ and value ~value~ to the 
- // message. The optional print/record bit is to specify whether 
- // the element will be printed/recorded.
- //
+  // Function: size
+  //
+  // Returns the size of the container, i.e. the number of elements
+  //
 
- virtual function void add_string(string name, string value, 
- uvm_action action = (UVM_LOG|UVM_RM_RECORD));
- process p;
- string rand_state;
- uvm_report_message_string_element urme;
+  virtual function int size();
+    return elements.size();
+  endfunction
 
- p = process::self();
- if (p != null)
-   rand_state = p.get_randstate();
- urme = new();
- if (p != null)
-   p.set_randstate(rand_state);
 
- urme.set_name(name);
- urme.set_value(value);
- urme.set_action(action);
- elements.push_back(urme);
+  // Function: delete
+  //
+  // Delete the ~index~-th element in the container
+  //
+
+  virtual function void delete(int index);
+    elements.delete(index);
+  endfunction
+
+
+  // Function: delete_elements
+  //
+  // Delete all the elements in the container
+  //
+
+  virtual function void delete_elements();
+    elements.delete();
+  endfunction
+
+
+  // Function: get_elements
+  //
+  // Get all the elements from the container and put them in a queue
+  //
+
+  typedef uvm_report_message_element_base queue_of_element[$];
+  virtual function queue_of_element get_elements();
+    return elements;
+  endfunction
+
+
+  // Function: add_int
+  // 
+  // This method adds an integral type of the name ~name~ and value ~value~ to
+  // the container.  The required ~size~ field indicates the size of ~value~. 
+  // The required ~radix~ field determines how to display and 
+  // record the field. The optional print/record bit is to specify whether 
+  // the element will be printed/recorded.
+  //
+
+  virtual function void add_int(string name, uvm_bitstream_t value, 
+                                int size, uvm_radix_enum radix,
+                                uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    process p;
+    string rand_state;
+    uvm_report_message_int_element urme;
+
+    p = process::self();
+    if (p != null)
+      rand_state = p.get_randstate();
+    urme = new();
+    if (p != null)
+      p.set_randstate(rand_state);
+
+    urme.set_name(name);
+    urme.set_value(value, size, radix);
+    urme.set_action(action);
+    elements.push_back(urme);
+  endfunction
+
+
+  // Function: add_string
+  // 
+  // This method adds a string of the name ~name~ and value ~value~ to the 
+  // message. The optional print/record bit is to specify whether 
+  // the element will be printed/recorded.
+  //
+
+  virtual function void add_string(string name, string value, 
+                                   uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    process p;
+    string rand_state;
+    uvm_report_message_string_element urme;
+
+    p = process::self();
+    if (p != null)
+      rand_state = p.get_randstate();
+    urme = new();
+    if (p != null)
+      p.set_randstate(rand_state);
+
+    urme.set_name(name);
+    urme.set_value(value);
+    urme.set_action(action);
+    elements.push_back(urme);
   endfunction
 
 
@@ -405,51 +405,51 @@ _val = value;
   //
 
   virtual function void add_object(string name, uvm_object obj, 
-  uvm_action action = (UVM_LOG|UVM_RM_RECORD));
-  process p;
-  string rand_state;
-  uvm_report_message_object_element urme;
+                                   uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    process p;
+    string rand_state;
+    uvm_report_message_object_element urme;
 
-  p = process::self();
-  if (p != null)
-    rand_state = p.get_randstate();
-  urme = new();
-  if (p != null)
-    p.set_randstate(rand_state);
+    p = process::self();
+    if (p != null)
+      rand_state = p.get_randstate();
+    urme = new();
+    if (p != null)
+      p.set_randstate(rand_state);
 
-  urme.set_name(name);
-  urme.set_value(obj);
-  urme.set_action(action);
-  elements.push_back(urme);
-endfunction
+    urme.set_name(name);
+    urme.set_value(obj);
+    urme.set_action(action);
+    elements.push_back(urme);
+  endfunction
 
-virtual function void do_print(uvm_printer printer);
-  super.do_print(printer);
-  for(int i = 0; i < elements.size(); i++) begin
-    elements[i].print(printer);
-  end 
-endfunction
+  virtual function void do_print(uvm_printer printer);
+    super.do_print(printer);
+    for(int i = 0; i < elements.size(); i++) begin
+      elements[i].print(printer);
+    end 
+  endfunction
 
-virtual function void do_record(uvm_recorder recorder);
-  super.do_record(recorder);
-  for(int i = 0; i < elements.size(); i++) begin
-    elements[i].record(recorder);
-  end
-endfunction
+  virtual function void do_record(uvm_recorder recorder);
+    super.do_record(recorder);
+    for(int i = 0; i < elements.size(); i++) begin
+      elements[i].record(recorder);
+    end
+  endfunction
 
-virtual function void do_copy(uvm_object rhs);
-  uvm_report_message_element_container urme_container;
+  virtual function void do_copy(uvm_object rhs);
+    uvm_report_message_element_container urme_container;
 
-  super.do_copy(rhs);
+    super.do_copy(rhs);
 
-  if(!$cast(urme_container, rhs) || (rhs==null))
-    return;
+    if(!$cast(urme_container, rhs) || (rhs==null))
+      return;
 
-  delete_elements();
-  foreach (urme_container.elements[i])
-    elements.push_back(urme_container.elements[i].clone());
+    delete_elements();
+    foreach (urme_container.elements[i])
+      elements.push_back(urme_container.elements[i].clone());
 
-endfunction
+  endfunction
 
 endclass
 
@@ -828,83 +828,83 @@ class uvm_report_message extends uvm_object;
   //
 
   virtual function void set_report_message(uvm_severity severity, 
-      string id,
-      string message,
-      int verbosity, 
-      string filename,
-      int line,
-  string context_name);
-  this._context_name = context_name;
-  this._filename = filename;
-  this._line = line;
-  this._severity = severity;
-  this._id = id;
-  this._message = message;
-  this._verbosity = verbosity;
-endfunction
+                                           string id,
+                                           string message,
+                                           int verbosity, 
+                                           string filename,
+                                           int line,
+                                           string context_name);
+    this._context_name = context_name;
+    this._filename = filename;
+    this._line = line;
+    this._severity = severity;
+    this._id = id;
+    this._message = message;
+    this._verbosity = verbosity;
+  endfunction
 
 
-//----------------------------------------------------------------------------
-// Group-  Message Recording
-//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  // Group-  Message Recording
+  //----------------------------------------------------------------------------
 
-// Not documented.
-virtual function void m_record_message(uvm_recorder recorder);
-  recorder.record_string("message", _message);
-endfunction
-
-
-// Not documented.
-virtual function void m_record_core_properties(uvm_recorder recorder);
-
-  string l_string;
-  uvm_verbosity l_verbosity;
-
-  if (_context_name != "")
-    recorder.record_string("context_name", _context_name);
-  recorder.record_string("filename", _filename);
-  recorder.record_field("line", _line, $bits(_line), UVM_UNSIGNED);
-  recorder.record_string("severity", _severity.name());
-  if ($cast(l_verbosity, _verbosity))
-    recorder.record_string("verbosity", l_verbosity.name());
-  else begin
-    l_string.itoa(_verbosity);
-    recorder.record_string("verbosity", l_string);
-  end
-
-  recorder.record_string("id", _id);
-  m_record_message(recorder);
-endfunction
-
-// Not documented.
-virtual function void do_record(uvm_recorder recorder);
-
-  super.do_record(recorder);
-
-  m_record_core_properties(recorder);
-  _report_message_element_container.record(recorder);
-
-endfunction
+  // Not documented.
+  virtual function void m_record_message(uvm_recorder recorder);
+    recorder.record_string("message", _message);
+  endfunction
 
 
-//----------------------------------------------------------------------------
-// Group:  Message Element APIs
-//----------------------------------------------------------------------------
+  // Not documented.
+  virtual function void m_record_core_properties(uvm_recorder recorder);
+
+    string l_string;
+    uvm_verbosity l_verbosity;
+
+    if (_context_name != "")
+      recorder.record_string("context_name", _context_name);
+    recorder.record_string("filename", _filename);
+    recorder.record_field("line", _line, $bits(_line), UVM_UNSIGNED);
+    recorder.record_string("severity", _severity.name());
+    if ($cast(l_verbosity, _verbosity))
+      recorder.record_string("verbosity", l_verbosity.name());
+    else begin
+      l_string.itoa(_verbosity);
+      recorder.record_string("verbosity", l_string);
+    end
+
+    recorder.record_string("id", _id);
+    m_record_message(recorder);
+  endfunction
+
+  // Not documented.
+  virtual function void do_record(uvm_recorder recorder);
+
+    super.do_record(recorder);
+
+    m_record_core_properties(recorder);
+    _report_message_element_container.record(recorder);
+
+  endfunction
 
 
-// Function: add_int
-// 
-// This method adds an integral type of the name ~name~ and value ~value~ to
-// the message.  The required ~size~ field indicates the size of ~value~. 
-// The required ~radix~ field determines how to display and 
-// record the field. The optional print/record bit is to specify whether 
-// the element will be printed/recorded.
-//
+  //----------------------------------------------------------------------------
+  // Group:  Message Element APIs
+  //----------------------------------------------------------------------------
 
-virtual function void add_int(string name, uvm_bitstream_t value, 
-    int size, uvm_radix_enum radix, 
-uvm_action action = (UVM_LOG|UVM_RM_RECORD));
-_report_message_element_container.add_int(name, value, size, radix, action);
+
+  // Function: add_int
+  // 
+  // This method adds an integral type of the name ~name~ and value ~value~ to
+  // the message.  The required ~size~ field indicates the size of ~value~. 
+  // The required ~radix~ field determines how to display and 
+  // record the field. The optional print/record bit is to specify whether 
+  // the element will be printed/recorded.
+  //
+
+  virtual function void add_int(string name, uvm_bitstream_t value, 
+                                int size, uvm_radix_enum radix, 
+                                uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    _report_message_element_container.add_int(name, value, size, radix, action);
   endfunction
 
 
@@ -916,21 +916,21 @@ _report_message_element_container.add_int(name, value, size, radix, action);
   //
 
   virtual function void add_string(string name, string value,
-  uvm_action action = (UVM_LOG|UVM_RM_RECORD));
-  _report_message_element_container.add_string(name, value, action);
-endfunction
+                                   uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    _report_message_element_container.add_string(name, value, action);
+  endfunction
 
 
-// Function: add_object
-// 
-// This method adds a uvm_object of the name ~name~ and reference ~obj~ to
-// the message. The optional print/record bit is to specify whether 
-// the element will be printed/recorded. 
-//
+  // Function: add_object
+  // 
+  // This method adds a uvm_object of the name ~name~ and reference ~obj~ to
+  // the message. The optional print/record bit is to specify whether 
+  // the element will be printed/recorded. 
+  //
 
-virtual function void add_object(string name, uvm_object obj,
-uvm_action action = (UVM_LOG|UVM_RM_RECORD));
-_report_message_element_container.add_object(name, obj, action);
+  virtual function void add_object(string name, uvm_object obj,
+                                   uvm_action action = (UVM_LOG|UVM_RM_RECORD));
+    _report_message_element_container.add_object(name, obj, action);
   endfunction
 
 endclass

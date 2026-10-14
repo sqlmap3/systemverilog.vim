@@ -223,46 +223,46 @@ virtual class uvm_reg_cbs extends uvm_callback;
   // modify the predicted mirror value.
   //
   virtual function void post_predict(input uvm_reg_field  fld,
-      input uvm_reg_data_t previous,
-      inout uvm_reg_data_t value,
-      input uvm_predict_e  kind,
-      input uvm_path_e     path,
-  input uvm_reg_map    map);
-endfunction
+                                     input uvm_reg_data_t previous,
+                                     inout uvm_reg_data_t value,
+                                     input uvm_predict_e  kind,
+                                     input uvm_path_e     path,
+                                     input uvm_reg_map    map);
+  endfunction
 
 
-// Function: encode
-//
-// Data encoder
-//
-// The registered callback methods are invoked in order of registration
-// after all the ~pre_write~ methods have been called.
-// The encoded data is passed through each invocation in sequence.
-// This allows the ~pre_write~ methods to deal with clear-text data.
-//
-// By default, the data is not modified.
-//
-virtual function void encode(ref uvm_reg_data_t data[]);
-endfunction
+  // Function: encode
+  //
+  // Data encoder
+  //
+  // The registered callback methods are invoked in order of registration
+  // after all the ~pre_write~ methods have been called.
+  // The encoded data is passed through each invocation in sequence.
+  // This allows the ~pre_write~ methods to deal with clear-text data.
+  //
+  // By default, the data is not modified.
+  //
+  virtual function void encode(ref uvm_reg_data_t data[]);
+  endfunction
 
 
-// Function: decode
-//
-// Data decode
-//
-// The registered callback methods are invoked in ~reverse order~
-// of registration before all the ~post_read~ methods are called.
-// The decoded data is passed through each invocation in sequence.
-// This allows the ~post_read~ methods to deal with clear-text data.
-//
-// The reversal of the invocation order is to allow the decoding
-// of the data to be performed in the opposite order of the encoding
-// with both operations specified in the same callback extension.
-// 
-// By default, the data is not modified.
-//
-virtual function void decode(ref uvm_reg_data_t data[]);
-endfunction
+  // Function: decode
+  //
+  // Data decode
+  //
+  // The registered callback methods are invoked in ~reverse order~
+  // of registration before all the ~post_read~ methods are called.
+  // The decoded data is passed through each invocation in sequence.
+  // This allows the ~post_read~ methods to deal with clear-text data.
+  //
+  // The reversal of the invocation order is to allow the decoding
+  // of the data to be performed in the opposite order of the encoding
+  // with both operations specified in the same callback extension.
+  // 
+  // By default, the data is not modified.
+  //
+  virtual function void decode(ref uvm_reg_data_t data[]);
+  endfunction
 
 
 

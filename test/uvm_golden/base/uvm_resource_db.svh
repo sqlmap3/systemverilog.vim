@@ -76,49 +76,49 @@ class uvm_resource_db #(type T=uvm_object);
   // a warning if no matching resource is found.
 
   static function rsrc_t get_by_name(string scope,
-      string name,
-  bit rpterr=1);
+                                     string name,
+                                     bit rpterr=1);
 
-  return rsrc_t::get_by_name(scope, name, rpterr);
-endfunction
+    return rsrc_t::get_by_name(scope, name, rpterr);
+  endfunction
 
-// function: set_default
-//
-// add a new item into the resources database.  The item will not be
-// written to so it will have its default value. The resource is
-// created using ~name~ and ~scope~ as the lookup parameters.
+  // function: set_default
+  //
+  // add a new item into the resources database.  The item will not be
+  // written to so it will have its default value. The resource is
+  // created using ~name~ and ~scope~ as the lookup parameters.
 
-static function rsrc_t set_default(string scope, string name);
+  static function rsrc_t set_default(string scope, string name);
 
-  rsrc_t r;
+    rsrc_t r;
 
-  r = new(name, scope);
-  r.set();
-  return r;
-endfunction
+    r = new(name, scope);
+    r.set();
+    return r;
+  endfunction
 
-// function- show_msg
+  // function- show_msg
 
-// internal helper function to print resource accesses
+  // internal helper function to print resource accesses
 
-protected static function void m_show_msg(
-    input string id,
-    input string rtype,
-    input string action,
-    input string scope,
-    input string name,
-    input uvm_object accessor,
-input rsrc_t rsrc);
+  protected static function void m_show_msg(
+                                            input string id,
+                                            input string rtype,
+                                            input string action,
+                                            input string scope,
+                                            input string name,
+                                            input uvm_object accessor,
+                                            input rsrc_t rsrc);
 
-T foo;
-string msg=`uvm_typename(foo);
+    T foo;
+    string msg=`uvm_typename(foo);
 
-$sformat(msg, "%s '%s%s' (type %s) %s by %s = %s",
-  rtype,scope, name=="" ? "" : {".",name}, msg,action,
-  (accessor != null) ? accessor.get_full_name() : "<unknown>",
-rsrc==null?"null (failed lookup)":rsrc.convert2string());
+    $sformat(msg, "%s '%s%s' (type %s) %s by %s = %s",
+      rtype,scope, name=="" ? "" : {".",name}, msg,action,
+      (accessor != null) ? accessor.get_full_name() : "<unknown>",
+    rsrc==null?"null (failed lookup)":rsrc.convert2string());
 
-`uvm_info(id, msg, UVM_LOW)
+    `uvm_info(id, msg, UVM_LOW)
   endfunction
 
   // function: set
@@ -127,31 +127,31 @@ rsrc==null?"null (failed lookup)":rsrc.convert2string());
   // database using ~name~ and ~scope~ as the lookup parameters. The
   // ~accessor~ is used for auditing.
   static function void set(input string scope, input string name,
-  T val, input uvm_object accessor = null);
+                           T val, input uvm_object accessor = null);
 
-  rsrc_t rsrc = new(name, scope);
-  rsrc.write(val, accessor);
-  rsrc.set();
+    rsrc_t rsrc = new(name, scope);
+    rsrc.write(val, accessor);
+    rsrc.set();
 
-  if(uvm_resource_db_options::is_tracing())
-    m_show_msg("RSRCDB/SET", "Resource","set", scope, name, accessor, rsrc);
-endfunction
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/SET", "Resource","set", scope, name, accessor, rsrc);
+  endfunction
 
-// function: set_anonymous
-//
-// Create a new resource, write a ~val~ to it, and set it into the
-// database.  The resource has no name and therefore will not be
-// entered into the name map. But is does have a ~scope~ for lookup
-// purposes. The ~accessor~ is used for auditing.
-static function void set_anonymous(input string scope,
-T val, input uvm_object accessor = null);
+  // function: set_anonymous
+  //
+  // Create a new resource, write a ~val~ to it, and set it into the
+  // database.  The resource has no name and therefore will not be
+  // entered into the name map. But is does have a ~scope~ for lookup
+  // purposes. The ~accessor~ is used for auditing.
+  static function void set_anonymous(input string scope,
+                                     T val, input uvm_object accessor = null);
 
-rsrc_t rsrc = new("", scope);
-rsrc.write(val, accessor);
-rsrc.set();
+    rsrc_t rsrc = new("", scope);
+    rsrc.write(val, accessor);
+    rsrc.set();
 
-if(uvm_resource_db_options::is_tracing())
-  m_show_msg("RSRCDB/SETANON","Resource", "set", scope, "", accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/SETANON","Resource", "set", scope, "", accessor, rsrc);
   endfunction
 
   // function set_override
@@ -162,33 +162,33 @@ if(uvm_resource_db_options::is_tracing())
   // resource with the specified name and type.
 
   static function void set_override(input string scope, input string name,
-  T val, uvm_object accessor = null);
-  rsrc_t rsrc = new(name, scope);
-  rsrc.write(val, accessor);
-  rsrc.set_override();
+                                    T val, uvm_object accessor = null);
+    rsrc_t rsrc = new(name, scope);
+    rsrc.write(val, accessor);
+    rsrc.set_override();
 
-  if(uvm_resource_db_options::is_tracing())
-    m_show_msg("RSRCDB/SETOVRD", "Resource","set", scope, name, accessor, rsrc);
-endfunction
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/SETOVRD", "Resource","set", scope, name, accessor, rsrc);
+  endfunction
 
 
 
-// function set_override_type
-//
-// Create a new resource, write ~val~ to it, and set it into the
-// database.  Set it at the beginning of the queue in the type map so
-// that it will be (currently) the highest priority resource with the
-// specified type. It will be normal priority (i.e. at the end of the
-// queue) in the name map.
+  // function set_override_type
+  //
+  // Create a new resource, write ~val~ to it, and set it into the
+  // database.  Set it at the beginning of the queue in the type map so
+  // that it will be (currently) the highest priority resource with the
+  // specified type. It will be normal priority (i.e. at the end of the
+  // queue) in the name map.
 
-static function void set_override_type(input string scope, input string name,
-T val, uvm_object accessor = null);
-rsrc_t rsrc = new(name, scope);
-rsrc.write(val, accessor);
-rsrc.set_override(uvm_resource_types::TYPE_OVERRIDE);
+  static function void set_override_type(input string scope, input string name,
+                                         T val, uvm_object accessor = null);
+    rsrc_t rsrc = new(name, scope);
+    rsrc.write(val, accessor);
+    rsrc.set_override(uvm_resource_types::TYPE_OVERRIDE);
 
-if(uvm_resource_db_options::is_tracing())
-  m_show_msg("RSRCDB/SETOVRDTYP","Resource", "set", scope, name, accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/SETOVRDTYP","Resource", "set", scope, name, accessor, rsrc);
   endfunction
 
   // function set_override_name
@@ -200,36 +200,36 @@ if(uvm_resource_db_options::is_tracing())
   // queue) in the type map.
 
   static function void set_override_name(input string scope, input string name,
-  T val, uvm_object accessor = null);
-  rsrc_t rsrc = new(name, scope);
-  rsrc.write(val, accessor);
-  rsrc.set_override(uvm_resource_types::NAME_OVERRIDE);
+                                         T val, uvm_object accessor = null);
+    rsrc_t rsrc = new(name, scope);
+    rsrc.write(val, accessor);
+    rsrc.set_override(uvm_resource_types::NAME_OVERRIDE);
 
-  if(uvm_resource_db_options::is_tracing())
-    m_show_msg("RSRCDB/SETOVRDNAM","Resource", "set", scope, name, accessor, rsrc);
-endfunction
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/SETOVRDNAM","Resource", "set", scope, name, accessor, rsrc);
+  endfunction
 
-// function: read_by_name
-//
-// locate a resource by ~name~ and ~scope~ and read its value. The value 
-// is returned through the output argument ~val~.  The return value is a bit 
-// that indicates whether or not the read was successful. The ~accessor~
-// is used for auditing.
-static function bit read_by_name(input string scope,
-    input string name,
-inout T val, input uvm_object accessor = null);
+  // function: read_by_name
+  //
+  // locate a resource by ~name~ and ~scope~ and read its value. The value 
+  // is returned through the output argument ~val~.  The return value is a bit 
+  // that indicates whether or not the read was successful. The ~accessor~
+  // is used for auditing.
+  static function bit read_by_name(input string scope,
+                                   input string name,
+                                   inout T val, input uvm_object accessor = null);
 
-rsrc_t rsrc = get_by_name(scope, name);
+    rsrc_t rsrc = get_by_name(scope, name);
 
-if(uvm_resource_db_options::is_tracing())
-  m_show_msg("RSRCDB/RDBYNAM","Resource", "read", scope, name, accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/RDBYNAM","Resource", "read", scope, name, accessor, rsrc);
 
-if(rsrc == null)
-  return 0;
+    if(rsrc == null)
+      return 0;
 
-val = rsrc.read(accessor);
+    val = rsrc.read(accessor);
 
-return 1;
+    return 1;
 
   endfunction
 
@@ -240,49 +240,49 @@ return 1;
   // value is a bit that indicates whether or not the read is successful.
   // The ~accessor~ is used for auditing.
   static function bit read_by_type(input string scope,
-      inout T val,
-  input uvm_object accessor = null);
+                                   inout T val,
+                                   input uvm_object accessor = null);
 
-  rsrc_t rsrc = get_by_type(scope);
+    rsrc_t rsrc = get_by_type(scope);
 
-  if(uvm_resource_db_options::is_tracing())
-    m_show_msg("RSRCDB/RDBYTYP", "Resource","read", scope, "", accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/RDBYTYP", "Resource","read", scope, "", accessor, rsrc);
 
-  if(rsrc == null)
-    return 0;
+    if(rsrc == null)
+      return 0;
 
-  val = rsrc.read(accessor);
+    val = rsrc.read(accessor);
 
-  return 1;
+    return 1;
 
-endfunction
+  endfunction
 
-// function: write_by_name
-//
-// write a ~val~ into the resources database.  First, look up the
-// resource by ~name~ and ~scope~.  If it is not located then add a new 
-// resource to the database and then write its value.
-//
-// Because the ~scope~ is matched to a resource which may be a
-// regular expression, and consequently may target other scopes beyond
-// the ~scope~ argument. Care must be taken with this function. If
-// a <get_by_name> match is found for ~name~ and ~scope~ then ~val~
-// will be written to that matching resource and thus may impact
-// other scopes which also match the resource.
-static function bit write_by_name(input string scope, input string name,
-input T val, input uvm_object accessor = null);
+  // function: write_by_name
+  //
+  // write a ~val~ into the resources database.  First, look up the
+  // resource by ~name~ and ~scope~.  If it is not located then add a new 
+  // resource to the database and then write its value.
+  //
+  // Because the ~scope~ is matched to a resource which may be a
+  // regular expression, and consequently may target other scopes beyond
+  // the ~scope~ argument. Care must be taken with this function. If
+  // a <get_by_name> match is found for ~name~ and ~scope~ then ~val~
+  // will be written to that matching resource and thus may impact
+  // other scopes which also match the resource.
+  static function bit write_by_name(input string scope, input string name,
+                                    input T val, input uvm_object accessor = null);
 
-rsrc_t rsrc = get_by_name(scope, name);
+    rsrc_t rsrc = get_by_name(scope, name);
 
-if(uvm_resource_db_options::is_tracing())
-  m_show_msg("RSRCDB/WR","Resource", "written", scope, name, accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/WR","Resource", "written", scope, name, accessor, rsrc);
 
-if(rsrc == null)
-  return 0;
+    if(rsrc == null)
+      return 0;
 
-rsrc.write(val, accessor);
+    rsrc.write(val, accessor);
 
-return 1;
+    return 1;
 
   endfunction
 
@@ -299,32 +299,32 @@ return 1;
   // will be written to that matching resource and thus may impact
   // other scopes which also match the resource.
   static function bit write_by_type(input string scope,
-  input T val, input uvm_object accessor = null);
+                                    input T val, input uvm_object accessor = null);
 
-  rsrc_t rsrc = get_by_type(scope);
+    rsrc_t rsrc = get_by_type(scope);
 
-  if(uvm_resource_db_options::is_tracing())
-    m_show_msg("RSRCDB/WRTYP", "Resource","written", scope, "", accessor, rsrc);
+    if(uvm_resource_db_options::is_tracing())
+      m_show_msg("RSRCDB/WRTYP", "Resource","written", scope, "", accessor, rsrc);
 
-  if(rsrc == null)
-    return 0;
+    if(rsrc == null)
+      return 0;
 
-  rsrc.write(val, accessor);
+    rsrc.write(val, accessor);
 
-  return 1;
-endfunction
+    return 1;
+  endfunction
 
-// function: dump
-//
-// Dump all the resources in the resource pool. This is useful for
-// debugging purposes.  This function does not use the parameter T, so
-// it will dump the same thing -- the entire database -- no matter the
-// value of the parameter.
+  // function: dump
+  //
+  // Dump all the resources in the resource pool. This is useful for
+  // debugging purposes.  This function does not use the parameter T, so
+  // it will dump the same thing -- the entire database -- no matter the
+  // value of the parameter.
 
-static function void dump();
-  uvm_resource_pool rp = uvm_resource_pool::get();
-  rp.dump();
-endfunction
+  static function void dump();
+    uvm_resource_pool rp = uvm_resource_pool::get();
+    rp.dump();
+  endfunction
 
 endclass
 

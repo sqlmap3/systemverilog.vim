@@ -90,66 +90,66 @@ class uvm_reg_mem_hdl_paths_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_re
 
 
   protected virtual function void do_block(uvm_reg_block blk,
-  string        kind);
-  uvm_reg       regs[$];
-  uvm_mem       mems[$];
+                                           string        kind);
+    uvm_reg       regs[$];
+    uvm_mem       mems[$];
 
-  `uvm_info("uvm_reg_mem_hdl_paths_seq",
-  {"Validating HDL paths in ", blk.get_full_name(),
-  " for ", (kind == "") ? "default" : kind,
-  " design abstraction"}, UVM_MEDIUM) 
+    `uvm_info("uvm_reg_mem_hdl_paths_seq",
+    {"Validating HDL paths in ", blk.get_full_name(),
+    " for ", (kind == "") ? "default" : kind,
+    " design abstraction"}, UVM_MEDIUM) 
 
-  // Iterate over all registers, checking accesses
-  blk.get_registers(regs, UVM_NO_HIER);
-  foreach (regs[i]) 
-    check_reg(regs[i], kind);
+    // Iterate over all registers, checking accesses
+    blk.get_registers(regs, UVM_NO_HIER);
+    foreach (regs[i]) 
+      check_reg(regs[i], kind);
 
-  blk.get_memories(mems, UVM_NO_HIER);
-  foreach (mems[i]) 
-    check_mem(mems[i], kind);
+    blk.get_memories(mems, UVM_NO_HIER);
+    foreach (mems[i]) 
+      check_mem(mems[i], kind);
 
-  begin
-    uvm_reg_block blks[$];
+    begin
+      uvm_reg_block blks[$];
 
-    blk.get_blocks(blks);
-    foreach (blks[i]) begin
-      do_block(blks[i], kind);
+      blk.get_blocks(blks);
+      foreach (blks[i]) begin
+        do_block(blks[i], kind);
+      end
     end
-  end
-endfunction: do_block
+  endfunction: do_block
 
 
-protected virtual function void check_reg(uvm_reg r,
-string kind);
-uvm_hdl_path_concat paths[$];
+  protected virtual function void check_reg(uvm_reg r,
+                                            string kind);
+    uvm_hdl_path_concat paths[$];
 
-// avoid calling get_full_hdl_path when the register has not path for this abstraction kind
-if(!r.has_hdl_path(kind))
-  return;
+    // avoid calling get_full_hdl_path when the register has not path for this abstraction kind
+    if(!r.has_hdl_path(kind))
+      return;
 
-r.get_full_hdl_path(paths, kind);
-if (paths.size() == 0) return;
+    r.get_full_hdl_path(paths, kind);
+    if (paths.size() == 0) return;
 
-foreach(paths[p]) begin
-  uvm_hdl_path_concat path=paths[p];
-  foreach (path.slices[j]) begin
-    string p_ = path.slices[j].path;
-    uvm_reg_data_t d;
-    if (!uvm_hdl_read(p_,d))
-      `uvm_error("uvm_reg_mem_hdl_paths_seq",
-    $sformatf("HDL path \"%s\" for register \"%s\" is not readable",
-      p_, r.get_full_name()));
-    if (!uvm_hdl_check_path(p_))
-      `uvm_error("uvm_reg_mem_hdl_paths_seq",
-    $sformatf("HDL path \"%s\" for register \"%s\" is not accessible",
-      p_, r.get_full_name()));
-  end
-end
-    endfunction
+    foreach(paths[p]) begin
+      uvm_hdl_path_concat path=paths[p];
+      foreach (path.slices[j]) begin
+        string p_ = path.slices[j].path;
+        uvm_reg_data_t d;
+        if (!uvm_hdl_read(p_,d))
+          `uvm_error("uvm_reg_mem_hdl_paths_seq",
+        $sformatf("HDL path \"%s\" for register \"%s\" is not readable",
+          p_, r.get_full_name()));
+        if (!uvm_hdl_check_path(p_))
+          `uvm_error("uvm_reg_mem_hdl_paths_seq",
+        $sformatf("HDL path \"%s\" for register \"%s\" is not accessible",
+          p_, r.get_full_name()));
+      end
+    end
+  endfunction
 
 
-    protected virtual function void check_mem(uvm_mem m,
-    string kind);
+  protected virtual function void check_mem(uvm_mem m,
+                                            string kind);
     uvm_hdl_path_concat paths[$];
 
     // avoid calling get_full_hdl_path when the register has not path for this abstraction kind

@@ -304,24 +304,24 @@ class uvm_heartbeat_callback extends uvm_objection_callback;
   endfunction
 
   virtual function void raised (uvm_objection objection,
-      uvm_object obj,
-      uvm_object source_obj,
-      string description,
-  int count);
-  if(obj == target) begin
-    if(!cnt.exists(source_obj))
-      cnt[source_obj] = 0;
-    cnt[source_obj] = cnt[source_obj]+1;
-    last_trigger[source_obj] = $realtime;
-  end
-endfunction
+                                uvm_object obj,
+                                uvm_object source_obj,
+                                string description,
+                                int count);
+    if(obj == target) begin
+      if(!cnt.exists(source_obj))
+        cnt[source_obj] = 0;
+      cnt[source_obj] = cnt[source_obj]+1;
+      last_trigger[source_obj] = $realtime;
+    end
+  endfunction
 
-virtual function void dropped (uvm_objection objection,
-    uvm_object obj,
-    uvm_object source_obj,
-    string description,
-int count);
-raised(objection,obj,source_obj,description,count);
+  virtual function void dropped (uvm_objection objection,
+                                 uvm_object obj,
+                                 uvm_object source_obj,
+                                 string description,
+                                 int count);
+    raised(objection,obj,source_obj,description,count);
   endfunction
 
   function void reset_counts;

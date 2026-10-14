@@ -61,81 +61,81 @@ class uvm_component_registry #(type T=uvm_component, string Tname="<unknown>")
   // You should not call this method directly. Call <create> instead.
 
   virtual function uvm_component create_component (string name,
-  uvm_component parent);
-  T obj;
-  obj = new(name, parent);
-  return obj;
-endfunction
+                                                   uvm_component parent);
+    T obj;
+    obj = new(name, parent);
+    return obj;
+  endfunction
 
 
-const static string type_name = Tname;
+  const static string type_name = Tname;
 
-// Function: get_type_name
-//
-// Returns the value given by the string parameter, ~Tname~. This method
-// overrides the method in <uvm_object_wrapper>.
+  // Function: get_type_name
+  //
+  // Returns the value given by the string parameter, ~Tname~. This method
+  // overrides the method in <uvm_object_wrapper>.
 
-virtual function string get_type_name();
-  return type_name;
-endfunction
+  virtual function string get_type_name();
+    return type_name;
+  endfunction
 
-local static this_type me = get();
+  local static this_type me = get();
 
 
-// Function: get
-//
-// Returns the singleton instance of this type. Type-based factory operation
-// depends on there being a single proxy instance for each registered type. 
+  // Function: get
+  //
+  // Returns the singleton instance of this type. Type-based factory operation
+  // depends on there being a single proxy instance for each registered type. 
 
-static function this_type get();
-  if (me == null) begin
+  static function this_type get();
+    if (me == null) begin
+      uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+      uvm_factory factory=cs.get_factory();
+      me = new;
+      factory.register(me);
+    end
+    return me;
+  endfunction
+
+
+  // Function: create
+  //
+  // Returns an instance of the component type, ~T~, represented by this proxy,
+  // subject to any factory overrides based on the context provided by the
+  // ~parent~'s full name. The ~contxt~ argument, if supplied, supersedes the
+  // ~parent~'s context. The new instance will have the given leaf ~name~
+  // and ~parent~.
+
+  static function T create(string name, uvm_component parent, string contxt="");
+    uvm_object obj;
     uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
     uvm_factory factory=cs.get_factory();
-    me = new;
-    factory.register(me);
-  end
-  return me;
-endfunction
+    if (contxt == "" && parent != null)
+      contxt = parent.get_full_name();
+    obj = factory.create_component_by_type(get(),contxt,name,parent);
+    if (!$cast(create, obj)) begin
+      string msg;
+      msg = {"Factory did not return a component of type '",type_name,
+      "'. A component of type '",obj == null ? "null" : obj.get_type_name(),
+      "' was returned instead. Name=",name," Parent=",
+      parent==null?"null":parent.get_type_name()," contxt=",contxt};
+      uvm_report_fatal("FCTTYP", msg, UVM_NONE);
+    end
+  endfunction
 
 
-// Function: create
-//
-// Returns an instance of the component type, ~T~, represented by this proxy,
-// subject to any factory overrides based on the context provided by the
-// ~parent~'s full name. The ~contxt~ argument, if supplied, supersedes the
-// ~parent~'s context. The new instance will have the given leaf ~name~
-// and ~parent~.
+  // Function: set_type_override
+  //
+  // Configures the factory to create an object of the type represented by
+  // ~override_type~ whenever a request is made to create an object of the type,
+  // ~T~, represented by this proxy, provided no instance override applies. The
+  // original type, ~T~, is typically a super class of the override type. 
 
-static function T create(string name, uvm_component parent, string contxt="");
-  uvm_object obj;
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
-  if (contxt == "" && parent != null)
-    contxt = parent.get_full_name();
-  obj = factory.create_component_by_type(get(),contxt,name,parent);
-  if (!$cast(create, obj)) begin
-    string msg;
-    msg = {"Factory did not return a component of type '",type_name,
-    "'. A component of type '",obj == null ? "null" : obj.get_type_name(),
-    "' was returned instead. Name=",name," Parent=",
-    parent==null?"null":parent.get_type_name()," contxt=",contxt};
-    uvm_report_fatal("FCTTYP", msg, UVM_NONE);
-  end
-endfunction
-
-
-// Function: set_type_override
-//
-// Configures the factory to create an object of the type represented by
-// ~override_type~ whenever a request is made to create an object of the type,
-// ~T~, represented by this proxy, provided no instance override applies. The
-// original type, ~T~, is typically a super class of the override type. 
-
-static function void set_type_override (uvm_object_wrapper override_type,
-bit replace=1);
-uvm_coreservice_t cs = uvm_coreservice_t::get();
-uvm_factory factory=cs.get_factory();                                          
-factory.set_type_override_by_type(get(),override_type,replace);
+  static function void set_type_override (uvm_object_wrapper override_type,
+                                          bit replace=1);
+    uvm_coreservice_t cs = uvm_coreservice_t::get();
+    uvm_factory factory=cs.get_factory();                                          
+    factory.set_type_override_by_type(get(),override_type,replace);
   endfunction
 
 
@@ -155,20 +155,20 @@ factory.set_type_override_by_type(get(),override_type,replace);
   // matching against multiple contexts.
 
   static function void set_inst_override(uvm_object_wrapper override_type,
-      string inst_path,
-  uvm_component parent=null);
-  string full_inst_path;
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
+                                         string inst_path,
+                                         uvm_component parent=null);
+    string full_inst_path;
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
 
-  if (parent != null) begin
-    if (inst_path == "")
-      inst_path = parent.get_full_name();
-    else
-      inst_path = {parent.get_full_name(),".",inst_path};
-  end
-  factory.set_inst_override_by_type(get(),override_type,inst_path);
-endfunction
+    if (parent != null) begin
+      if (inst_path == "")
+        inst_path = parent.get_full_name();
+      else
+        inst_path = {parent.get_full_name(),".",inst_path};
+    end
+    factory.set_inst_override_by_type(get(),override_type,inst_path);
+  endfunction
 
 endclass
 
@@ -248,37 +248,37 @@ class uvm_object_registry #(type T=uvm_object, string Tname="<unknown>")
   // if provided.
 
   static function T create (string name="", uvm_component parent=null,
-  string contxt="");
-  uvm_object obj;
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
+                            string contxt="");
+    uvm_object obj;
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
 
-  if (contxt == "" && parent != null)
-    contxt = parent.get_full_name();
-  obj = factory.create_object_by_type(get(),contxt,name);
-  if (!$cast(create, obj)) begin
-    string msg;
-    msg = {"Factory did not return an object of type '",type_name,
-    "'. A component of type '",obj == null ? "null" : obj.get_type_name(),
-    "' was returned instead. Name=",name," Parent=",
-    parent==null?"null":parent.get_type_name()," contxt=",contxt};
-    uvm_report_fatal("FCTTYP", msg, UVM_NONE);
-  end
-endfunction
+    if (contxt == "" && parent != null)
+      contxt = parent.get_full_name();
+    obj = factory.create_object_by_type(get(),contxt,name);
+    if (!$cast(create, obj)) begin
+      string msg;
+      msg = {"Factory did not return an object of type '",type_name,
+      "'. A component of type '",obj == null ? "null" : obj.get_type_name(),
+      "' was returned instead. Name=",name," Parent=",
+      parent==null?"null":parent.get_type_name()," contxt=",contxt};
+      uvm_report_fatal("FCTTYP", msg, UVM_NONE);
+    end
+  endfunction
 
 
-// Function: set_type_override
-//
-// Configures the factory to create an object of the type represented by
-// ~override_type~ whenever a request is made to create an object of the type
-// represented by this proxy, provided no instance override applies. The
-// original type, ~T~, is typically a super class of the override type. 
+  // Function: set_type_override
+  //
+  // Configures the factory to create an object of the type represented by
+  // ~override_type~ whenever a request is made to create an object of the type
+  // represented by this proxy, provided no instance override applies. The
+  // original type, ~T~, is typically a super class of the override type. 
 
-static function void set_type_override (uvm_object_wrapper override_type,
-bit replace=1);
-uvm_coreservice_t cs = uvm_coreservice_t::get();
-uvm_factory factory=cs.get_factory();
-factory.set_type_override_by_type(get(),override_type,replace);
+  static function void set_type_override (uvm_object_wrapper override_type,
+                                          bit replace=1);
+    uvm_coreservice_t cs = uvm_coreservice_t::get();
+    uvm_factory factory=cs.get_factory();
+    factory.set_type_override_by_type(get(),override_type,replace);
   endfunction
 
 
@@ -298,20 +298,20 @@ factory.set_type_override_by_type(get(),override_type,replace);
   // matching against multiple contexts.
 
   static function void set_inst_override(uvm_object_wrapper override_type,
-      string inst_path,
-  uvm_component parent=null);
-  string full_inst_path;
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
+                                         string inst_path,
+                                         uvm_component parent=null);
+    string full_inst_path;
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
 
-  if (parent != null) begin
-    if (inst_path == "")
-      inst_path = parent.get_full_name();
-    else
-      inst_path = {parent.get_full_name(),".",inst_path};
-  end
-  factory.set_inst_override_by_type(get(),override_type,inst_path);
-endfunction
+    if (parent != null) begin
+      if (inst_path == "")
+        inst_path = parent.get_full_name();
+      else
+        inst_path = {parent.get_full_name(),".",inst_path};
+    end
+    factory.set_inst_override_by_type(get(),override_type,inst_path);
+  endfunction
 
 endclass
 

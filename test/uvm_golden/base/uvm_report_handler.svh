@@ -521,20 +521,20 @@ class uvm_report_handler extends uvm_object;
   // Internal methods called by uvm_report_object.
 
   function void set_severity_action(input uvm_severity severity,
-  input uvm_action action);
-  severity_actions[severity] = action;
-endfunction
+                                    input uvm_action action);
+    severity_actions[severity] = action;
+  endfunction
 
-function void set_id_action(input string id, input uvm_action action);
-  id_actions.add(id, action);
-endfunction
+  function void set_id_action(input string id, input uvm_action action);
+    id_actions.add(id, action);
+  endfunction
 
-function void set_severity_id_action(uvm_severity severity,
-    string id,
-uvm_action action);
-if(!severity_id_actions.exists(severity))
-  severity_id_actions[severity] = new;
-severity_id_actions[severity].add(id,action);
+  function void set_severity_id_action(uvm_severity severity,
+                                       string id,
+                                       uvm_action action);
+    if(!severity_id_actions.exists(severity))
+      severity_id_actions[severity] = new;
+    severity_id_actions[severity].add(id,action);
   endfunction
 
   function void set_id_verbosity(input string id, input int verbosity);
@@ -542,54 +542,54 @@ severity_id_actions[severity].add(id,action);
   endfunction
 
   function void set_severity_id_verbosity(uvm_severity severity,
-      string id,
-  int verbosity);
-  if(!severity_id_verbosities.exists(severity))
-    severity_id_verbosities[severity] = new;
-  severity_id_verbosities[severity].add(id,verbosity);
-endfunction
+                                          string id,
+                                          int verbosity);
+    if(!severity_id_verbosities.exists(severity))
+      severity_id_verbosities[severity] = new;
+    severity_id_verbosities[severity].add(id,verbosity);
+  endfunction
 
-// Function- set_default_file
-// Function- set_severity_file
-// Function- set_id_file
-// Function- set_severity_id_file
-//
-// Internal methods called by uvm_report_object.
+  // Function- set_default_file
+  // Function- set_severity_file
+  // Function- set_id_file
+  // Function- set_severity_id_file
+  //
+  // Internal methods called by uvm_report_object.
 
-function void set_default_file (UVM_FILE file);
-  default_file_handle = file;
-endfunction
+  function void set_default_file (UVM_FILE file);
+    default_file_handle = file;
+  endfunction
 
-function void set_severity_file (uvm_severity severity, UVM_FILE file);
-  severity_file_handles[severity] = file;
-endfunction
+  function void set_severity_file (uvm_severity severity, UVM_FILE file);
+    severity_file_handles[severity] = file;
+  endfunction
 
-function void set_id_file (string id, UVM_FILE file);
-  id_file_handles.add(id, file);
-endfunction
+  function void set_id_file (string id, UVM_FILE file);
+    id_file_handles.add(id, file);
+  endfunction
 
-function void set_severity_id_file(uvm_severity severity,
-string id, UVM_FILE file);
-if(!severity_id_file_handles.exists(severity))
-  severity_id_file_handles[severity] = new;
-severity_id_file_handles[severity].add(id, file);
+  function void set_severity_id_file(uvm_severity severity,
+                                     string id, UVM_FILE file);
+    if(!severity_id_file_handles.exists(severity))
+      severity_id_file_handles[severity] = new;
+    severity_id_file_handles[severity].add(id, file);
   endfunction
 
   function void set_severity_override(uvm_severity cur_severity,
-  uvm_severity new_severity);
-  sev_overrides.add(cur_severity, new_severity);
-endfunction
+                                      uvm_severity new_severity);
+    sev_overrides.add(cur_severity, new_severity);
+  endfunction
 
-function void set_severity_id_override(uvm_severity cur_severity,
-    string id,
-uvm_severity new_severity);
-// has precedence over set_severity_override
-// silently override previous setting
-uvm_sev_override_array arr;
-if(!sev_id_overrides.exists(id))
-  sev_id_overrides[id] = new;
+  function void set_severity_id_override(uvm_severity cur_severity,
+                                         string id,
+                                         uvm_severity new_severity);
+    // has precedence over set_severity_override
+    // silently override previous setting
+    uvm_sev_override_array arr;
+    if(!sev_id_overrides.exists(id))
+      sev_id_overrides[id] = new;
 
-sev_id_overrides[id].add(cur_severity, new_severity);
+    sev_id_overrides[id].add(cur_severity, new_severity);
   endfunction
 
 
@@ -600,200 +600,200 @@ sev_id_overrides[id].add(cur_severity, new_severity);
   // (e.g., uvm_report_error) in <uvm_report_object>.
 
   virtual function void report(
-      uvm_severity severity,
-      string name,
-      string id,
-      string message,
-      int verbosity_level=UVM_MEDIUM,
-      string filename="",
-      int line=0,
-      uvm_report_object client=null
-    );
+                               uvm_severity severity,
+                               string name,
+                               string id,
+                               string message,
+                               int verbosity_level=UVM_MEDIUM,
+                               string filename="",
+                               int line=0,
+                               uvm_report_object client=null
+                               );
 
-    bit l_report_enabled = 0;
-    uvm_report_message l_report_message;
-    uvm_coreservice_t cs;
-    cs = uvm_coreservice_t::get();
-    if (!uvm_report_enabled(verbosity_level, UVM_INFO, id))
-      return;
+                               bit l_report_enabled = 0;
+                               uvm_report_message l_report_message;
+                               uvm_coreservice_t cs;
+                               cs = uvm_coreservice_t::get();
+                               if (!uvm_report_enabled(verbosity_level, UVM_INFO, id))
+                                 return;
 
-    if (client==null) 
-      client = cs.get_root();
+                               if (client==null) 
+                                 client = cs.get_root();
 
-    l_report_message = uvm_report_message::new_report_message();
-    l_report_message.set_report_message(severity, id, message, 
-    verbosity_level, filename, line, name);
-    l_report_message.set_report_object(client);
-    l_report_message.set_action(get_action(severity,id));
-    process_report_message(l_report_message);
+                               l_report_message = uvm_report_message::new_report_message();
+                               l_report_message.set_report_message(severity, id, message, 
+                               verbosity_level, filename, line, name);
+                               l_report_message.set_report_object(client);
+                               l_report_message.set_action(get_action(severity,id));
+                               process_report_message(l_report_message);
 
-  endfunction
+                             endfunction
 
-  `ifndef UVM_NO_DEPRECATED
-
-
-    // Function- run_hooks
-    //
-    // The ~run_hooks~ method is called if the <UVM_CALL_HOOK> action is set for a
-    // report. It first calls the client's <uvm_report_object::report_hook> method, 
-    // followed by the appropriate severity-specific hook method. If either 
-    // returns 0, then the report is not processed.
-
-    virtual function bit run_hooks(uvm_report_object client,
-        uvm_severity severity,
-        string id,
-        string message,
-        int verbosity,
-        string filename,
-    int line);
-
-    bit ok;
-
-    ok = client.report_hook(id, message, verbosity, filename, line);
-
-    case(severity)
-      UVM_INFO:
-      ok &= client.report_info_hook   (id, message, verbosity, filename, line);
-      UVM_WARNING:
-      ok &= client.report_warning_hook(id, message, verbosity, filename, line);
-      UVM_ERROR:
-      ok &= client.report_error_hook  (id, message, verbosity, filename, line);
-      UVM_FATAL:
-      ok &= client.report_fatal_hook  (id, message, verbosity, filename, line);
-    endcase
-
-    return ok;
-
-  endfunction
+                             `ifndef UVM_NO_DEPRECATED
 
 
-  // Function- dump_state
-  //
-  // Internal method for debug.
+                               // Function- run_hooks
+                               //
+                               // The ~run_hooks~ method is called if the <UVM_CALL_HOOK> action is set for a
+                               // report. It first calls the client's <uvm_report_object::report_hook> method, 
+                               // followed by the appropriate severity-specific hook method. If either 
+                               // returns 0, then the report is not processed.
 
-  function void dump_state();
+                               virtual function bit run_hooks(uvm_report_object client,
+                                                              uvm_severity severity,
+                                                              string id,
+                                                              string message,
+                                                              int verbosity,
+                                                              string filename,
+                                                              int line);
 
-    string s;
-    UVM_FILE file;
-    uvm_action a;
-    string idx;
-    string q[$];
+                                 bit ok;
 
-    uvm_id_actions_array id_a_ary;
-    uvm_id_verbosities_array id_v_ary;
-    uvm_id_file_array id_f_ary;
+                                 ok = client.report_hook(id, message, verbosity, filename, line);
 
-    q.push_back("\n----------------------------------------------------------------------\n");
-    q.push_back("report handler state dump \n\n");
+                                 case(severity)
+                                   UVM_INFO:
+                                   ok &= client.report_info_hook   (id, message, verbosity, filename, line);
+                                   UVM_WARNING:
+                                   ok &= client.report_warning_hook(id, message, verbosity, filename, line);
+                                   UVM_ERROR:
+                                   ok &= client.report_error_hook  (id, message, verbosity, filename, line);
+                                   UVM_FATAL:
+                                   ok &= client.report_fatal_hook  (id, message, verbosity, filename, line);
+                                 endcase
 
-    // verbosities
+                                 return ok;
 
-    q.push_back("\n+-----------------+\n");
-    q.push_back("|   Verbosities   |\n");
-    q.push_back("+-----------------+\n\n"); 
-
-    q.push_back($sformatf("max verbosity level = %d\n", m_max_verbosity_level));
-    q.push_back("*** verbosities by id\n");
-
-    if(id_verbosities.first(idx))
-    do begin
-      uvm_verbosity v = uvm_verbosity'(id_verbosities.get(idx));
-      q.push_back($sformatf("[%s] --> %s\n", idx, v.name()));
-    end while(id_verbosities.next(idx));
-
-    // verbosities by id
-
-    q.push_back("*** verbosities by id and severity\n");
-
-    foreach( severity_id_verbosities[severity] ) begin
-      uvm_severity sev = uvm_severity'(severity);
-      id_v_ary = severity_id_verbosities[severity];
-      if(id_v_ary.first(idx))
-      do begin
-        uvm_verbosity v = uvm_verbosity'(id_v_ary.get(idx));
-        q.push_back($sformatf("%s:%s --> %s\n",sev.name(), idx, v.name()));    
-      end while(id_v_ary.next(idx));
-    end
-
-    // actions
-
-    q.push_back("\n+-------------+\n");
-    q.push_back("|   actions   |\n");
-    q.push_back("+-------------+\n\n");
-
-    q.push_back("*** actions by severity\n");
-    foreach( severity_actions[severity] ) begin
-      uvm_severity sev = uvm_severity'(severity);
-      q.push_back($sformatf("%s = %s\n",sev.name(), format_action(severity_actions[severity])));
-    end
-
-    q.push_back("\n*** actions by id\n");
-
-    if(id_actions.first(idx))
-    do begin
-      q.push_back($sformatf("[%s] --> %s\n", idx, format_action(id_actions.get(idx))));
-    end while(id_actions.next(idx));
-
-    // actions by id
-    q.push_back("\n*** actions by id and severity\n");
-
-    foreach( severity_id_actions[severity] ) begin
-      uvm_severity sev = uvm_severity'(severity);
-      id_a_ary = severity_id_actions[severity];
-      if(id_a_ary.first(idx))
-      do begin
-        q.push_back($sformatf("%s:%s --> %s\n",sev.name(), idx, format_action(id_a_ary.get(idx))));   
-      end while(id_a_ary.next(idx));
-    end
-
-    // Files
-
-    q.push_back("\n+-------------+\n");
-    q.push_back("|    files    |\n");
-    q.push_back("+-------------+\n\n");
-
-    q.push_back($sformatf("default file handle = %d\n\n", default_file_handle));
-
-    q.push_back("*** files by severity\n");
-    foreach( severity_file_handles[severity] ) begin
-      uvm_severity sev = uvm_severity'(severity);
-      file = severity_file_handles[severity];
-      q.push_back($sformatf("%s = %d\n", sev.name(), file));
-    end
-
-    q.push_back("\n*** files by id\n");
-
-    if(id_file_handles.first(idx))
-    do begin
-      file = id_file_handles.get(idx);
-      q.push_back($sformatf("id %s --> %d\n", idx, file));
-    end while (id_file_handles.next(idx));
-
-    q.push_back("\n*** files by id and severity\n");
-
-    foreach( severity_id_file_handles[severity] ) begin
-      uvm_severity sev = uvm_severity'(severity);
-      id_f_ary = severity_id_file_handles[severity];
-      if(id_f_ary.first(idx))
-      do begin
-        q.push_back($sformatf("%s:%s --> %d\n", sev.name(), idx, id_f_ary.get(idx)));
-      end while(id_f_ary.next(idx));
-    end
-
-    begin
-      uvm_report_server srvr;
-      srvr=uvm_report_server::get_server();        
-      srvr.report_summarize();
-    end
-
-    q.push_back("----------------------------------------------------------------------\n");
-    `uvm_info("UVM/REPORT/HANDLER",`UVM_STRING_QUEUE_STREAMING_PACK(q),UVM_LOW)
-  endfunction
+                               endfunction
 
 
-  `endif
+                               // Function- dump_state
+                               //
+                               // Internal method for debug.
+
+                               function void dump_state();
+
+                                 string s;
+                                 UVM_FILE file;
+                                 uvm_action a;
+                                 string idx;
+                                 string q[$];
+
+                                 uvm_id_actions_array id_a_ary;
+                                 uvm_id_verbosities_array id_v_ary;
+                                 uvm_id_file_array id_f_ary;
+
+                                 q.push_back("\n----------------------------------------------------------------------\n");
+                                 q.push_back("report handler state dump \n\n");
+
+                                 // verbosities
+
+                                 q.push_back("\n+-----------------+\n");
+                                 q.push_back("|   Verbosities   |\n");
+                                 q.push_back("+-----------------+\n\n"); 
+
+                                 q.push_back($sformatf("max verbosity level = %d\n", m_max_verbosity_level));
+                                 q.push_back("*** verbosities by id\n");
+
+                                 if(id_verbosities.first(idx))
+                                 do begin
+                                   uvm_verbosity v = uvm_verbosity'(id_verbosities.get(idx));
+                                   q.push_back($sformatf("[%s] --> %s\n", idx, v.name()));
+                                 end while(id_verbosities.next(idx));
+
+                                 // verbosities by id
+
+                                 q.push_back("*** verbosities by id and severity\n");
+
+                                 foreach( severity_id_verbosities[severity] ) begin
+                                   uvm_severity sev = uvm_severity'(severity);
+                                   id_v_ary = severity_id_verbosities[severity];
+                                   if(id_v_ary.first(idx))
+                                   do begin
+                                     uvm_verbosity v = uvm_verbosity'(id_v_ary.get(idx));
+                                     q.push_back($sformatf("%s:%s --> %s\n",sev.name(), idx, v.name()));    
+                                   end while(id_v_ary.next(idx));
+                                 end
+
+                                 // actions
+
+                                 q.push_back("\n+-------------+\n");
+                                 q.push_back("|   actions   |\n");
+                                 q.push_back("+-------------+\n\n");
+
+                                 q.push_back("*** actions by severity\n");
+                                 foreach( severity_actions[severity] ) begin
+                                   uvm_severity sev = uvm_severity'(severity);
+                                   q.push_back($sformatf("%s = %s\n",sev.name(), format_action(severity_actions[severity])));
+                                 end
+
+                                 q.push_back("\n*** actions by id\n");
+
+                                 if(id_actions.first(idx))
+                                 do begin
+                                   q.push_back($sformatf("[%s] --> %s\n", idx, format_action(id_actions.get(idx))));
+                                 end while(id_actions.next(idx));
+
+                                 // actions by id
+                                 q.push_back("\n*** actions by id and severity\n");
+
+                                 foreach( severity_id_actions[severity] ) begin
+                                   uvm_severity sev = uvm_severity'(severity);
+                                   id_a_ary = severity_id_actions[severity];
+                                   if(id_a_ary.first(idx))
+                                   do begin
+                                     q.push_back($sformatf("%s:%s --> %s\n",sev.name(), idx, format_action(id_a_ary.get(idx))));   
+                                   end while(id_a_ary.next(idx));
+                                 end
+
+                                 // Files
+
+                                 q.push_back("\n+-------------+\n");
+                                 q.push_back("|    files    |\n");
+                                 q.push_back("+-------------+\n\n");
+
+                                 q.push_back($sformatf("default file handle = %d\n\n", default_file_handle));
+
+                                 q.push_back("*** files by severity\n");
+                                 foreach( severity_file_handles[severity] ) begin
+                                   uvm_severity sev = uvm_severity'(severity);
+                                   file = severity_file_handles[severity];
+                                   q.push_back($sformatf("%s = %d\n", sev.name(), file));
+                                 end
+
+                                 q.push_back("\n*** files by id\n");
+
+                                 if(id_file_handles.first(idx))
+                                 do begin
+                                   file = id_file_handles.get(idx);
+                                   q.push_back($sformatf("id %s --> %d\n", idx, file));
+                                 end while (id_file_handles.next(idx));
+
+                                 q.push_back("\n*** files by id and severity\n");
+
+                                 foreach( severity_id_file_handles[severity] ) begin
+                                   uvm_severity sev = uvm_severity'(severity);
+                                   id_f_ary = severity_id_file_handles[severity];
+                                   if(id_f_ary.first(idx))
+                                   do begin
+                                     q.push_back($sformatf("%s:%s --> %d\n", sev.name(), idx, id_f_ary.get(idx)));
+                                   end while(id_f_ary.next(idx));
+                                 end
+
+                                 begin
+                                   uvm_report_server srvr;
+                                   srvr=uvm_report_server::get_server();        
+                                   srvr.report_summarize();
+                                 end
+
+                                 q.push_back("----------------------------------------------------------------------\n");
+                                 `uvm_info("UVM/REPORT/HANDLER",`UVM_STRING_QUEUE_STREAMING_PACK(q),UVM_LOW)
+                               endfunction
 
 
-endclass : uvm_report_handler
+                             `endif
+
+
+                           endclass : uvm_report_handler
 
 `endif //UVM_REPORT_HANDLER_SVH

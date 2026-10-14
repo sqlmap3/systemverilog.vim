@@ -392,304 +392,304 @@ virtual class uvm_recorder extends uvm_object;
   //
   // This method will trigger a <do_record_field> call.
   function void record_field(string name,
-      uvm_bitstream_t value,
-      int size,
-  uvm_radix_enum radix=UVM_NORADIX);
-  if (get_stream() == null) begin
-    return;
-  end
-  do_record_field(name, value, size, radix);
-endfunction : record_field
+                             uvm_bitstream_t value,
+                             int size,
+                             uvm_radix_enum radix=UVM_NORADIX);
+    if (get_stream() == null) begin
+      return;
+    end
+    do_record_field(name, value, size, radix);
+  endfunction : record_field
 
-// Function: record_field_int
-// Records an integral field (less than or equal to 64 bits).
-//
-// This optimized version of <record_field> is useful for sizes up
-// to 64 bits.
-//
-// Parameters:
-// name - Name of the field
-// value - Value of the field to record
-// size - Number of bits of the wfield which apply (Usually obtained via $bits).
-// radix - The <uvm_radix_enum> to use.
-//
-// This method will trigger a <do_record_field_int> call.
-function void record_field_int(string name,
-    uvm_integral_t value,
-    int size,
-uvm_radix_enum radix=UVM_NORADIX);
-if (get_stream() == null) begin
-  return;
-end
-do_record_field_int(name, value, size, radix);
-   endfunction : record_field_int
+  // Function: record_field_int
+  // Records an integral field (less than or equal to 64 bits).
+  //
+  // This optimized version of <record_field> is useful for sizes up
+  // to 64 bits.
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Value of the field to record
+  // size - Number of bits of the wfield which apply (Usually obtained via $bits).
+  // radix - The <uvm_radix_enum> to use.
+  //
+  // This method will trigger a <do_record_field_int> call.
+  function void record_field_int(string name,
+                                 uvm_integral_t value,
+                                 int size,
+                                 uvm_radix_enum radix=UVM_NORADIX);
+    if (get_stream() == null) begin
+      return;
+    end
+    do_record_field_int(name, value, size, radix);
+  endfunction : record_field_int
 
-   // Function: record_field_real
-   // Records a real field.
-   //
-   // Parameters:
-   // name - Name of the field
-   // value - Value of the field to record
-   //
-   // This method will trigger a <do_record_field_real> call.
-   function void record_field_real(string name,
-   real value);
-   if (get_stream() == null) begin
-     return;
-   end
-   do_record_field_real(name, value);
- endfunction : record_field_real
+  // Function: record_field_real
+  // Records a real field.
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Value of the field to record
+  //
+  // This method will trigger a <do_record_field_real> call.
+  function void record_field_real(string name,
+                                  real value);
+    if (get_stream() == null) begin
+      return;
+    end
+    do_record_field_real(name, value);
+  endfunction : record_field_real
 
- // Function: record_object
- // Records an object field.
- //
- // Parameters:
- // name - Name of the field
- // value - Object to record
- //
- // The implementation must use the <recursion_policy> and <identifier> to
- // determine exactly what should be recorded.
- function void record_object(string name,
- uvm_object value);
- if (get_stream() == null) begin
-   return;
- end
+  // Function: record_object
+  // Records an object field.
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Object to record
+  //
+  // The implementation must use the <recursion_policy> and <identifier> to
+  // determine exactly what should be recorded.
+  function void record_object(string name,
+                              uvm_object value);
+    if (get_stream() == null) begin
+      return;
+    end
 
- do_record_object(name, value);
-   endfunction : record_object
+    do_record_object(name, value);
+  endfunction : record_object
 
-   // Function: record_string
-   // Records a string field.
-   //
-   // Parameters:
-   // name - Name of the field
-   // value - Value of the field
-   //
-   function void record_string(string name,
-   string value);
-   if (get_stream() == null) begin
-     return;
-   end
+  // Function: record_string
+  // Records a string field.
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Value of the field
+  //
+  function void record_string(string name,
+                              string value);
+    if (get_stream() == null) begin
+      return;
+    end
 
-   do_record_string(name, value);
- endfunction : record_string
+    do_record_string(name, value);
+  endfunction : record_string
 
- // Function: record_time
- // Records a time field.
- //
- // Parameters:
- // name - Name of the field
- // value - Value of the field
- //
- function void record_time(string name,
- time value);
- if (get_stream() == null) begin
-   return;
- end
+  // Function: record_time
+  // Records a time field.
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Value of the field
+  //
+  function void record_time(string name,
+                            time value);
+    if (get_stream() == null) begin
+      return;
+    end
 
- do_record_time(name, value);
-   endfunction : record_time
+    do_record_time(name, value);
+  endfunction : record_time
 
-   // Function: record_generic
-   // Records a name/value pair, where ~value~ has been converted to a string.
-   //
-   // For example:
-   //| recorder.record_generic("myvar","var_type", $sformatf("%0d",myvar), 32);
-   //
-   // Parameters:
-   // name - Name of the field
-   // value - Value of the field
-   // type_name - ~optional~ Type name of the field
-   function void record_generic(string name,
-       string value,
-   string type_name="");
-   if (get_stream() == null) begin
-     return;
-   end
+  // Function: record_generic
+  // Records a name/value pair, where ~value~ has been converted to a string.
+  //
+  // For example:
+  //| recorder.record_generic("myvar","var_type", $sformatf("%0d",myvar), 32);
+  //
+  // Parameters:
+  // name - Name of the field
+  // value - Value of the field
+  // type_name - ~optional~ Type name of the field
+  function void record_generic(string name,
+                               string value,
+                               string type_name="");
+    if (get_stream() == null) begin
+      return;
+    end
 
-   do_record_generic(name, value, type_name);
- endfunction : record_generic
+    do_record_generic(name, value, type_name);
+  endfunction : record_generic
 
- // Function: use_record_attribute
- //
- // Indicates that this recorder does (or does not) support usage of
- // the <`uvm_record_attribute> macro.
- //
- // The default return value is ~0~ (not supported), developers can
- // optionally extend ~uvm_recorder~ and set the value to ~1~ if they
- // support the <`uvm_record_attribute> macro.
- virtual function bit use_record_attribute();
-   return 0;
- endfunction : use_record_attribute
+  // Function: use_record_attribute
+  //
+  // Indicates that this recorder does (or does not) support usage of
+  // the <`uvm_record_attribute> macro.
+  //
+  // The default return value is ~0~ (not supported), developers can
+  // optionally extend ~uvm_recorder~ and set the value to ~1~ if they
+  // support the <`uvm_record_attribute> macro.
+  virtual function bit use_record_attribute();
+    return 0;
+  endfunction : use_record_attribute
 
- // Function: get_record_attribute_handle
- // Provides a tool-specific handle which is compatible with <`uvm_record_attribute>.
- //
- // By default, this method will return the same value as <get_handle>,
- // however tool vendors can override this method to provide tool-specific handles
- // which will be passed to the <`uvm_record_attribute> macro.
- //
- virtual function integer get_record_attribute_handle();
-   return get_handle();
- endfunction : get_record_attribute_handle
+  // Function: get_record_attribute_handle
+  // Provides a tool-specific handle which is compatible with <`uvm_record_attribute>.
+  //
+  // By default, this method will return the same value as <get_handle>,
+  // however tool vendors can override this method to provide tool-specific handles
+  // which will be passed to the <`uvm_record_attribute> macro.
+  //
+  virtual function integer get_record_attribute_handle();
+    return get_handle();
+  endfunction : get_record_attribute_handle
 
- // Group: Implementation Agnostic API
+  // Group: Implementation Agnostic API
 
- // Function: do_open
- // Callback triggered via <uvm_tr_stream::open_recorder>.
- //
- // The ~do_open~ callback can be used to initialize any internal
- // state within the recorder, as well as providing a location to
- // record any initial information.
- protected virtual function void do_open(uvm_tr_stream stream,
-     time open_time,
- string type_name);
-   endfunction : do_open
+  // Function: do_open
+  // Callback triggered via <uvm_tr_stream::open_recorder>.
+  //
+  // The ~do_open~ callback can be used to initialize any internal
+  // state within the recorder, as well as providing a location to
+  // record any initial information.
+  protected virtual function void do_open(uvm_tr_stream stream,
+                                          time open_time,
+                                          string type_name);
+  endfunction : do_open
 
-   // Function: do_close
-   // Callback triggered via <close>.
-   //
-   // The ~do_close~ callback can be used to set internal state
-   // within the recorder, as well as providing a location to
-   // record any closing information.
-   protected virtual function void do_close(time close_time);
-   endfunction : do_close
+  // Function: do_close
+  // Callback triggered via <close>.
+  //
+  // The ~do_close~ callback can be used to set internal state
+  // within the recorder, as well as providing a location to
+  // record any closing information.
+  protected virtual function void do_close(time close_time);
+  endfunction : do_close
 
-   // Function: do_free
-   // Callback triggered via <free>.
-   //
-   // The ~do_free~ callback can be used to release the internal
-   // state within the recorder, as well as providing a location
-   // to record any "freeing" information.
-   protected virtual function void do_free();
-   endfunction : do_free
+  // Function: do_free
+  // Callback triggered via <free>.
+  //
+  // The ~do_free~ callback can be used to release the internal
+  // state within the recorder, as well as providing a location
+  // to record any "freeing" information.
+  protected virtual function void do_free();
+  endfunction : do_free
 
-   // Function: do_record_field
-   // Records an integral field (less than or equal to 4096 bits).
-   //
-   // ~Mandatory~ Backend implementation of <record_field>
-   pure virtual protected function void do_record_field(string name,
-                                                        uvm_bitstream_t value,
-                                                        int size,
-                                                        uvm_radix_enum radix);
+  // Function: do_record_field
+  // Records an integral field (less than or equal to 4096 bits).
+  //
+  // ~Mandatory~ Backend implementation of <record_field>
+  pure virtual protected function void do_record_field(string name,
+                                                       uvm_bitstream_t value,
+                                                       int size,
+                                                       uvm_radix_enum radix);
 
-   // Function: do_record_field_int
-   // Records an integral field (less than or equal to 64 bits).
-   //
-   // ~Mandatory~ Backend implementation of <record_field_int>
-   pure virtual protected function void do_record_field_int(string name,
-                                                            uvm_integral_t value,
-                                                            int          size,
-                                                            uvm_radix_enum radix);
+  // Function: do_record_field_int
+  // Records an integral field (less than or equal to 64 bits).
+  //
+  // ~Mandatory~ Backend implementation of <record_field_int>
+  pure virtual protected function void do_record_field_int(string name,
+                                                           uvm_integral_t value,
+                                                           int          size,
+                                                           uvm_radix_enum radix);
 
-   // Function: do_record_field_real
-   // Records a real field.
-   //
-   // ~Mandatory~ Backend implementation of <record_field_real>
-   pure virtual protected function void do_record_field_real(string name,
-                                                             real value);
+  // Function: do_record_field_real
+  // Records a real field.
+  //
+  // ~Mandatory~ Backend implementation of <record_field_real>
+  pure virtual protected function void do_record_field_real(string name,
+                                                            real value);
 
-   // Function: do_record_object
-   // Records an object field.
-   //
-   // ~Mandatory~ Backend implementation of <record_object>
-   pure virtual protected function void do_record_object(string name,
-                                                         uvm_object value);
+  // Function: do_record_object
+  // Records an object field.
+  //
+  // ~Mandatory~ Backend implementation of <record_object>
+  pure virtual protected function void do_record_object(string name,
+                                                        uvm_object value);
 
-   // Function: do_record_string
-   // Records a string field.
-   //
-   // ~Mandatory~ Backend implementation of <record_string>
-   pure virtual protected function void do_record_string(string name,
-                                                         string value);
+  // Function: do_record_string
+  // Records a string field.
+  //
+  // ~Mandatory~ Backend implementation of <record_string>
+  pure virtual protected function void do_record_string(string name,
+                                                        string value);
 
-   // Function: do_record_time
-   // Records a time field.
-   //
-   // ~Mandatory~ Backend implementation of <record_time>
-   pure virtual protected function void do_record_time(string name,
-                                                       time value);
+  // Function: do_record_time
+  // Records a time field.
+  //
+  // ~Mandatory~ Backend implementation of <record_time>
+  pure virtual protected function void do_record_time(string name,
+                                                      time value);
 
-   // Function: do_record_generic
-   // Records a name/value pair, where ~value~ has been converted to a string.
-   //
-   // ~Mandatory~ Backend implementation of <record_generic>
-   pure virtual protected function void do_record_generic(string name,
-                                                          string value,
-                                                          string type_name);
-
-
-   // The following code is primarily for backwards compat. purposes.  "Transaction
-   // Handles" are useful when connecting to a backend, but when passing the information
-   // back and forth within simulation, it is safer to user the ~recorder~ itself
-   // as a reference to the transaction within the database.
-
-   //------------------------------
-   // Group- Vendor-Independent API
-   //------------------------------
+  // Function: do_record_generic
+  // Records a name/value pair, where ~value~ has been converted to a string.
+  //
+  // ~Mandatory~ Backend implementation of <record_generic>
+  pure virtual protected function void do_record_generic(string name,
+                                                         string value,
+                                                         string type_name);
 
 
-   // UVM provides only a text-based default implementation.
-   // Vendors provide subtype implementations and overwrite the
-   // <uvm_default_recorder> handle.
+  // The following code is primarily for backwards compat. purposes.  "Transaction
+  // Handles" are useful when connecting to a backend, but when passing the information
+  // back and forth within simulation, it is safer to user the ~recorder~ itself
+  // as a reference to the transaction within the database.
+
+  //------------------------------
+  // Group- Vendor-Independent API
+  //------------------------------
 
 
-   // Function- open_file
-   //
-   // Opens the file in the <filename> property and assigns to the
-   // file descriptor <file>.
-   //
-   virtual function bit open_file();
-     return 0;
-   endfunction
-
-   // Function- create_stream
-   //
-   //
-   virtual function integer create_stream (string name,
-       string t,
-   string scope);
-   return -1;
- endfunction
+  // UVM provides only a text-based default implementation.
+  // Vendors provide subtype implementations and overwrite the
+  // <uvm_default_recorder> handle.
 
 
- // Function- m_set_attribute
- //
- //
- virtual function void m_set_attribute (integer txh,
-     string nm,
- string value);
+  // Function- open_file
+  //
+  // Opens the file in the <filename> property and assigns to the
+  // file descriptor <file>.
+  //
+  virtual function bit open_file();
+    return 0;
+  endfunction
+
+  // Function- create_stream
+  //
+  //
+  virtual function integer create_stream (string name,
+                                          string t,
+                                          string scope);
+    return -1;
+  endfunction
+
+
+  // Function- m_set_attribute
+  //
+  //
+  virtual function void m_set_attribute (integer txh,
+                                         string nm,
+                                         string value);
   endfunction
 
 
   // Function- set_attribute
   //
   virtual function void set_attribute (integer txh,
-      string nm,
-      logic [1023:0] value,
-      uvm_radix_enum radix,
-  integer numbits=1024);
-endfunction
+                                       string nm,
+                                       logic [1023:0] value,
+                                       uvm_radix_enum radix,
+                                       integer numbits=1024);
+  endfunction
 
 
-// Function- check_handle_kind
-//
-//
-virtual function integer check_handle_kind (string htype, integer handle);
-  return 0;
-endfunction
+  // Function- check_handle_kind
+  //
+  //
+  virtual function integer check_handle_kind (string htype, integer handle);
+    return 0;
+  endfunction
 
 
-// Function- begin_tr
-//
-//
-virtual function integer begin_tr(string txtype,
-    integer stream,
-    string nm,
-    string label="",
-    string desc="",
-time begin_time=0);
-return -1;
+  // Function- begin_tr
+  //
+  //
+  virtual function integer begin_tr(string txtype,
+                                    integer stream,
+                                    string nm,
+                                    string label="",
+                                    string desc="",
+                                    time begin_time=0);
+    return -1;
   endfunction
 
 
@@ -704,17 +704,17 @@ return -1;
   //
   //
   virtual function void link_tr(integer h1,
-      integer h2,
-  string relation="");
-endfunction
+                                integer h2,
+                                string relation="");
+  endfunction
 
 
 
-// Function- free_tr
-//
-//
-virtual function void free_tr(integer handle);
-endfunction
+  // Function- free_tr
+  //
+  //
+  virtual function void free_tr(integer handle);
+  endfunction
 
 endclass // uvm_recorder
 
@@ -755,289 +755,289 @@ class uvm_text_recorder extends uvm_recorder;
   //
   // Text-backend specific implementation.
   protected virtual function void do_open(uvm_tr_stream stream,
-      time open_time,
-  string type_name);
-  $cast(m_text_db, stream.get_db());
-  if (m_text_db.open_db())
-  $fdisplay(m_text_db.m_file, 
-    "    OPEN_RECORDER @%0t {TXH:%0d STREAM:%0d NAME:%s TIME:%0t TYPE=\"%0s\"}",
-    $realtime,
-    this.get_handle(),
-    stream.get_handle(),
-    this.get_name(),
-    open_time,
-  type_name);
-endfunction : do_open
-
-// Function: do_close
-// Callback triggered via <uvm_recorder::close>.
-//
-// Text-backend specific implementation.
-protected virtual function void do_close(time close_time);
-  if (m_text_db.open_db()) begin
+                                          time open_time,
+                                          string type_name);
+    $cast(m_text_db, stream.get_db());
+    if (m_text_db.open_db())
     $fdisplay(m_text_db.m_file, 
-      "    CLOSE_RECORDER @%0t {TXH:%0d TIME=%0t}",
+      "    OPEN_RECORDER @%0t {TXH:%0d STREAM:%0d NAME:%s TIME:%0t TYPE=\"%0s\"}",
       $realtime,
       this.get_handle(),
-    close_time);
+      stream.get_handle(),
+      this.get_name(),
+      open_time,
+    type_name);
+  endfunction : do_open
 
-  end
-endfunction : do_close
+  // Function: do_close
+  // Callback triggered via <uvm_recorder::close>.
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_close(time close_time);
+    if (m_text_db.open_db()) begin
+      $fdisplay(m_text_db.m_file, 
+        "    CLOSE_RECORDER @%0t {TXH:%0d TIME=%0t}",
+        $realtime,
+        this.get_handle(),
+      close_time);
 
-// Function: do_free
-// Callback triggered via <uvm_recorder::free>.
-//
-// Text-backend specific implementation.
-protected virtual function void do_free();
-  if (m_text_db.open_db()) begin
-    $fdisplay(m_text_db.m_file, 
-      "    FREE_RECORDER @%0t {TXH:%0d}",
-      $realtime,
-    this.get_handle());
-  end
-  m_text_db = null;
-endfunction : do_free
+    end
+  endfunction : do_close
 
-// Function: do_record_field
-// Records an integral field (less than or equal to 4096 bits).
-//
-// Text-backend specific implementation.
-protected virtual function void do_record_field(string name,
-    uvm_bitstream_t value,
-    int size,
-uvm_radix_enum radix);
-scope.set_arg(name);
-if (!radix)
-  radix = default_radix;
+  // Function: do_free
+  // Callback triggered via <uvm_recorder::free>.
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_free();
+    if (m_text_db.open_db()) begin
+      $fdisplay(m_text_db.m_file, 
+        "    FREE_RECORDER @%0t {TXH:%0d}",
+        $realtime,
+      this.get_handle());
+    end
+    m_text_db = null;
+  endfunction : do_free
 
-write_attribute(scope.get(),
-  value,
-  radix,
-size);
+  // Function: do_record_field
+  // Records an integral field (less than or equal to 4096 bits).
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_record_field(string name,
+                                                  uvm_bitstream_t value,
+                                                  int size,
+                                                  uvm_radix_enum radix);
+    scope.set_arg(name);
+    if (!radix)
+      radix = default_radix;
 
-   endfunction : do_record_field
+    write_attribute(scope.get(),
+      value,
+      radix,
+    size);
 
-
-   // Function: do_record_field_int
-   // Records an integral field (less than or equal to 64 bits).
-   //
-   // Text-backend specific implementation.
-   protected virtual function void do_record_field_int(string name,
-       uvm_integral_t value,
-       int          size,
-   uvm_radix_enum radix);
-   scope.set_arg(name);
-   if (!radix)
-     radix = default_radix;
-
-   write_attribute_int(scope.get(),
-     value,
-     radix,
-   size);
-
- endfunction : do_record_field_int
+  endfunction : do_record_field
 
 
- // Function: do_record_field_real
- // Record a real field.
- //
- // Text-backened specific implementation.
- protected virtual function void do_record_field_real(string name,
- real value);
- bit [63:0] ival = $realtobits(value);
- scope.set_arg(name);
+  // Function: do_record_field_int
+  // Records an integral field (less than or equal to 64 bits).
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_record_field_int(string name,
+                                                      uvm_integral_t value,
+                                                      int          size,
+                                                      uvm_radix_enum radix);
+    scope.set_arg(name);
+    if (!radix)
+      radix = default_radix;
 
- write_attribute_int(scope.get(),
-   ival,
-   UVM_REAL,
- 64);
-   endfunction : do_record_field_real
+    write_attribute_int(scope.get(),
+      value,
+      radix,
+    size);
 
-   // Function: do_record_object
-   // Record an object field.
-   //
-   // Text-backend specific implementation.
-   //
-   // The method uses ~identifier~ to determine whether or not to
-   // record the object instance id, and ~recursion_policy~ to
-   // determine whether or not to recurse into the object.
-   protected virtual function void do_record_object(string name,
-   uvm_object value);
-   int            v;
-   string         str;
-
-   if(identifier) begin 
-     if(value != null) begin
-       $swrite(str, "%0d", value.get_inst_id());
-       v = str.atoi(); 
-     end
-     scope.set_arg(name);
-     write_attribute_int(scope.get(), 
-       v, 
-       UVM_DEC, 
-     32);
-   end
-
-   if(policy != UVM_REFERENCE) begin
-     if(value!=null) begin
-       if(value.__m_uvm_status_container.cycle_check.exists(value)) return;
-       value.__m_uvm_status_container.cycle_check[value] = 1;
-       scope.down(name);
-       value.record(this);
-       scope.up();
-       value.__m_uvm_status_container.cycle_check.delete(value);
-     end
-   end
- endfunction : do_record_object
-
- // Function: do_record_string
- // Records a string field.
- //
- // Text-backend specific implementation.
- protected virtual function void do_record_string(string name,
- string value);
- scope.set_arg(name);
- if (m_text_db.open_db()) begin
-   $fdisplay(m_text_db.m_file, 
-     "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
-     $realtime,
-     this.get_handle(),
-     scope.get(),
-     value,
-     "UVM_STRING",
-   8+value.len());
- end
-   endfunction : do_record_string
-
-   // Function: do_record_time
-   // Records a time field.
-   //
-   // Text-backend specific implementation.
-   protected virtual function void do_record_time(string name,
-   time value);
-   scope.set_arg(name);
-   write_attribute_int(scope.get(), 
-     value,
-     UVM_TIME, 
-   64);
- endfunction : do_record_time
-
- // Function: do_record_generic
- // Records a name/value pair, where ~value~ has been converted to a string.
- //
- // Text-backend specific implementation.
- protected virtual function void do_record_generic(string name,
-     string value,
- string type_name);
- scope.set_arg(name);
- write_attribute(scope.get(), 
-   uvm_string_to_bits(value), 
-   UVM_STRING, 
- 8+value.len());
-   endfunction : do_record_generic
-
-   // Group: Implementation Specific API
-
-   // Function: write_attribute
-   // Outputs an integral attribute to the textual log
-   //
-   // Parameters:
-   // nm - Name of the attribute
-   // value - Value
-   // radix - Radix of the output
-   // numbits - number of valid bits
-   function void write_attribute(string nm,
-       uvm_bitstream_t value,
-       uvm_radix_enum radix,
-   integer numbits=$bits(uvm_bitstream_t));
-   if (m_text_db.open_db()) begin
-     $fdisplay(m_text_db.m_file, 
-       "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
-       $realtime,
-       this.get_handle(),
-       nm,
-       uvm_bitstream_to_string(value, numbits, radix),
-       radix.name(),
-     numbits);
-   end
- endfunction : write_attribute
-
- // Function: write_attribute_int
- // Outputs an integral attribute to the textual log
- //
- // Parameters:
- // nm - Name of the attribute
- // value - Value
- // radix - Radix of the output
- // numbits - number of valid bits
- function void write_attribute_int(string  nm,
-     uvm_integral_t value,
-     uvm_radix_enum radix,
- integer numbits=$bits(uvm_bitstream_t));
- if (m_text_db.open_db()) begin
-   $fdisplay(m_text_db.m_file, 
-     "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
-     $realtime,
-     this.get_handle(),
-     nm,
-     uvm_integral_to_string(value, numbits, radix),
-     radix.name(),
-   numbits);
- end
-   endfunction : write_attribute_int
-
-   /// LEFT FOR BACKWARDS COMPAT ONLY!!!!!!!!
-
-   //------------------------------
-   // Group- Vendor-Independent API
-   //------------------------------
+  endfunction : do_record_field_int
 
 
-   // UVM provides only a text-based default implementation.
-   // Vendors provide subtype implementations and overwrite the
-   // <uvm_default_recorder> handle.
+  // Function: do_record_field_real
+  // Record a real field.
+  //
+  // Text-backened specific implementation.
+  protected virtual function void do_record_field_real(string name,
+                                                       real value);
+    bit [63:0] ival = $realtobits(value);
+    scope.set_arg(name);
 
-   string                                                   filename;
-   bit                                                      filename_set;
+    write_attribute_int(scope.get(),
+      ival,
+      UVM_REAL,
+    64);
+  endfunction : do_record_field_real
 
-   // Function- open_file
-   //
-   // Opens the file in the <filename> property and assigns to the
-   // file descriptor <file>.
-   //
-   virtual function bit open_file();
-     if (!filename_set) begin
-       m_text_db.set_file_name(filename);
-     end
-     return m_text_db.open_db();
-   endfunction
+  // Function: do_record_object
+  // Record an object field.
+  //
+  // Text-backend specific implementation.
+  //
+  // The method uses ~identifier~ to determine whether or not to
+  // record the object instance id, and ~recursion_policy~ to
+  // determine whether or not to recurse into the object.
+  protected virtual function void do_record_object(string name,
+                                                   uvm_object value);
+    int            v;
+    string         str;
+
+    if(identifier) begin 
+      if(value != null) begin
+        $swrite(str, "%0d", value.get_inst_id());
+        v = str.atoi(); 
+      end
+      scope.set_arg(name);
+      write_attribute_int(scope.get(), 
+        v, 
+        UVM_DEC, 
+      32);
+    end
+
+    if(policy != UVM_REFERENCE) begin
+      if(value!=null) begin
+        if(value.__m_uvm_status_container.cycle_check.exists(value)) return;
+        value.__m_uvm_status_container.cycle_check[value] = 1;
+        scope.down(name);
+        value.record(this);
+        scope.up();
+        value.__m_uvm_status_container.cycle_check.delete(value);
+      end
+    end
+  endfunction : do_record_object
+
+  // Function: do_record_string
+  // Records a string field.
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_record_string(string name,
+                                                   string value);
+    scope.set_arg(name);
+    if (m_text_db.open_db()) begin
+      $fdisplay(m_text_db.m_file, 
+        "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
+        $realtime,
+        this.get_handle(),
+        scope.get(),
+        value,
+        "UVM_STRING",
+      8+value.len());
+    end
+  endfunction : do_record_string
+
+  // Function: do_record_time
+  // Records a time field.
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_record_time(string name,
+                                                 time value);
+    scope.set_arg(name);
+    write_attribute_int(scope.get(), 
+      value,
+      UVM_TIME, 
+    64);
+  endfunction : do_record_time
+
+  // Function: do_record_generic
+  // Records a name/value pair, where ~value~ has been converted to a string.
+  //
+  // Text-backend specific implementation.
+  protected virtual function void do_record_generic(string name,
+                                                    string value,
+                                                    string type_name);
+    scope.set_arg(name);
+    write_attribute(scope.get(), 
+      uvm_string_to_bits(value), 
+      UVM_STRING, 
+    8+value.len());
+  endfunction : do_record_generic
+
+  // Group: Implementation Specific API
+
+  // Function: write_attribute
+  // Outputs an integral attribute to the textual log
+  //
+  // Parameters:
+  // nm - Name of the attribute
+  // value - Value
+  // radix - Radix of the output
+  // numbits - number of valid bits
+  function void write_attribute(string nm,
+                                uvm_bitstream_t value,
+                                uvm_radix_enum radix,
+                                integer numbits=$bits(uvm_bitstream_t));
+    if (m_text_db.open_db()) begin
+      $fdisplay(m_text_db.m_file, 
+        "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
+        $realtime,
+        this.get_handle(),
+        nm,
+        uvm_bitstream_to_string(value, numbits, radix),
+        radix.name(),
+      numbits);
+    end
+  endfunction : write_attribute
+
+  // Function: write_attribute_int
+  // Outputs an integral attribute to the textual log
+  //
+  // Parameters:
+  // nm - Name of the attribute
+  // value - Value
+  // radix - Radix of the output
+  // numbits - number of valid bits
+  function void write_attribute_int(string  nm,
+                                    uvm_integral_t value,
+                                    uvm_radix_enum radix,
+                                    integer numbits=$bits(uvm_bitstream_t));
+    if (m_text_db.open_db()) begin
+      $fdisplay(m_text_db.m_file, 
+        "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
+        $realtime,
+        this.get_handle(),
+        nm,
+        uvm_integral_to_string(value, numbits, radix),
+        radix.name(),
+      numbits);
+    end
+  endfunction : write_attribute_int
+
+  /// LEFT FOR BACKWARDS COMPAT ONLY!!!!!!!!
+
+  //------------------------------
+  // Group- Vendor-Independent API
+  //------------------------------
 
 
-   // Function- create_stream
-   //
-   //
-   virtual function integer create_stream (string name,
-       string t,
-   string scope);
-   uvm_text_tr_stream stream;
-   if (open_file()) begin
-     $cast(stream,m_text_db.open_stream(name, scope, t));
-     return stream.get_handle();
-   end
-   return 0;
- endfunction
+  // UVM provides only a text-based default implementation.
+  // Vendors provide subtype implementations and overwrite the
+  // <uvm_default_recorder> handle.
+
+  string                                                   filename;
+  bit                                                      filename_set;
+
+  // Function- open_file
+  //
+  // Opens the file in the <filename> property and assigns to the
+  // file descriptor <file>.
+  //
+  virtual function bit open_file();
+    if (!filename_set) begin
+      m_text_db.set_file_name(filename);
+    end
+    return m_text_db.open_db();
+  endfunction
 
 
- // Function- m_set_attribute
- //
- //
- virtual function void m_set_attribute (integer txh,
-     string nm,
- string value);
- if (open_file()) begin
-   UVM_FILE file = m_text_db.m_file;
-   $fdisplay(file,"      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s}", $realtime,txh,nm,value);
- end
+  // Function- create_stream
+  //
+  //
+  virtual function integer create_stream (string name,
+                                          string t,
+                                          string scope);
+    uvm_text_tr_stream stream;
+    if (open_file()) begin
+      $cast(stream,m_text_db.open_stream(name, scope, t));
+      return stream.get_handle();
+    end
+    return 0;
+  endfunction
+
+
+  // Function- m_set_attribute
+  //
+  //
+  virtual function void m_set_attribute (integer txh,
+                                         string nm,
+                                         string value);
+    if (open_file()) begin
+      UVM_FILE file = m_text_db.m_file;
+      $fdisplay(file,"      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s}", $realtime,txh,nm,value);
+    end
   endfunction
 
 
@@ -1045,55 +1045,55 @@ size);
   //
   //
   virtual function void set_attribute (integer txh,
-      string nm,
-      logic [1023:0] value,
-      uvm_radix_enum radix,
-  integer numbits=1024);
-  if (open_file()) begin
-    UVM_FILE file = m_text_db.m_file;
-    $fdisplay(file, 
-      "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
-      $realtime,
-      txh,
-      nm,
-      uvm_bitstream_to_string(value, numbits, radix),
-      radix.name(),
-    numbits);
+                                       string nm,
+                                       logic [1023:0] value,
+                                       uvm_radix_enum radix,
+                                       integer numbits=1024);
+    if (open_file()) begin
+      UVM_FILE file = m_text_db.m_file;
+      $fdisplay(file, 
+        "      SET_ATTR @%0t {TXH:%0d NAME:%s VALUE:%s   RADIX:%s BITS=%0d}",
+        $realtime,
+        txh,
+        nm,
+        uvm_bitstream_to_string(value, numbits, radix),
+        radix.name(),
+      numbits);
 
-  end
-endfunction
-
-
-// Function- check_handle_kind
-//
-//
-virtual function integer check_handle_kind (string htype, integer handle);
-  return ((uvm_recorder::get_recorder_from_handle(handle) != null) ||
-  (uvm_tr_stream::get_stream_from_handle(handle) != null));
-endfunction
+    end
+  endfunction
 
 
-// Function- begin_tr
-//
-//
-virtual function integer begin_tr(string txtype,
-    integer stream,
-    string nm,
-    string label="",
-    string desc="",
-time begin_time=0);
-if (open_file()) begin
-  uvm_tr_stream stream_obj = uvm_tr_stream::get_stream_from_handle(stream);
-  uvm_recorder recorder;
+  // Function- check_handle_kind
+  //
+  //
+  virtual function integer check_handle_kind (string htype, integer handle);
+    return ((uvm_recorder::get_recorder_from_handle(handle) != null) ||
+    (uvm_tr_stream::get_stream_from_handle(handle) != null));
+  endfunction
 
-  if (stream_obj == null)
+
+  // Function- begin_tr
+  //
+  //
+  virtual function integer begin_tr(string txtype,
+                                    integer stream,
+                                    string nm,
+                                    string label="",
+                                    string desc="",
+                                    time begin_time=0);
+    if (open_file()) begin
+      uvm_tr_stream stream_obj = uvm_tr_stream::get_stream_from_handle(stream);
+      uvm_recorder recorder;
+
+      if (stream_obj == null)
+        return -1;
+
+      recorder = stream_obj.open_recorder(nm, begin_time, txtype);
+
+      return recorder.get_handle();
+    end
     return -1;
-
-  recorder = stream_obj.open_recorder(nm, begin_time, txtype);
-
-  return recorder.get_handle();
-end
-return -1;
   endfunction
 
 
@@ -1114,25 +1114,25 @@ return -1;
   //
   //
   virtual function void link_tr(integer h1,
-      integer h2,
-  string relation="");
-  if (open_file())
-    $fdisplay(m_text_db.m_file,"  LINK @%0t {TXH1:%0d TXH2:%0d RELATION=%0s}", $realtime,h1,h2,relation);
-endfunction
+                                integer h2,
+                                string relation="");
+    if (open_file())
+      $fdisplay(m_text_db.m_file,"  LINK @%0t {TXH1:%0d TXH2:%0d RELATION=%0s}", $realtime,h1,h2,relation);
+  endfunction
 
 
 
-// Function- free_tr
-//
-//
-virtual function void free_tr(integer handle);
-  if (open_file()) begin
-    uvm_recorder record = uvm_recorder::get_recorder_from_handle(handle);
-    if (record != null) begin
-      record.free();
+  // Function- free_tr
+  //
+  //
+  virtual function void free_tr(integer handle);
+    if (open_file()) begin
+      uvm_recorder record = uvm_recorder::get_recorder_from_handle(handle);
+      if (record != null) begin
+        record.free();
+      end
     end
-  end
-endfunction // free_tr
+  endfunction // free_tr
 
 endclass : uvm_text_recorder
 

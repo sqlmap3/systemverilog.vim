@@ -108,179 +108,179 @@ virtual class uvm_printer;
 
   // backward compatibility
   virtual function void print_int (string          name, 
-      uvm_bitstream_t value, 
-      int    size, 
-      uvm_radix_enum radix=UVM_NORADIX,
-      byte   scope_separator=".",
-  string type_name="");
-  print_field (name, value, size, radix, scope_separator, type_name);
-endfunction
+                                   uvm_bitstream_t value, 
+                                   int    size, 
+                                   uvm_radix_enum radix=UVM_NORADIX,
+                                   byte   scope_separator=".",
+                                   string type_name="");
+    print_field (name, value, size, radix, scope_separator, type_name);
+  endfunction
 
-// Function: print_field_int
-//
-// Prints an integral field (up to 64 bits).
-//
-// name  - The name of the field. 
-// value - The value of the field.
-// size  - The number of bits of the field (maximum is 64). 
-// radix - The radix to use for printing. The printer knob for radix is used
-//           if no radix is specified. 
-// scope_separator - is used to find the leaf name since many printers only
-//           print the leaf name of a field.  Typical values for the separator
-//           are . (dot) or [ (open bracket).
-extern virtual function void print_field_int (string name,
-                                              uvm_integral_t value, 
-                                              int    size, 
-                                              uvm_radix_enum radix=UVM_NORADIX,
-                                              byte   scope_separator=".",
-                                              string type_name="");
+  // Function: print_field_int
+  //
+  // Prints an integral field (up to 64 bits).
+  //
+  // name  - The name of the field. 
+  // value - The value of the field.
+  // size  - The number of bits of the field (maximum is 64). 
+  // radix - The radix to use for printing. The printer knob for radix is used
+  //           if no radix is specified. 
+  // scope_separator - is used to find the leaf name since many printers only
+  //           print the leaf name of a field.  Typical values for the separator
+  //           are . (dot) or [ (open bracket).
+  extern virtual function void print_field_int (string name,
+                                                uvm_integral_t value, 
+                                                int    size, 
+                                                uvm_radix_enum radix=UVM_NORADIX,
+                                                byte   scope_separator=".",
+                                                string type_name="");
 
-// Function: print_object
-//
-// Prints an object. Whether the object is recursed depends on a variety of
-// knobs, such as the depth knob; if the current depth is at or below the
-// depth setting, then the object is not recursed. 
-//
-// By default, the children of <uvm_components> are printed. To turn this
-// behavior off, you must set the <uvm_component::print_enabled> bit to 0 for
-// the specific children you do not want automatically printed.
+  // Function: print_object
+  //
+  // Prints an object. Whether the object is recursed depends on a variety of
+  // knobs, such as the depth knob; if the current depth is at or below the
+  // depth setting, then the object is not recursed. 
+  //
+  // By default, the children of <uvm_components> are printed. To turn this
+  // behavior off, you must set the <uvm_component::print_enabled> bit to 0 for
+  // the specific children you do not want automatically printed.
 
-extern virtual function void print_object (string     name,
-                                           uvm_object value, 
-                                           byte       scope_separator=".");
-
-
-extern virtual function void print_object_header (string name,
-                                                  uvm_object value,
-                                                  byte scope_separator=".");
+  extern virtual function void print_object (string     name,
+                                             uvm_object value, 
+                                             byte       scope_separator=".");
 
 
-// Function: print_string
-//
-// Prints a string field.
+  extern virtual function void print_object_header (string name,
+                                                    uvm_object value,
+                                                    byte scope_separator=".");
 
-extern virtual function void print_string (string name,
-                                           string value, 
+
+  // Function: print_string
+  //
+  // Prints a string field.
+
+  extern virtual function void print_string (string name,
+                                             string value, 
+                                             byte   scope_separator=".");
+
+
+  // Function: print_time
+  //
+  // Prints a time value. name is the name of the field, and value is the
+  // value to print. 
+  //
+  // The print is subject to the ~$timeformat~ system task for formatting time
+  // values.
+
+  extern virtual function void print_time (string name,
+                                           time   value, 
                                            byte   scope_separator=".");
 
 
-// Function: print_time
-//
-// Prints a time value. name is the name of the field, and value is the
-// value to print. 
-//
-// The print is subject to the ~$timeformat~ system task for formatting time
-// values.
+  // Function: print_real
+  //
+  // Prints a real field.
 
-extern virtual function void print_time (string name,
-                                         time   value, 
-                                         byte   scope_separator=".");
+  extern virtual function void print_real (string  name, 
+                                           real    value,
+                                           byte    scope_separator=".");
 
+  // Function: print_generic
+  //
+  // Prints a field having the given ~name~, ~type_name~, ~size~, and ~value~.
 
-// Function: print_real
-//
-// Prints a real field.
+  extern virtual function void print_generic (string  name, 
+                                              string  type_name, 
+                                              int     size, 
+                                              string  value,
+                                              byte    scope_separator=".");
 
-extern virtual function void print_real (string  name, 
-                                         real    value,
-                                         byte    scope_separator=".");
+  // Group: Methods for printer subtyping
 
-// Function: print_generic
-//
-// Prints a field having the given ~name~, ~type_name~, ~size~, and ~value~.
-
-extern virtual function void print_generic (string  name, 
-                                            string  type_name, 
-                                            int     size, 
-                                            string  value,
-                                            byte    scope_separator=".");
-
-// Group: Methods for printer subtyping
-
-// Function: emit
-//
-// Emits a string representing the contents of an object
-// in a format defined by an extension of this object.
-//
-extern virtual function string emit (); 
+  // Function: emit
+  //
+  // Emits a string representing the contents of an object
+  // in a format defined by an extension of this object.
+  //
+  extern virtual function string emit (); 
 
 
-// Function: format_row
-//
-// Hook for producing custom output of a single field (row).
-//
-extern virtual function string format_row (uvm_printer_row_info row);
+  // Function: format_row
+  //
+  // Hook for producing custom output of a single field (row).
+  //
+  extern virtual function string format_row (uvm_printer_row_info row);
 
 
-// Function: format_header
-//
-// Hook to override base header with a custom header. 
-virtual function string format_header();
-  return "";
-endfunction
+  // Function: format_header
+  //
+  // Hook to override base header with a custom header. 
+  virtual function string format_header();
+    return "";
+  endfunction
 
 
-// Function: format_footer
-//
-// Hook to override base footer with a custom footer. 
-virtual function string format_footer();
-  return "";
-endfunction
+  // Function: format_footer
+  //
+  // Hook to override base footer with a custom footer. 
+  virtual function string format_footer();
+    return "";
+  endfunction
 
 
-// Function: adjust_name
-//
-// Prints a field's name, or ~id~, which is the full instance name.
-//
-// The intent of the separator is to mark where the leaf name starts if the
-// printer if configured to print only the leaf name of the identifier. 
+  // Function: adjust_name
+  //
+  // Prints a field's name, or ~id~, which is the full instance name.
+  //
+  // The intent of the separator is to mark where the leaf name starts if the
+  // printer if configured to print only the leaf name of the identifier. 
 
-extern virtual protected function string adjust_name (string id, 
-                                                      byte scope_separator=".");
+  extern virtual protected function string adjust_name (string id, 
+                                                        byte scope_separator=".");
 
-// Function: print_array_header
-//
-// Prints the header of an array. This function is called before each
-// individual element is printed. <print_array_footer> is called to mark the
-// completion of array printing.
+  // Function: print_array_header
+  //
+  // Prints the header of an array. This function is called before each
+  // individual element is printed. <print_array_footer> is called to mark the
+  // completion of array printing.
 
-extern virtual  function void print_array_header(string name,
-                                                 int    size,     
-                                                 string arraytype="array",
-                                                 byte   scope_separator=".");
+  extern virtual  function void print_array_header(string name,
+                                                   int    size,     
+                                                   string arraytype="array",
+                                                   byte   scope_separator=".");
 
-// Function: print_array_range
-//
-// Prints a range using ellipses for values. This method is used when honoring
-// the array knobs for partial printing of large arrays, 
-// <uvm_printer_knobs::begin_elements> and <uvm_printer_knobs::end_elements>. 
-//
-// This function should be called after begin_elements have been printed
-// and before end_elements have been printed.
+  // Function: print_array_range
+  //
+  // Prints a range using ellipses for values. This method is used when honoring
+  // the array knobs for partial printing of large arrays, 
+  // <uvm_printer_knobs::begin_elements> and <uvm_printer_knobs::end_elements>. 
+  //
+  // This function should be called after begin_elements have been printed
+  // and before end_elements have been printed.
 
-extern virtual function void print_array_range (int min, int max);
+  extern virtual function void print_array_range (int min, int max);
 
 
-// Function: print_array_footer
-//
-// Prints the header of a footer. This function marks the end of an array
-// print. Generally, there is no output associated with the array footer, but
-// this method let's the printer know that the array printing is complete.
+  // Function: print_array_footer
+  //
+  // Prints the header of a footer. This function marks the end of an array
+  // print. Generally, there is no output associated with the array footer, but
+  // this method let's the printer know that the array printing is complete.
 
-extern virtual  function void print_array_footer (int size = 0);
+  extern virtual  function void print_array_footer (int size = 0);
 
 
 
-// Utility methods
-extern  function bit istop ();
-extern  function string index_string (int index, string name="");
+  // Utility methods
+  extern  function bit istop ();
+  extern  function string index_string (int index, string name="");
 
-protected bit m_array_stack[$];
-uvm_scope_stack m_scope = new;
-string m_string;
+  protected bit m_array_stack[$];
+  uvm_scope_stack m_scope = new;
+  string m_string;
 
-// holds each cell entry
-protected uvm_printer_row_info m_rows[$];
+  // holds each cell entry
+  protected uvm_printer_row_info m_rows[$];
 
 endclass
 
@@ -657,24 +657,24 @@ endfunction
 // ------------------
 
 function void uvm_printer::print_array_header (string name,
-    int size,
-    string arraytype="array",
-byte scope_separator=".");
-uvm_printer_row_info row_info;
+                                               int size,
+                                               string arraytype="array",
+                                               byte scope_separator=".");
+  uvm_printer_row_info row_info;
 
-if(name != "")
-  m_scope.set_arg(name);
+  if(name != "")
+    m_scope.set_arg(name);
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(m_scope.get(),scope_separator);
-row_info.type_name = arraytype;
-row_info.size = $sformatf("%0d",size);
-row_info.val = "-";
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(m_scope.get(),scope_separator);
+  row_info.type_name = arraytype;
+  row_info.size = $sformatf("%0d",size);
+  row_info.val = "-";
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
-m_scope.down(name);
-m_array_stack.push_back(1);
+  m_scope.down(name);
+  m_array_stack.push_back(1);
 endfunction
 
 
@@ -710,39 +710,39 @@ endfunction
 // -------------------
 
 function void uvm_printer::print_object_header (string name,
-    uvm_object value,
-byte scope_separator=".");
-uvm_printer_row_info row_info;
-uvm_component comp;
+                                                uvm_object value,
+                                                byte scope_separator=".");
+  uvm_printer_row_info row_info;
+  uvm_component comp;
 
-if(name == "") begin
-  if(value!=null) begin
-    if((m_scope.depth()==0) && $cast(comp, value)) begin
-      name = comp.get_full_name();
-    end
-    else begin
-      name=value.get_name();
+  if(name == "") begin
+    if(value!=null) begin
+      if((m_scope.depth()==0) && $cast(comp, value)) begin
+        name = comp.get_full_name();
+      end
+      else begin
+        name=value.get_name();
+      end
     end
   end
-end
 
-if(name == "")
-  name = "<unnamed>";
+  if(name == "")
+    name = "<unnamed>";
 
-m_scope.set_arg(name);
+  m_scope.set_arg(name);
 
-row_info.level = m_scope.depth();
+  row_info.level = m_scope.depth();
 
-if(row_info.level == 0 && knobs.show_root==1)
-  row_info.name = value.get_full_name();
-else
-  row_info.name = adjust_name(m_scope.get(),scope_separator);
+  if(row_info.level == 0 && knobs.show_root==1)
+    row_info.name = value.get_full_name();
+  else
+    row_info.name = adjust_name(m_scope.get(),scope_separator);
 
-row_info.type_name = (value != null) ?  value.get_type_name() : "object";
-row_info.size = "-";
-row_info.val = knobs.reference ? uvm_object_value_str(value) : "-";
+  row_info.type_name = (value != null) ?  value.get_type_name() : "object";
+  row_info.size = "-";
+  row_info.val = knobs.reference ? uvm_object_value_str(value) : "-";
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 
@@ -751,42 +751,42 @@ endfunction
 // ------------
 
 function void uvm_printer::print_object (string name, uvm_object value,
-byte scope_separator=".");
-uvm_component comp, child_comp;
+                                         byte scope_separator=".");
+  uvm_component comp, child_comp;
 
-print_object_header(name,value,scope_separator);
+  print_object_header(name,value,scope_separator);
 
-if(value != null)  begin
-  if((knobs.depth == -1 || (knobs.depth > m_scope.depth())) &&
-  !value.__m_uvm_status_container.cycle_check.exists(value)) begin
+  if(value != null)  begin
+    if((knobs.depth == -1 || (knobs.depth > m_scope.depth())) &&
+    !value.__m_uvm_status_container.cycle_check.exists(value)) begin
 
-    value.__m_uvm_status_container.cycle_check[value] = 1;
-    if(name=="" && value!=null) 
-      m_scope.down(value.get_name());
-    else
-      m_scope.down(name);
+      value.__m_uvm_status_container.cycle_check[value] = 1;
+      if(name=="" && value!=null) 
+        m_scope.down(value.get_name());
+      else
+        m_scope.down(name);
 
-    //Handle children of the comp
-    if($cast(comp, value)) begin
-      string name;
-      if (comp.get_first_child(name))
-      do begin
-        child_comp = comp.get_child(name);
-        if(child_comp.print_enabled)
-          this.print_object("",child_comp);
-      end while (comp.get_next_child(name));
+      //Handle children of the comp
+      if($cast(comp, value)) begin
+        string name;
+        if (comp.get_first_child(name))
+        do begin
+          child_comp = comp.get_child(name);
+          if(child_comp.print_enabled)
+            this.print_object("",child_comp);
+        end while (comp.get_next_child(name));
+      end
+
+      // print members of object
+      void'(value.sprint(this));
+
+      if(name != "" && name[0] == "[")
+        m_scope.up("[");
+      else
+        m_scope.up(".");
+      value.__m_uvm_status_container.cycle_check.delete(value);
     end
-
-    // print members of object
-    void'(value.sprint(this));
-
-    if(name != "" && name[0] == "[")
-      m_scope.up("[");
-    else
-      m_scope.up(".");
-    value.__m_uvm_status_container.cycle_check.delete(value);
   end
-end
 
 endfunction
 
@@ -813,25 +813,25 @@ endfunction
 // -------------
 
 function void uvm_printer::print_generic (string name,
-    string type_name,        
-    int size,
-    string value,
-byte scope_separator=".");
+                                          string type_name,        
+                                          int size,
+                                          string value,
+                                          byte scope_separator=".");
 
-uvm_printer_row_info row_info;
+  uvm_printer_row_info row_info;
 
-if (name != "" && name != "...") begin
-  m_scope.set_arg(name);
-  name = m_scope.get();
-end
+  if (name != "" && name != "...") begin
+    m_scope.set_arg(name);
+    name = m_scope.get();
+  end
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(name,scope_separator);
-row_info.type_name = type_name;
-row_info.size = (size == -2 ? "..." : $sformatf("%0d",size));
-row_info.val = (value == "" ? "\"\"" : value);
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(name,scope_separator);
+  row_info.type_name = type_name;
+  row_info.size = (size == -2 ? "..." : $sformatf("%0d",size));
+  row_info.val = (value == "" ? "\"\"" : value);
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 
@@ -840,44 +840,44 @@ endfunction
 // ---------
 
 function void uvm_printer::print_field (string name,
-    uvm_bitstream_t value, 
-    int size, 
-    uvm_radix_enum radix=UVM_NORADIX,
-    byte scope_separator=".",
-string type_name="");
+                                        uvm_bitstream_t value, 
+                                        int size, 
+                                        uvm_radix_enum radix=UVM_NORADIX,
+                                        byte scope_separator=".",
+                                        string type_name="");
 
-uvm_printer_row_info row_info;
-string sz_str, val_str;
+  uvm_printer_row_info row_info;
+  string sz_str, val_str;
 
-if(name != "") begin
-  m_scope.set_arg(name);
-  name = m_scope.get();
-end
+  if(name != "") begin
+    m_scope.set_arg(name);
+    name = m_scope.get();
+  end
 
-if(type_name == "") begin
-  if(radix == UVM_TIME)
-    type_name ="time";
-  else if(radix == UVM_STRING)
-    type_name ="string";
-  else
-    type_name ="integral";
-end
+  if(type_name == "") begin
+    if(radix == UVM_TIME)
+      type_name ="time";
+    else if(radix == UVM_STRING)
+      type_name ="string";
+    else
+      type_name ="integral";
+  end
 
-sz_str.itoa(size);
+  sz_str.itoa(size);
 
-if(radix == UVM_NORADIX)
-  radix = knobs.default_radix;
+  if(radix == UVM_NORADIX)
+    radix = knobs.default_radix;
 
-val_str = uvm_bitstream_to_string (value, size, radix,
-knobs.get_radix_str(radix));
+  val_str = uvm_bitstream_to_string (value, size, radix,
+  knobs.get_radix_str(radix));
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(name,scope_separator);
-row_info.type_name = type_name;
-row_info.size = sz_str;
-row_info.val = val_str;
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(name,scope_separator);
+  row_info.type_name = type_name;
+  row_info.size = sz_str;
+  row_info.val = val_str;
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 
@@ -885,44 +885,44 @@ endfunction
 // ---------
 
 function void uvm_printer::print_field_int (string name,
-    uvm_integral_t value, 
-    int          size, 
-    uvm_radix_enum radix=UVM_NORADIX,
-    byte         scope_separator=".",
-string       type_name="");
+                                            uvm_integral_t value, 
+                                            int          size, 
+                                            uvm_radix_enum radix=UVM_NORADIX,
+                                            byte         scope_separator=".",
+                                            string       type_name="");
 
-uvm_printer_row_info row_info;
-string sz_str, val_str;
+  uvm_printer_row_info row_info;
+  string sz_str, val_str;
 
-if(name != "") begin
-  m_scope.set_arg(name);
-  name = m_scope.get();
-end
+  if(name != "") begin
+    m_scope.set_arg(name);
+    name = m_scope.get();
+  end
 
-if(type_name == "") begin
-  if(radix == UVM_TIME)
-    type_name ="time";
-  else if(radix == UVM_STRING)
-    type_name ="string";
-  else
-    type_name ="integral";
-end
+  if(type_name == "") begin
+    if(radix == UVM_TIME)
+      type_name ="time";
+    else if(radix == UVM_STRING)
+      type_name ="string";
+    else
+      type_name ="integral";
+  end
 
-sz_str.itoa(size);
+  sz_str.itoa(size);
 
-if(radix == UVM_NORADIX)
-  radix = knobs.default_radix;
+  if(radix == UVM_NORADIX)
+    radix = knobs.default_radix;
 
-val_str = uvm_integral_to_string (value, size, radix,
-knobs.get_radix_str(radix));
+  val_str = uvm_integral_to_string (value, size, radix,
+  knobs.get_radix_str(radix));
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(name,scope_separator);
-row_info.type_name = type_name;
-row_info.size = sz_str;
-row_info.val = val_str;
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(name,scope_separator);
+  row_info.type_name = type_name;
+  row_info.size = sz_str;
+  row_info.val = val_str;
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 
@@ -931,9 +931,9 @@ endfunction
 // ----------
 
 function void uvm_printer::print_time (string name,
-    time value,
-byte scope_separator=".");
-print_field_int(name, value, 64, UVM_TIME, scope_separator);
+                                       time value,
+                                       byte scope_separator=".");
+  print_field_int(name, value, 64, UVM_TIME, scope_separator);
 endfunction
 
 
@@ -941,21 +941,21 @@ endfunction
 // ------------
 
 function void uvm_printer::print_string (string name,
-    string value,
-byte scope_separator=".");
+                                         string value,
+                                         byte scope_separator=".");
 
-uvm_printer_row_info row_info;
+  uvm_printer_row_info row_info;
 
-if(name != "")
-  m_scope.set_arg(name);
+  if(name != "")
+    m_scope.set_arg(name);
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(m_scope.get(),scope_separator);
-row_info.type_name = "string";
-row_info.size = $sformatf("%0d",value.len());
-row_info.val = (value == "" ? "\"\"" : value);
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(m_scope.get(),scope_separator);
+  row_info.type_name = "string";
+  row_info.size = $sformatf("%0d",value.len());
+  row_info.val = (value == "" ? "\"\"" : value);
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 
@@ -964,23 +964,23 @@ endfunction
 // ----------
 
 function void uvm_printer::print_real (string name,
-    real value,
-byte scope_separator=".");
+                                       real value,
+                                       byte scope_separator=".");
 
-uvm_printer_row_info row_info;
+  uvm_printer_row_info row_info;
 
-if (name != "" && name != "...") begin
-  m_scope.set_arg(name);
-  name = m_scope.get();
-end
+  if (name != "" && name != "...") begin
+    m_scope.set_arg(name);
+    name = m_scope.get();
+  end
 
-row_info.level = m_scope.depth();
-row_info.name = adjust_name(m_scope.get(),scope_separator);
-row_info.type_name = "real";
-row_info.size = "64";
-row_info.val = $sformatf("%f",value);
+  row_info.level = m_scope.depth();
+  row_info.name = adjust_name(m_scope.get(),scope_separator);
+  row_info.type_name = "real";
+  row_info.size = "64";
+  row_info.val = $sformatf("%f",value);
 
-m_rows.push_back(row_info);
+  m_rows.push_back(row_info);
 
 endfunction
 

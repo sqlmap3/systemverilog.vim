@@ -220,326 +220,326 @@ class uvm_reg_sequence #(type BASE=uvm_sequence #(uvm_reg_item)) extends BASE;
   //| model.regA.write(status, value, .parent(this));
   //
   virtual task write_reg(input  uvm_reg           rg,
-      output uvm_status_e      status,
-      input  uvm_reg_data_t    value,
-      input  uvm_path_e        path = UVM_DEFAULT_PATH,
-      input  uvm_reg_map       map = null,
-      input  int               prior = -1,
-      input  uvm_object        extension = null,
-      input  string            fname = "",
-  input  int               lineno = 0);
-  if (rg == null)
-    `uvm_error("NO_REG","Register argument is null")
-  else
-    rg.write(status,value,path,map,this,prior,extension,fname,lineno);
-endtask
+                         output uvm_status_e      status,
+                         input  uvm_reg_data_t    value,
+                         input  uvm_path_e        path = UVM_DEFAULT_PATH,
+                         input  uvm_reg_map       map = null,
+                         input  int               prior = -1,
+                         input  uvm_object        extension = null,
+                         input  string            fname = "",
+                         input  int               lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.write(status,value,path,map,this,prior,extension,fname,lineno);
+  endtask
 
 
-// Task: read_reg
+  // Task: read_reg
+  //
+  // Reads the given register ~rg~ using <uvm_reg::read>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| read_reg(model.regA, status, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.read(status, value, .parent(this));
+  //
+  //
+  virtual task read_reg(input  uvm_reg           rg,
+                        output uvm_status_e      status,
+                        output uvm_reg_data_t    value,
+                        input  uvm_path_e        path = UVM_DEFAULT_PATH,
+                        input  uvm_reg_map       map = null,
+                        input  int               prior = -1,
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.read(status,value,path,map,this,prior,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: poke_reg
+  //
+  // Pokes the given register ~rg~ using <uvm_reg::poke>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| poke_reg(model.regA, status, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.poke(status, value, .parent(this));
+  //
+  //
+  virtual task poke_reg(input  uvm_reg           rg,
+                        output uvm_status_e      status,
+                        input  uvm_reg_data_t    value,
+                        input  string            kind = "",
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.poke(status,value,kind,this,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: peek_reg
+  //
+  // Peeks the given register ~rg~ using <uvm_reg::peek>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| peek_reg(model.regA, status, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.peek(status, value, .parent(this));
+  //
+  virtual task peek_reg(input  uvm_reg           rg,
+                        output uvm_status_e      status,
+                        output uvm_reg_data_t    value,
+                        input  string            kind = "",
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.peek(status,value,kind,this,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: update_reg
+  //
+  // Updates the given register ~rg~ using <uvm_reg::update>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| update_reg(model.regA, status, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.update(status, value, .parent(this));
+  //
+  virtual task update_reg(input  uvm_reg           rg,
+                          output uvm_status_e      status,
+                          input  uvm_path_e        path = UVM_DEFAULT_PATH,
+                          input  uvm_reg_map       map = null,
+                          input  int               prior = -1,
+                          input  uvm_object        extension = null,
+                          input  string            fname = "",
+                          input  int               lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.update(status,path,map,this,prior,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: mirror_reg
+  //
+  // Mirrors the given register ~rg~ using <uvm_reg::mirror>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| mirror_reg(model.regA, status, UVM_CHECK);
+  //
+  // is equivalent to
+  //
+  //| model.regA.mirror(status, UVM_CHECK, .parent(this));
+  //
+  virtual task mirror_reg(input  uvm_reg       rg,
+                          output uvm_status_e  status,
+                          input  uvm_check_e   check  = UVM_NO_CHECK,
+                          input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                          input  uvm_reg_map   map = null,
+                          input  int           prior = -1,
+                          input  uvm_object    extension = null,
+                          input  string        fname = "",
+                          input  int           lineno = 0);
+    if (rg == null)
+      `uvm_error("NO_REG","Register argument is null")
+    else
+      rg.mirror(status,check,path,map,this,prior,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: write_mem
+  //
+  // Writes the given memory ~mem~ using <uvm_mem::write>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| write_mem(model.regA, status, offset, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.write(status, offset, value, .parent(this));
+  //
+  virtual task write_mem(input  uvm_mem           mem,
+                         output uvm_status_e      status,
+                         input  uvm_reg_addr_t    offset,
+                         input  uvm_reg_data_t    value,
+                         input  uvm_path_e        path = UVM_DEFAULT_PATH,
+                         input  uvm_reg_map       map = null,
+                         input  int               prior = -1,
+                         input  uvm_object        extension = null,
+                         input  string            fname = "",
+                         input  int               lineno = 0);
+    if (mem == null)
+      `uvm_error("NO_MEM","Memory argument is null")
+    else
+      mem.write(status,offset,value,path,map,this,prior,extension,fname,lineno);
+  endtask
+
+
+  // Task: read_mem
+  //
+  // Reads the given memory ~mem~ using <uvm_mem::read>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| read_mem(model.regA, status, offset, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.read(status, offset, value, .parent(this));
+  //
+  //
+  virtual task read_mem(input  uvm_mem           mem,
+                        output uvm_status_e      status,
+                        input  uvm_reg_addr_t    offset,
+                        output uvm_reg_data_t    value,
+                        input  uvm_path_e        path = UVM_DEFAULT_PATH,
+                        input  uvm_reg_map       map = null,
+                        input  int               prior = -1,
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (mem == null)
+      `uvm_error("NO_MEM","Memory argument is null")
+    else
+      mem.read(status,offset,value,path,map,this,prior,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: poke_mem
+  //
+  // Pokes the given memory ~mem~ using <uvm_mem::poke>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| poke_mem(model.regA, status, offset, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.poke(status, offset, value, .parent(this));
+  //
+  //
+  virtual task poke_mem(input  uvm_mem           mem,
+                        output uvm_status_e      status,
+                        input  uvm_reg_addr_t    offset,
+                        input  uvm_reg_data_t    value,
+                        input  string            kind = "",
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (mem == null)
+      `uvm_error("NO_MEM","Memory argument is null")
+    else
+      mem.poke(status,offset,value,kind,this,extension,fname,lineno);
+  endtask
+
+
+
+  // Task: peek_mem
+  //
+  // Peeks the given memory ~mem~ using <uvm_mem::peek>, supplying 'this' as
+  // the ~parent~ argument. Thus,
+  //
+  //| peek_mem(model.regA, status, offset, value);
+  //
+  // is equivalent to
+  //
+  //| model.regA.peek(status, offset, value, .parent(this));
+  //
+  virtual task peek_mem(input  uvm_mem           mem,
+                        output uvm_status_e      status,
+                        input  uvm_reg_addr_t    offset,
+                        output uvm_reg_data_t    value,
+                        input  string            kind = "",
+                        input  uvm_object        extension = null,
+                        input  string            fname = "",
+                        input  int               lineno = 0);
+    if (mem == null)
+      `uvm_error("NO_MEM","Memory argument is null")
+    else
+      mem.peek(status,offset,value,kind,this,extension,fname,lineno);
+  endtask
+
+
+  // Function- put_response
+  //
+  // not user visible. Needed to populate this sequence's response
+  // queue with any bus item type. 
+  //
+  virtual function void put_response(uvm_sequence_item response_item);
+    put_base_response(response_item);
+  endfunction
+
+endclass
+
+
+//------------------------------------------------------------------------------
+// Class: uvm_reg_frontdoor
 //
-// Reads the given register ~rg~ using <uvm_reg::read>, supplying 'this' as
-// the ~parent~ argument. Thus,
+// Facade class for register and memory frontdoor access.
+//------------------------------------------------------------------------------
 //
-//| read_reg(model.regA, status, value);
+// User-defined frontdoor access sequence
 //
-// is equivalent to
+// Base class for user-defined access to register and memory reads and writes
+// through a physical interface.
 //
-//| model.regA.read(status, value, .parent(this));
+// By default, different registers and memories are mapped to different
+// addresses in the address space and are accessed via those exclusively
+// through physical addresses.
 //
+// The frontdoor allows access using a non-linear and/or non-mapped mechanism.
+// Users can extend this class to provide the physical access to these registers.
 //
-virtual task read_reg(input  uvm_reg           rg,
-    output uvm_status_e      status,
-    output uvm_reg_data_t    value,
-    input  uvm_path_e        path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map       map = null,
-    input  int               prior = -1,
-    input  uvm_object        extension = null,
-    input  string            fname = "",
-input  int               lineno = 0);
-if (rg == null)
-  `uvm_error("NO_REG","Register argument is null")
-else
-  rg.read(status,value,path,map,this,prior,extension,fname,lineno);
-   endtask
+virtual class uvm_reg_frontdoor extends uvm_reg_sequence #(uvm_sequence #(uvm_sequence_item));
 
+  // Variable: rw_info
+  //
+  // Holds information about the register being read or written
+  //
+  uvm_reg_item rw_info;
 
+  // Variable: sequencer
+  //
+  // Sequencer executing the operation
+  //
+  uvm_sequencer_base sequencer;
 
-   // Task: poke_reg
-   //
-   // Pokes the given register ~rg~ using <uvm_reg::poke>, supplying 'this' as
-   // the ~parent~ argument. Thus,
-   //
-   //| poke_reg(model.regA, status, value);
-   //
-   // is equivalent to
-   //
-   //| model.regA.poke(status, value, .parent(this));
-   //
-   //
-   virtual task poke_reg(input  uvm_reg           rg,
-       output uvm_status_e      status,
-       input  uvm_reg_data_t    value,
-       input  string            kind = "",
-       input  uvm_object        extension = null,
-       input  string            fname = "",
-   input  int               lineno = 0);
-   if (rg == null)
-     `uvm_error("NO_REG","Register argument is null")
-   else
-     rg.poke(status,value,kind,this,extension,fname,lineno);
- endtask
+  // Function: new
+  //
+  // Constructor, new object given optional ~name~.
+  //
+  function new(string name="");
+    super.new(name);
+  endfunction
 
+  string fname;
+  int lineno;
 
-
- // Task: peek_reg
- //
- // Peeks the given register ~rg~ using <uvm_reg::peek>, supplying 'this' as
- // the ~parent~ argument. Thus,
- //
- //| peek_reg(model.regA, status, value);
- //
- // is equivalent to
- //
- //| model.regA.peek(status, value, .parent(this));
- //
- virtual task peek_reg(input  uvm_reg           rg,
-     output uvm_status_e      status,
-     output uvm_reg_data_t    value,
-     input  string            kind = "",
-     input  uvm_object        extension = null,
-     input  string            fname = "",
- input  int               lineno = 0);
- if (rg == null)
-   `uvm_error("NO_REG","Register argument is null")
- else
-   rg.peek(status,value,kind,this,extension,fname,lineno);
-   endtask
-
-
-
-   // Task: update_reg
-   //
-   // Updates the given register ~rg~ using <uvm_reg::update>, supplying 'this' as
-   // the ~parent~ argument. Thus,
-   //
-   //| update_reg(model.regA, status, value);
-   //
-   // is equivalent to
-   //
-   //| model.regA.update(status, value, .parent(this));
-   //
-   virtual task update_reg(input  uvm_reg           rg,
-       output uvm_status_e      status,
-       input  uvm_path_e        path = UVM_DEFAULT_PATH,
-       input  uvm_reg_map       map = null,
-       input  int               prior = -1,
-       input  uvm_object        extension = null,
-       input  string            fname = "",
-   input  int               lineno = 0);
-   if (rg == null)
-     `uvm_error("NO_REG","Register argument is null")
-   else
-     rg.update(status,path,map,this,prior,extension,fname,lineno);
- endtask
-
-
-
- // Task: mirror_reg
- //
- // Mirrors the given register ~rg~ using <uvm_reg::mirror>, supplying 'this' as
- // the ~parent~ argument. Thus,
- //
- //| mirror_reg(model.regA, status, UVM_CHECK);
- //
- // is equivalent to
- //
- //| model.regA.mirror(status, UVM_CHECK, .parent(this));
- //
- virtual task mirror_reg(input  uvm_reg       rg,
-     output uvm_status_e  status,
-     input  uvm_check_e   check  = UVM_NO_CHECK,
-     input  uvm_path_e    path = UVM_DEFAULT_PATH,
-     input  uvm_reg_map   map = null,
-     input  int           prior = -1,
-     input  uvm_object    extension = null,
-     input  string        fname = "",
- input  int           lineno = 0);
- if (rg == null)
-   `uvm_error("NO_REG","Register argument is null")
- else
-   rg.mirror(status,check,path,map,this,prior,extension,fname,lineno);
-   endtask
-
-
-
-   // Task: write_mem
-   //
-   // Writes the given memory ~mem~ using <uvm_mem::write>, supplying 'this' as
-   // the ~parent~ argument. Thus,
-   //
-   //| write_mem(model.regA, status, offset, value);
-   //
-   // is equivalent to
-   //
-   //| model.regA.write(status, offset, value, .parent(this));
-   //
-   virtual task write_mem(input  uvm_mem           mem,
-       output uvm_status_e      status,
-       input  uvm_reg_addr_t    offset,
-       input  uvm_reg_data_t    value,
-       input  uvm_path_e        path = UVM_DEFAULT_PATH,
-       input  uvm_reg_map       map = null,
-       input  int               prior = -1,
-       input  uvm_object        extension = null,
-       input  string            fname = "",
-   input  int               lineno = 0);
-   if (mem == null)
-     `uvm_error("NO_MEM","Memory argument is null")
-   else
-     mem.write(status,offset,value,path,map,this,prior,extension,fname,lineno);
- endtask
-
-
- // Task: read_mem
- //
- // Reads the given memory ~mem~ using <uvm_mem::read>, supplying 'this' as
- // the ~parent~ argument. Thus,
- //
- //| read_mem(model.regA, status, offset, value);
- //
- // is equivalent to
- //
- //| model.regA.read(status, offset, value, .parent(this));
- //
- //
- virtual task read_mem(input  uvm_mem           mem,
-     output uvm_status_e      status,
-     input  uvm_reg_addr_t    offset,
-     output uvm_reg_data_t    value,
-     input  uvm_path_e        path = UVM_DEFAULT_PATH,
-     input  uvm_reg_map       map = null,
-     input  int               prior = -1,
-     input  uvm_object        extension = null,
-     input  string            fname = "",
- input  int               lineno = 0);
- if (mem == null)
-   `uvm_error("NO_MEM","Memory argument is null")
- else
-   mem.read(status,offset,value,path,map,this,prior,extension,fname,lineno);
-   endtask
-
-
-
-   // Task: poke_mem
-   //
-   // Pokes the given memory ~mem~ using <uvm_mem::poke>, supplying 'this' as
-   // the ~parent~ argument. Thus,
-   //
-   //| poke_mem(model.regA, status, offset, value);
-   //
-   // is equivalent to
-   //
-   //| model.regA.poke(status, offset, value, .parent(this));
-   //
-   //
-   virtual task poke_mem(input  uvm_mem           mem,
-       output uvm_status_e      status,
-       input  uvm_reg_addr_t    offset,
-       input  uvm_reg_data_t    value,
-       input  string            kind = "",
-       input  uvm_object        extension = null,
-       input  string            fname = "",
-   input  int               lineno = 0);
-   if (mem == null)
-     `uvm_error("NO_MEM","Memory argument is null")
-   else
-     mem.poke(status,offset,value,kind,this,extension,fname,lineno);
- endtask
-
-
-
- // Task: peek_mem
- //
- // Peeks the given memory ~mem~ using <uvm_mem::peek>, supplying 'this' as
- // the ~parent~ argument. Thus,
- //
- //| peek_mem(model.regA, status, offset, value);
- //
- // is equivalent to
- //
- //| model.regA.peek(status, offset, value, .parent(this));
- //
- virtual task peek_mem(input  uvm_mem           mem,
-     output uvm_status_e      status,
-     input  uvm_reg_addr_t    offset,
-     output uvm_reg_data_t    value,
-     input  string            kind = "",
-     input  uvm_object        extension = null,
-     input  string            fname = "",
- input  int               lineno = 0);
- if (mem == null)
-   `uvm_error("NO_MEM","Memory argument is null")
- else
-   mem.peek(status,offset,value,kind,this,extension,fname,lineno);
-   endtask
-
-
-   // Function- put_response
-   //
-   // not user visible. Needed to populate this sequence's response
-   // queue with any bus item type. 
-   //
-   virtual function void put_response(uvm_sequence_item response_item);
-     put_base_response(response_item);
-   endfunction
-
- endclass
-
-
- //------------------------------------------------------------------------------
- // Class: uvm_reg_frontdoor
- //
- // Facade class for register and memory frontdoor access.
- //------------------------------------------------------------------------------
- //
- // User-defined frontdoor access sequence
- //
- // Base class for user-defined access to register and memory reads and writes
- // through a physical interface.
- //
- // By default, different registers and memories are mapped to different
- // addresses in the address space and are accessed via those exclusively
- // through physical addresses.
- //
- // The frontdoor allows access using a non-linear and/or non-mapped mechanism.
- // Users can extend this class to provide the physical access to these registers.
- //
- virtual class uvm_reg_frontdoor extends uvm_reg_sequence #(uvm_sequence #(uvm_sequence_item));
-
-   // Variable: rw_info
-   //
-   // Holds information about the register being read or written
-   //
-   uvm_reg_item rw_info;
-
-   // Variable: sequencer
-   //
-   // Sequencer executing the operation
-   //
-   uvm_sequencer_base sequencer;
-
-   // Function: new
-   //
-   // Constructor, new object given optional ~name~.
-   //
-   function new(string name="");
-     super.new(name);
-   endfunction
-
-   string fname;
-   int lineno;
-
- endclass: uvm_reg_frontdoor
+endclass: uvm_reg_frontdoor
 
 
 

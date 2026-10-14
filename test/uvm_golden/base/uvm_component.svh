@@ -1042,21 +1042,21 @@ virtual class uvm_component extends uvm_report_object;
   // objections raised by the ~source_obj~.
 
   virtual function void raised (uvm_objection objection, uvm_object source_obj, 
-  string description, int count);
-endfunction
+                                string description, int count);
+  endfunction
 
 
-// Function: dropped
-//
-// The ~dropped~ callback is called when this or a descendant of this component
-// instance drops the specified ~objection~. The ~source_obj~ is the object
-// that originally dropped the objection. 
-// The ~description~ is optionally provided by the ~source_obj~ to give a
-// reason for dropping the objection. The ~count~ indicates the number of
-// objections dropped by the ~source_obj~.
+  // Function: dropped
+  //
+  // The ~dropped~ callback is called when this or a descendant of this component
+  // instance drops the specified ~objection~. The ~source_obj~ is the object
+  // that originally dropped the objection. 
+  // The ~description~ is optionally provided by the ~source_obj~ to give a
+  // reason for dropping the objection. The ~count~ indicates the number of
+  // objections dropped by the ~source_obj~.
 
-virtual function void dropped (uvm_objection objection, uvm_object source_obj, 
-string description, int count);
+  virtual function void dropped (uvm_objection objection, uvm_object source_obj, 
+                                 string description, int count);
   endfunction
 
 
@@ -1070,2569 +1070,2569 @@ string description, int count);
   // objections dropped by the ~source_obj~.
 
   virtual task all_dropped (uvm_objection objection, uvm_object source_obj, 
-  string description, int count);
-endtask
+                            string description, int count);
+  endtask
 
 
-//----------------------------------------------------------------------------
-// Group: Factory Interface
-//----------------------------------------------------------------------------
-//
-// The factory interface provides convenient access to a portion of UVM's
-// <uvm_factory> interface. For creating new objects and components, the
-// preferred method of accessing the factory is via the object or component
-// wrapper (see <uvm_component_registry #(T,Tname)> and
-// <uvm_object_registry #(T,Tname)>). The wrapper also provides functions
-// for setting type and instance overrides.
-//
-//----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  // Group: Factory Interface
+  //----------------------------------------------------------------------------
+  //
+  // The factory interface provides convenient access to a portion of UVM's
+  // <uvm_factory> interface. For creating new objects and components, the
+  // preferred method of accessing the factory is via the object or component
+  // wrapper (see <uvm_component_registry #(T,Tname)> and
+  // <uvm_object_registry #(T,Tname)>). The wrapper also provides functions
+  // for setting type and instance overrides.
+  //
+  //----------------------------------------------------------------------------
 
-// Function: create_component
-//
-// A convenience function for <uvm_factory::create_component_by_name>,
-// this method calls upon the factory to create a new child component
-// whose type corresponds to the preregistered type name, ~requested_type_name~,
-// and instance name, ~name~. This method is equivalent to:
-//
-//|  factory.create_component_by_name(requested_type_name,
-//|                                   get_full_name(), name, this);
-//
-// If the factory determines that a type or instance override exists, the type
-// of the component created may be different than the requested type. See
-// <set_type_override> and <set_inst_override>. See also <uvm_factory> for
-// details on factory operation.
+  // Function: create_component
+  //
+  // A convenience function for <uvm_factory::create_component_by_name>,
+  // this method calls upon the factory to create a new child component
+  // whose type corresponds to the preregistered type name, ~requested_type_name~,
+  // and instance name, ~name~. This method is equivalent to:
+  //
+  //|  factory.create_component_by_name(requested_type_name,
+  //|                                   get_full_name(), name, this);
+  //
+  // If the factory determines that a type or instance override exists, the type
+  // of the component created may be different than the requested type. See
+  // <set_type_override> and <set_inst_override>. See also <uvm_factory> for
+  // details on factory operation.
 
-extern function uvm_component create_component (string requested_type_name, 
-                                                string name);
-
-
-// Function: create_object
-//
-// A convenience function for <uvm_factory::create_object_by_name>,
-// this method calls upon the factory to create a new object
-// whose type corresponds to the preregistered type name,
-// ~requested_type_name~, and instance name, ~name~. This method is
-// equivalent to:
-//
-//|  factory.create_object_by_name(requested_type_name,
-//|                                get_full_name(), name);
-//
-// If the factory determines that a type or instance override exists, the
-// type of the object created may be different than the requested type.  See
-// <uvm_factory> for details on factory operation.
-
-extern function uvm_object create_object (string requested_type_name,
-                                          string name="");
+  extern function uvm_component create_component (string requested_type_name, 
+                                                  string name);
 
 
-// Function: set_type_override_by_type
-//
-// A convenience function for <uvm_factory::set_type_override_by_type>, this
-// method registers a factory override for components and objects created at
-// this level of hierarchy or below. This method is equivalent to:
-//
-//|  factory.set_type_override_by_type(original_type, override_type,replace);
-//
-// The ~relative_inst_path~ is relative to this component and may include
-// wildcards. The ~original_type~ represents the type that is being overridden.
-// In subsequent calls to <uvm_factory::create_object_by_type> or
-// <uvm_factory::create_component_by_type>, if the requested_type matches the
-// ~original_type~ and the instance paths match, the factory will produce
-// the ~override_type~. 
-//
-// The original and override type arguments are lightweight proxies to the
-// types they represent. See <set_inst_override_by_type> for information
-// on usage.
+  // Function: create_object
+  //
+  // A convenience function for <uvm_factory::create_object_by_name>,
+  // this method calls upon the factory to create a new object
+  // whose type corresponds to the preregistered type name,
+  // ~requested_type_name~, and instance name, ~name~. This method is
+  // equivalent to:
+  //
+  //|  factory.create_object_by_name(requested_type_name,
+  //|                                get_full_name(), name);
+  //
+  // If the factory determines that a type or instance override exists, the
+  // type of the object created may be different than the requested type.  See
+  // <uvm_factory> for details on factory operation.
 
-extern static function void set_type_override_by_type
-  (uvm_object_wrapper original_type, 
-   uvm_object_wrapper override_type,
-   bit replace=1);
+  extern function uvm_object create_object (string requested_type_name,
+                                            string name="");
 
 
-// Function: set_inst_override_by_type
-//
-// A convenience function for <uvm_factory::set_inst_override_by_type>, this
-// method registers a factory override for components and objects created at
-// this level of hierarchy or below. In typical usage, this method is
-// equivalent to:
-//
-//|  factory.set_inst_override_by_type( original_type,
-//|                                     override_type,
-//|                                     {get_full_name(),".",
-//|                                      relative_inst_path});
-//
-// The ~relative_inst_path~ is relative to this component and may include
-// wildcards. The ~original_type~ represents the type that is being overridden.
-// In subsequent calls to <uvm_factory::create_object_by_type> or
-// <uvm_factory::create_component_by_type>, if the requested_type matches the
-// ~original_type~ and the instance paths match, the factory will produce the
-// ~override_type~. 
-//
-// The original and override types are lightweight proxies to the types they
-// represent. They can be obtained by calling ~type::get_type()~, if
-// implemented by ~type~, or by directly calling ~type::type_id::get()~, where 
-// ~type~ is the user type and ~type_id~ is the name of the typedef to
-// <uvm_object_registry #(T,Tname)> or <uvm_component_registry #(T,Tname)>.
-//
-// If you are employing the `uvm_*_utils macros, the typedef and the get_type
-// method will be implemented for you. For details on the utils macros
-// refer to <Utility and Field Macros for Components and Objects>.
-//
-// The following example shows `uvm_*_utils usage:
-//
-//|  class comp extends uvm_component;
-//|    `uvm_component_utils(comp)
-//|    ...
-//|  endclass
-//|
-//|  class mycomp extends uvm_component;
-//|    `uvm_component_utils(mycomp)
-//|    ...
-//|  endclass
-//|
-//|  class block extends uvm_component;
-//|    `uvm_component_utils(block)
-//|    comp c_inst;
-//|    virtual function void build_phase(uvm_phase phase);
-//|      set_inst_override_by_type("c_inst",comp::get_type(),
-//|                                         mycomp::get_type());
-//|    endfunction
-//|    ...
-//|  endclass
+  // Function: set_type_override_by_type
+  //
+  // A convenience function for <uvm_factory::set_type_override_by_type>, this
+  // method registers a factory override for components and objects created at
+  // this level of hierarchy or below. This method is equivalent to:
+  //
+  //|  factory.set_type_override_by_type(original_type, override_type,replace);
+  //
+  // The ~relative_inst_path~ is relative to this component and may include
+  // wildcards. The ~original_type~ represents the type that is being overridden.
+  // In subsequent calls to <uvm_factory::create_object_by_type> or
+  // <uvm_factory::create_component_by_type>, if the requested_type matches the
+  // ~original_type~ and the instance paths match, the factory will produce
+  // the ~override_type~. 
+  //
+  // The original and override type arguments are lightweight proxies to the
+  // types they represent. See <set_inst_override_by_type> for information
+  // on usage.
 
-extern function void set_inst_override_by_type(string relative_inst_path,  
-                                               uvm_object_wrapper original_type,
-                                               uvm_object_wrapper override_type);
+  extern static function void set_type_override_by_type
+    (uvm_object_wrapper original_type, 
+     uvm_object_wrapper override_type,
+     bit replace=1);
 
 
-// Function: set_type_override
-//
-// A convenience function for <uvm_factory::set_type_override_by_name>,
-// this method configures the factory to create an object of type
-// ~override_type_name~ whenever the factory is asked to produce a type
-// represented by ~original_type_name~.  This method is equivalent to:
-//
-//|  factory.set_type_override_by_name(original_type_name,
-//|                                    override_type_name, replace);
-//
-// The ~original_type_name~ typically refers to a preregistered type in the
-// factory. It may, however, be any arbitrary string. Subsequent calls to
-// create_component or create_object with the same string and matching
-// instance path will produce the type represented by override_type_name.
-// The ~override_type_name~ must refer to a preregistered type in the factory. 
+  // Function: set_inst_override_by_type
+  //
+  // A convenience function for <uvm_factory::set_inst_override_by_type>, this
+  // method registers a factory override for components and objects created at
+  // this level of hierarchy or below. In typical usage, this method is
+  // equivalent to:
+  //
+  //|  factory.set_inst_override_by_type( original_type,
+  //|                                     override_type,
+  //|                                     {get_full_name(),".",
+  //|                                      relative_inst_path});
+  //
+  // The ~relative_inst_path~ is relative to this component and may include
+  // wildcards. The ~original_type~ represents the type that is being overridden.
+  // In subsequent calls to <uvm_factory::create_object_by_type> or
+  // <uvm_factory::create_component_by_type>, if the requested_type matches the
+  // ~original_type~ and the instance paths match, the factory will produce the
+  // ~override_type~. 
+  //
+  // The original and override types are lightweight proxies to the types they
+  // represent. They can be obtained by calling ~type::get_type()~, if
+  // implemented by ~type~, or by directly calling ~type::type_id::get()~, where 
+  // ~type~ is the user type and ~type_id~ is the name of the typedef to
+  // <uvm_object_registry #(T,Tname)> or <uvm_component_registry #(T,Tname)>.
+  //
+  // If you are employing the `uvm_*_utils macros, the typedef and the get_type
+  // method will be implemented for you. For details on the utils macros
+  // refer to <Utility and Field Macros for Components and Objects>.
+  //
+  // The following example shows `uvm_*_utils usage:
+  //
+  //|  class comp extends uvm_component;
+  //|    `uvm_component_utils(comp)
+  //|    ...
+  //|  endclass
+  //|
+  //|  class mycomp extends uvm_component;
+  //|    `uvm_component_utils(mycomp)
+  //|    ...
+  //|  endclass
+  //|
+  //|  class block extends uvm_component;
+  //|    `uvm_component_utils(block)
+  //|    comp c_inst;
+  //|    virtual function void build_phase(uvm_phase phase);
+  //|      set_inst_override_by_type("c_inst",comp::get_type(),
+  //|                                         mycomp::get_type());
+  //|    endfunction
+  //|    ...
+  //|  endclass
 
-extern static function void set_type_override(string original_type_name, 
-                                              string override_type_name,
-                                              bit    replace=1);
-
-
-// Function: set_inst_override
-//
-// A convenience function for <uvm_factory::set_inst_override_by_name>, this
-// method registers a factory override for components created at this level
-// of hierarchy or below. In typical usage, this method is equivalent to:
-//
-//|  factory.set_inst_override_by_name(original_type_name,
-//|                                    override_type_name,
-//|                                    {get_full_name(),".",
-//|                                     relative_inst_path}
-//|                                     );
-//
-// The ~relative_inst_path~ is relative to this component and may include
-// wildcards. The ~original_type_name~ typically refers to a preregistered type
-// in the factory. It may, however, be any arbitrary string. Subsequent calls
-// to create_component or create_object with the same string and matching
-// instance path will produce the type represented by ~override_type_name~.
-// The ~override_type_name~ must refer to a preregistered type in the factory. 
-
-extern function void set_inst_override(string relative_inst_path,  
-                                       string original_type_name,
-                                       string override_type_name);
-
-
-// Function: print_override_info
-//
-// This factory debug method performs the same lookup process as create_object
-// and create_component, but instead of creating an object, it prints
-// information about what type of object would be created given the
-// provided arguments.
-
-extern function void print_override_info(string requested_type_name,
-                                         string name="");
-
-
-//----------------------------------------------------------------------------
-// Group: Hierarchical Reporting Interface
-//----------------------------------------------------------------------------
-//
-// This interface provides versions of the set_report_* methods in the
-// <uvm_report_object> base class that are applied recursively to this
-// component and all its children.
-//
-// When a report is issued and its associated action has the LOG bit set, the
-// report will be sent to its associated FILE descriptor.
-//----------------------------------------------------------------------------
-
-// Function: set_report_id_verbosity_hier
-
-extern function void set_report_id_verbosity_hier (string id,
-                                                   int verbosity);
-
-// Function: set_report_severity_id_verbosity_hier
-//
-// These methods recursively associate the specified verbosity with reports of
-// the given ~severity~, ~id~, or ~severity-id~ pair. A verbosity associated
-// with a particular severity-id pair takes precedence over a verbosity
-// associated with id, which takes precedence over a verbosity associated
-// with a severity.
-//
-// For a list of severities and their default verbosities, refer to
-// <uvm_report_handler>.
-
-extern function void set_report_severity_id_verbosity_hier(uvm_severity severity,
-                                                           string id,
-                                                           int verbosity);
+  extern function void set_inst_override_by_type(string relative_inst_path,  
+                                                 uvm_object_wrapper original_type,
+                                                 uvm_object_wrapper override_type);
 
 
-// Function: set_report_severity_action_hier
+  // Function: set_type_override
+  //
+  // A convenience function for <uvm_factory::set_type_override_by_name>,
+  // this method configures the factory to create an object of type
+  // ~override_type_name~ whenever the factory is asked to produce a type
+  // represented by ~original_type_name~.  This method is equivalent to:
+  //
+  //|  factory.set_type_override_by_name(original_type_name,
+  //|                                    override_type_name, replace);
+  //
+  // The ~original_type_name~ typically refers to a preregistered type in the
+  // factory. It may, however, be any arbitrary string. Subsequent calls to
+  // create_component or create_object with the same string and matching
+  // instance path will produce the type represented by override_type_name.
+  // The ~override_type_name~ must refer to a preregistered type in the factory. 
 
-extern function void set_report_severity_action_hier (uvm_severity severity,
-                                                      uvm_action action);
+  extern static function void set_type_override(string original_type_name, 
+                                                string override_type_name,
+                                                bit    replace=1);
 
 
-// Function: set_report_id_action_hier
+  // Function: set_inst_override
+  //
+  // A convenience function for <uvm_factory::set_inst_override_by_name>, this
+  // method registers a factory override for components created at this level
+  // of hierarchy or below. In typical usage, this method is equivalent to:
+  //
+  //|  factory.set_inst_override_by_name(original_type_name,
+  //|                                    override_type_name,
+  //|                                    {get_full_name(),".",
+  //|                                     relative_inst_path}
+  //|                                     );
+  //
+  // The ~relative_inst_path~ is relative to this component and may include
+  // wildcards. The ~original_type_name~ typically refers to a preregistered type
+  // in the factory. It may, however, be any arbitrary string. Subsequent calls
+  // to create_component or create_object with the same string and matching
+  // instance path will produce the type represented by ~override_type_name~.
+  // The ~override_type_name~ must refer to a preregistered type in the factory. 
 
-extern function void set_report_id_action_hier (string id,
-                                                uvm_action action);
+  extern function void set_inst_override(string relative_inst_path,  
+                                         string original_type_name,
+                                         string override_type_name);
 
-// Function: set_report_severity_id_action_hier
-//
-// These methods recursively associate the specified action with reports of
-// the given ~severity~, ~id~, or ~severity-id~ pair. An action associated
-// with a particular severity-id pair takes precedence over an action
-// associated with id, which takes precedence over an action associated
-// with a severity.
-//
-// For a list of severities and their default actions, refer to
-// <uvm_report_handler>.
 
-extern function void set_report_severity_id_action_hier(uvm_severity severity,
-                                                        string id,
+  // Function: print_override_info
+  //
+  // This factory debug method performs the same lookup process as create_object
+  // and create_component, but instead of creating an object, it prints
+  // information about what type of object would be created given the
+  // provided arguments.
+
+  extern function void print_override_info(string requested_type_name,
+                                           string name="");
+
+
+  //----------------------------------------------------------------------------
+  // Group: Hierarchical Reporting Interface
+  //----------------------------------------------------------------------------
+  //
+  // This interface provides versions of the set_report_* methods in the
+  // <uvm_report_object> base class that are applied recursively to this
+  // component and all its children.
+  //
+  // When a report is issued and its associated action has the LOG bit set, the
+  // report will be sent to its associated FILE descriptor.
+  //----------------------------------------------------------------------------
+
+  // Function: set_report_id_verbosity_hier
+
+  extern function void set_report_id_verbosity_hier (string id,
+                                                     int verbosity);
+
+  // Function: set_report_severity_id_verbosity_hier
+  //
+  // These methods recursively associate the specified verbosity with reports of
+  // the given ~severity~, ~id~, or ~severity-id~ pair. A verbosity associated
+  // with a particular severity-id pair takes precedence over a verbosity
+  // associated with id, which takes precedence over a verbosity associated
+  // with a severity.
+  //
+  // For a list of severities and their default verbosities, refer to
+  // <uvm_report_handler>.
+
+  extern function void set_report_severity_id_verbosity_hier(uvm_severity severity,
+                                                             string id,
+                                                             int verbosity);
+
+
+  // Function: set_report_severity_action_hier
+
+  extern function void set_report_severity_action_hier (uvm_severity severity,
                                                         uvm_action action);
 
 
+  // Function: set_report_id_action_hier
 
-// Function: set_report_default_file_hier
+  extern function void set_report_id_action_hier (string id,
+                                                  uvm_action action);
 
-extern function void set_report_default_file_hier (UVM_FILE file);
+  // Function: set_report_severity_id_action_hier
+  //
+  // These methods recursively associate the specified action with reports of
+  // the given ~severity~, ~id~, or ~severity-id~ pair. An action associated
+  // with a particular severity-id pair takes precedence over an action
+  // associated with id, which takes precedence over an action associated
+  // with a severity.
+  //
+  // For a list of severities and their default actions, refer to
+  // <uvm_report_handler>.
 
-// Function: set_report_severity_file_hier
+  extern function void set_report_severity_id_action_hier(uvm_severity severity,
+                                                          string id,
+                                                          uvm_action action);
 
-extern function void set_report_severity_file_hier (uvm_severity severity,
-                                                    UVM_FILE file);
 
-// Function: set_report_id_file_hier
 
-extern function void set_report_id_file_hier (string id,
-                                              UVM_FILE file);
+  // Function: set_report_default_file_hier
 
-// Function: set_report_severity_id_file_hier
-//
-// These methods recursively associate the specified FILE descriptor with
-// reports of the given ~severity~, ~id~, or ~severity-id~ pair. A FILE
-// associated with a particular severity-id pair takes precedence over a FILE
-// associated with id, which take precedence over an a FILE associated with a
-// severity, which takes precedence over the default FILE descriptor.
-//
-// For a list of severities and other information related to the report
-// mechanism, refer to <uvm_report_handler>.
+  extern function void set_report_default_file_hier (UVM_FILE file);
 
-extern function void set_report_severity_id_file_hier(uvm_severity severity,
-                                                      string id,
+  // Function: set_report_severity_file_hier
+
+  extern function void set_report_severity_file_hier (uvm_severity severity,
                                                       UVM_FILE file);
 
+  // Function: set_report_id_file_hier
 
-// Function: set_report_verbosity_level_hier
-//
-// This method recursively sets the maximum verbosity level for reports for
-// this component and all those below it. Any report from this component
-// subtree whose verbosity exceeds this maximum will be ignored.
-// 
-// See <uvm_report_handler> for a list of predefined message verbosity levels
-// and their meaning.
+  extern function void set_report_id_file_hier (string id,
+                                                UVM_FILE file);
 
-extern function void set_report_verbosity_level_hier (int verbosity);
-
-
-// Function: pre_abort
-//
-// This callback is executed when the message system is executing a
-// <UVM_EXIT> action. The exit action causes an immediate termination of
-// the simulation, but the pre_abort callback hook gives components an 
-// opportunity to provide additional information to the user before
-// the termination happens. For example, a test may want to executed
-// the report function of a particular component even when an error
-// condition has happened to force a premature termination you would
-// write a function like:
-//
-//| function void mycomponent::pre_abort();
-//|   report();
-//| endfunction
-//
-// The pre_abort() callback hooks are called in a bottom-up fashion.
-
-virtual function void pre_abort;
-endfunction
-
-//----------------------------------------------------------------------------
-// Group: Recording Interface
-//----------------------------------------------------------------------------
-// These methods comprise the component-based transaction recording
-// interface. The methods can be used to record the transactions that
-// this component "sees", i.e. produces or consumes.
-//
-// The API and implementation are subject to change once a vendor-independent
-// use-model is determined.
-//----------------------------------------------------------------------------
-
-// Function: accept_tr
-//
-// This function marks the acceptance of a transaction, ~tr~, by this
-// component. Specifically, it performs the following actions:
-//
-// - Calls the ~tr~'s <uvm_transaction::accept_tr> method, passing to it the
-//   ~accept_time~ argument.
-//
-// - Calls this component's <do_accept_tr> method to allow for any post-begin
-//   action in derived classes.
-//
-// - Triggers the component's internal accept_tr event. Any processes waiting
-//   on this event will resume in the next delta cycle. 
-
-extern function void accept_tr (uvm_transaction tr, time accept_time = 0);
-
-
-// Function: do_accept_tr
-//
-// The <accept_tr> method calls this function to accommodate any user-defined
-// post-accept action. Implementations should call super.do_accept_tr to
-// ensure correct operation.
-
-extern virtual protected function void do_accept_tr (uvm_transaction tr);
-
-
-// Function: begin_tr
-//
-// This function marks the start of a transaction, ~tr~, by this component.
-// Specifically, it performs the following actions:
-//
-// - Calls ~tr~'s <uvm_transaction::begin_tr> method, passing to it the
-//   ~begin_time~ argument. The ~begin_time~ should be greater than or equal
-//   to the accept time. By default, when ~begin_time~ = 0, the current
-//   simulation time is used.
-//
-//   If recording is enabled (recording_detail != UVM_OFF), then a new
-//   database-transaction is started on the component's transaction stream
-//   given by the stream argument. No transaction properties are recorded at
-//   this time.
-//
-// - Calls the component's <do_begin_tr> method to allow for any post-begin
-//   action in derived classes.
-//
-// - Triggers the component's internal begin_tr event. Any processes waiting
-//   on this event will resume in the next delta cycle. 
-//
-// A handle to the transaction is returned. The meaning of this handle, as
-// well as the interpretation of the arguments ~stream_name~, ~label~, and
-// ~desc~ are vendor specific.
-
-extern function integer begin_tr (uvm_transaction tr,
-                                  string stream_name="main",
-                                  string label="",
-                                  string desc="",
-                                  time begin_time=0,
-                                  integer parent_handle=0);
-
-
-// Function: begin_child_tr
-//
-// This function marks the start of a child transaction, ~tr~, by this
-// component. Its operation is identical to that of <begin_tr>, except that
-// an association is made between this transaction and the provided parent
-// transaction. This association is vendor-specific.
-
-extern function integer begin_child_tr (uvm_transaction tr,
-                                        integer parent_handle=0,
-                                        string stream_name="main",
-                                        string label="",
-                                        string desc="",
-                                        time begin_time=0);
-
-
-// Function: do_begin_tr
-//
-// The <begin_tr> and <begin_child_tr> methods call this function to
-// accommodate any user-defined post-begin action. Implementations should call
-// super.do_begin_tr to ensure correct operation.
-
-extern virtual protected 
-function void do_begin_tr (uvm_transaction tr,
-  string stream_name,
-integer tr_handle);
-
-
-// Function: end_tr
-//
-// This function marks the end of a transaction, ~tr~, by this component.
-// Specifically, it performs the following actions:
-//
-// - Calls ~tr~'s <uvm_transaction::end_tr> method, passing to it the
-//   ~end_time~ argument. The ~end_time~ must at least be greater than the
-//   begin time. By default, when ~end_time~ = 0, the current simulation time
-//   is used.
-//
-//   The transaction's properties are recorded to the database-transaction on
-//   which it was started, and then the transaction is ended. Only those
-//   properties handled by the transaction's do_record method (and optional
-//   `uvm_*_field macros) are recorded.
-//
-// - Calls the component's <do_end_tr> method to accommodate any post-end
-//   action in derived classes.
-//
-// - Triggers the component's internal end_tr event. Any processes waiting on
-//   this event will resume in the next delta cycle. 
-//
-// The ~free_handle~ bit indicates that this transaction is no longer needed.
-// The implementation of free_handle is vendor-specific.
-
-extern function void end_tr (uvm_transaction tr,
-                             time end_time=0,
-                             bit free_handle=1);
-
-
-// Function: do_end_tr
-//
-// The <end_tr> method calls this function to accommodate any user-defined
-// post-end action. Implementations should call super.do_end_tr to ensure
-// correct operation.
-
-extern virtual protected function void do_end_tr (uvm_transaction tr,
-                                                  integer tr_handle);
-
-
-// Function: record_error_tr
-//
-// This function marks an error transaction by a component. Properties of the
-// given uvm_object, ~info~, as implemented in its <uvm_object::do_record> method,
-// are recorded to the transaction database.
-//
-// An ~error_time~ of 0 indicates to use the current simulation time. The
-// ~keep_active~ bit determines if the handle should remain active. If 0,
-// then a zero-length error transaction is recorded. A handle to the
-// database-transaction is returned. 
-//
-// Interpretation of this handle, as well as the strings ~stream_name~,
-// ~label~, and ~desc~, are vendor-specific.
-
-extern function integer record_error_tr (string stream_name="main",
-                                         uvm_object info=null,
-                                         string label="error_tr",
-                                         string desc="",
-                                         time   error_time=0,
-                                         bit    keep_active=0);
-
-
-// Function: record_event_tr
-//
-// This function marks an event transaction by a component. 
-//
-// An ~event_time~ of 0 indicates to use the current simulation time. 
-//
-// A handle to the transaction is returned. The ~keep_active~ bit determines
-// if the handle may be used for other vendor-specific purposes. 
-//
-// The strings for ~stream_name~, ~label~, and ~desc~ are vendor-specific
-// identifiers for the transaction.
-
-extern function integer record_event_tr (string stream_name="main",
-                                         uvm_object info=null,
-                                         string label="event_tr",
-                                         string desc="",
-                                         time   event_time=0,
-                                         bit    keep_active=0);
-
-// Function: get_tr_stream
-// Returns a tr stream with ~this~ component's full name as a scope.
-//
-// Streams which are retrieved via this method will be stored internally,
-// such that later calls to ~get_tr_stream~ will return the same stream
-// reference.
-//
-// The stream can be removed from the internal storage via a call
-// to <free_tr_stream>.
-//
-// Parameters:
-// name - Name for the stream
-// stream_type_name - Type name for the stream (Default = "")
-extern virtual function uvm_tr_stream get_tr_stream(string name,
-                                                    string stream_type_name="");
-
-// Function: free_tr_stream
-// Frees the internal references associated with ~stream~.
-//
-// The next call to <get_tr_stream> will result in a newly created
-// <uvm_tr_stream>.  If the current stream is open (or closed),
-// then it will be freed.
-extern virtual function void free_tr_stream(uvm_tr_stream stream);
-
-// Variable: print_enabled
-//
-// This bit determines if this component should automatically be printed as a
-// child of its parent object. 
-// 
-// By default, all children are printed. However, this bit allows a parent
-// component to disable the printing of specific children.
-
-bit print_enabled = 1;
-
-// Variable: tr_database
-//
-// Specifies the <uvm_tr_database> object to use for <begin_tr>
-// and other methods in the <Recording Interface>.  
-// Default is <uvm_coreservice_t::get_default_tr_database>.
-uvm_tr_database tr_database;
-extern virtual function uvm_tr_database m_get_tr_database();
-
-//----------------------------------------------------------------------------
-//                     PRIVATE or PSUEDO-PRIVATE members
-//                      *** Do not call directly ***
-//         Implementation and even existence are subject to change. 
-//----------------------------------------------------------------------------
-// Most local methods are prefixed with m_, indicating they are not
-// user-level methods. SystemVerilog does not support friend classes,
-// which forces some otherwise internal methods to be exposed (i.e. not
-// be protected via 'local' keyword). These methods are also prefixed
-// with m_ to indicate they are not intended for public use.
-//
-// Internal methods will not be documented, although their implementa-
-// tions are freely available via the open-source license.
-//----------------------------------------------------------------------------
-
-protected uvm_domain m_domain;    // set_domain stores our domain handle
-
-/*protected*/ uvm_phase  m_phase_imps[uvm_phase];    // functors to override ovm_root defaults
-
-//TND review protected, provide read-only accessor.
-uvm_phase            m_current_phase;            // the most recently executed phase
-protected process    m_phase_process;
-
-/*protected*/ bit  m_build_done;
-/*protected*/ int  m_phasing_active;
-
-extern                   function void set_int_local(string field_name, 
-                                                     uvm_bitstream_t value,
-                                                     bit recurse=1);
-
-/*protected*/ uvm_component m_parent;
-protected     uvm_component m_children[string];
-protected     uvm_component m_children_by_handle[uvm_component];
-extern protected virtual function bit  m_add_child(uvm_component child);
-extern local     virtual function void m_set_full_name();
-
-extern                   function void do_resolve_bindings();
-extern                   function void do_flush();
-
-extern virtual           function void flush ();
-
-extern local             function void m_extract_name(string name ,
-                                                      output string leaf ,
-                                                      output string remainder );
-
-// overridden to disable
-extern virtual function uvm_object create (string name=""); 
-extern virtual function uvm_object clone  ();
-
-local uvm_tr_stream m_main_stream;
-local uvm_tr_stream m_streams[string][string];
-local uvm_recorder m_tr_h[uvm_transaction];
-extern protected function integer m_begin_tr (uvm_transaction tr,
-                                              integer parent_handle=0,
-                                              string stream_name="main", string label="",
-                                              string desc="", time begin_time=0);
-
-string m_name;
-
-const static string type_name = "uvm_component";
-virtual function string get_type_name();
-  return type_name;
-endfunction
-
-protected uvm_event_pool event_pool;
-
-int unsigned recording_detail = UVM_NONE;
-extern         function void   do_print(uvm_printer printer);
-
-// Internal methods for setting up command line messaging stuff
-extern function void m_set_cl_msg_args;
-extern function void m_set_cl_verb;
-extern function void m_set_cl_action;
-extern function void m_set_cl_sev;
-extern function void m_apply_verbosity_settings(uvm_phase phase);
-
-// The verbosity settings may have a specific phase to start at. 
-// We will do this work in the phase_started callback. 
-
-typedef struct {
-  string comp;
-  string phase;
-  time   offset;
-  uvm_verbosity verbosity;
-  string id;
-} m_verbosity_setting;
-
-m_verbosity_setting m_verbosity_settings[$];
-static m_verbosity_setting m_time_settings[$];
-
-// does the pre abort callback hierarchically
-extern /*local*/ function void m_do_pre_abort;
-
-
-typedef struct  {
-  string arg;
-  string args[$];
-  int unsigned used;
-} uvm_cmdline_parsed_arg_t;
-
-static uvm_cmdline_parsed_arg_t m_uvm_applied_cl_action[$];
-static uvm_cmdline_parsed_arg_t m_uvm_applied_cl_sev[$];
-
-endclass : uvm_component
-
-`include "base/uvm_root.svh"
-
-//------------------------------------------------------------------------------
-// IMPLEMENTATION
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-//
-// CLASS- uvm_component
-//
-//------------------------------------------------------------------------------
-
-
-// new
-// ---
-
-function uvm_component::new (string name, uvm_component parent);
-  string error_str;
-  uvm_root top;
-  uvm_coreservice_t cs;
-
-  super.new(name);
-
-  // If uvm_top, reset name to "" so it doesn't show in full paths then return
-  if (parent==null && name == "__top__") begin
-    set_name(""); // *** VIRTUAL
-    return;
-  end
-
-  cs = uvm_coreservice_t::get();
-  top = cs.get_root();  
-
-  // Check that we're not in or past end_of_elaboration
-  begin
-    uvm_phase bld;
-    uvm_domain common;
-    common = uvm_domain::get_common_domain();
-    bld = common.find(uvm_build_phase::get());
-    if (bld == null)
-    uvm_report_fatal("COMP/INTERNAL",
-    "attempt to find build phase object failed",UVM_NONE);
-    if (bld.get_state() == UVM_PHASE_DONE) begin
-      uvm_report_fatal("ILLCRT", {"It is illegal to create a component ('",
-        name,"' under '",
-        (parent == null ? top.get_full_name() : parent.get_full_name()),
-        "') after the build phase has ended."},
-      UVM_NONE);
-    end
-  end
-
-  if (name == "") begin
-    name.itoa(m_inst_count);
-    name = {"COMP_", name};
-  end
-
-  if(parent == this) begin
-    `uvm_fatal("THISPARENT", "cannot set the parent of a component to itself")
-  end
-
-  if (parent == null)
-    parent = top;
-
-  if(uvm_report_enabled(UVM_MEDIUM+1, UVM_INFO, "NEWCOMP"))
-    `uvm_info("NEWCOMP", {"Creating ",
-    (parent==top?"uvm_top":parent.get_full_name()),".",name},UVM_MEDIUM+1)
-
-  if (parent.has_child(name) && this != parent.get_child(name)) begin
-    if (parent == top) begin
-      error_str = {"Name '",name,"' is not unique to other top-level ",
-      "instances. If parent is a module, build a unique name by combining the ",
-      "the module name and component name: $sformatf(\"\%m.\%s\",\"",name,"\")."};
-      `uvm_fatal("CLDEXT",error_str)
-    end
-    else
-      `uvm_fatal("CLDEXT",
-    $sformatf("Cannot set '%s' as a child of '%s', %s",
-      name, parent.get_full_name(),
-      "which already has a child by that name."))
-    return;
-  end
-
-  m_parent = parent;
-
-  set_name(name); // *** VIRTUAL
-
-  if (!m_parent.m_add_child(this))
-    m_parent = null;
-
-  event_pool = new("event_pool");
-
-  m_domain = parent.m_domain;     // by default, inherit domains from parents
-
-  // Now that inst name is established, reseed (if use_uvm_seeding is set)
-  reseed();
-
-  // Do local configuration settings
-  if (!uvm_config_db #(uvm_bitstream_t)::get(this, "", "recording_detail", recording_detail))
-    void'(uvm_config_db #(int)::get(this, "", "recording_detail", recording_detail));
-
-  m_rh.set_name(get_full_name());
-  set_report_verbosity_level(parent.get_report_verbosity_level());
-
-  m_set_cl_msg_args();
-
-endfunction
-
-
-// m_add_child
-// -----------
-
-function bit uvm_component::m_add_child(uvm_component child);
-
-  if (m_children.exists(child.get_name()) &&
-  m_children[child.get_name()] != child) begin
-    `uvm_warning("BDCLD",
-    $sformatf("A child with the name '%0s' (type=%0s) already exists.",
-    child.get_name(), m_children[child.get_name()].get_type_name()))
-    return 0;
-  end
-
-  if (m_children_by_handle.exists(child)) begin
-    `uvm_warning("BDCHLD",
-    $sformatf("A child with the name '%0s' %0s %0s'",
-      child.get_name(),
-      "already exists in parent under name '",
-    m_children_by_handle[child].get_name()))
-    return 0;
-  end
-
-  m_children[child.get_name()] = child;
-  m_children_by_handle[child] = child;
-  return 1;
-endfunction
-
-
-
-//------------------------------------------------------------------------------
-//
-// Hierarchy Methods
-// 
-//------------------------------------------------------------------------------
-
-
-// get_children
-// ------------
-
-function void uvm_component::get_children(ref uvm_component children[$]);
-  foreach(m_children[i]) 
-    children.push_back(m_children[i]);
-endfunction
-
-
-// get_first_child
-// ---------------
-
-function int uvm_component::get_first_child(ref string name);
-  return m_children.first(name);
-endfunction
-
-
-// get_next_child
-// --------------
-
-function int uvm_component::get_next_child(ref string name);
-  return m_children.next(name);
-endfunction
-
-
-// get_child
-// ---------
-
-function uvm_component uvm_component::get_child(string name);
-  if (m_children.exists(name))
-    return m_children[name];
-  `uvm_warning("NOCHILD",{"Component with name '",name,
-  "' is not a child of component '",get_full_name(),"'"})
-  return null;
-endfunction
-
-
-// has_child
-// ---------
-
-function int uvm_component::has_child(string name);
-  return m_children.exists(name);
-endfunction
-
-
-// get_num_children
-// ----------------
-
-function int uvm_component::get_num_children();
-  return m_children.num();
-endfunction
-
-
-// get_full_name
-// -------------
-
-function string uvm_component::get_full_name ();
-  // Note- Implementation choice to construct full name once since the
-  // full name may be used often for lookups.
-  if(m_name == "")
-    return get_name();
-  else
-    return m_name;
-endfunction
-
-
-// get_parent
-// ----------
-
-function uvm_component uvm_component::get_parent ();
-  return  m_parent;
-endfunction
-
-
-// set_name
-// --------
-
-function void uvm_component::set_name (string name);
-  if(m_name != "") begin
-    `uvm_error("INVSTNM", $sformatf("It is illegal to change the name of a component. The component name will not be changed to \"%s\"", name))
-    return;
-  end
-  super.set_name(name);
-  m_set_full_name();
-
-endfunction
-
-
-// m_set_full_name
-// ---------------
-
-function void uvm_component::m_set_full_name();
-  uvm_root top;
-  top = uvm_top;
-  if (m_parent == top || m_parent==null)
-    m_name = get_name();
-  else 
-    m_name = {m_parent.get_full_name(), ".", get_name()};
-
-  foreach (m_children[c]) begin
-    uvm_component tmp;
-    tmp = m_children[c];
-    tmp.m_set_full_name(); 
-  end
-
-endfunction
-
-
-// lookup
-// ------
-
-function uvm_component uvm_component::lookup( string name );
-
-  string leaf , remainder;
-  uvm_component comp;
-  uvm_root top;
-  uvm_coreservice_t cs;
-  cs = uvm_coreservice_t::get();
-  top = cs.get_root();
-
-  comp = this;
-
-  m_extract_name(name, leaf, remainder);
-
-  if (leaf == "") begin
-    comp = top; // absolute lookup
-    m_extract_name(remainder, leaf, remainder);
-  end
-
-  if (!comp.has_child(leaf)) begin
-    `uvm_warning("Lookup Error", 
-    $sformatf("Cannot find child %0s",leaf))
-    return null;
-  end
-
-  if( remainder != "" )
-    return comp.m_children[leaf].lookup(remainder);
-
-  return comp.m_children[leaf];
-
-endfunction
-
-
-// get_depth
-// ---------
-
-function int unsigned uvm_component::get_depth();
-  if(m_name == "") return 0;
-  get_depth = 1;
-  foreach(m_name[i]) 
-    if(m_name[i] == ".") ++get_depth;
-endfunction
-
-
-// m_extract_name
-// --------------
-
-function void uvm_component::m_extract_name(input string name ,
-    output string leaf ,
-output string remainder );
-int i , len;
-string extract_str;
-len = name.len();
-
-for( i = 0; i < name.len(); i++ ) begin  
-  if( name[i] == "." ) begin
-    break;
-  end
-end
-
-if( i == len ) begin
-  leaf = name;
-  remainder = "";
-  return;
-end
-
-leaf = name.substr( 0 , i - 1 );
-remainder = name.substr( i + 1 , len - 1 );
-
-return;
-endfunction
-
-
-// flush
-// -----
-
-function void uvm_component::flush();
-  return;
-endfunction
-
-
-// do_flush  (flush_hier?)
-// --------
-
-function void uvm_component::do_flush();
-  foreach( m_children[s] )
-    m_children[s].do_flush();
-  flush();
-endfunction
-
-
-
-//------------------------------------------------------------------------------
-//
-// Factory Methods
-// 
-//------------------------------------------------------------------------------
-
-
-// create
-// ------
-
-function uvm_object  uvm_component::create (string name =""); 
-  `uvm_error("ILLCRT",
-  "create cannot be called on a uvm_component. Use create_component instead.")
-  return null;
-endfunction
-
-
-// clone
-// ------
-
-function uvm_object  uvm_component::clone ();
-  `uvm_error("ILLCLN", $sformatf("Attempting to clone '%s'.  Clone cannot be called on a uvm_component.  The clone target variable will be set to null.", get_full_name()))
-  return null;
-endfunction
-
-
-// print_override_info
-// -------------------
-
-function void  uvm_component::print_override_info (string requested_type_name, 
-string name="");
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-factory.debug_create_by_name(requested_type_name, get_full_name(), name);
-endfunction
-
-
-// create_component
-// ----------------
-
-function uvm_component uvm_component::create_component (string requested_type_name,
-string name);
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-return factory.create_component_by_name(requested_type_name, get_full_name(),
-name, this);
-endfunction
-
-
-// create_object
-// -------------
-
-function uvm_object uvm_component::create_object (string requested_type_name,
-string name="");
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-return factory.create_object_by_name(requested_type_name,
-get_full_name(), name);
-endfunction
-
-
-// set_type_override (static)
-// -----------------
-
-function void uvm_component::set_type_override (string original_type_name,
-    string override_type_name,
-bit    replace=1);
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-factory.set_type_override_by_name(original_type_name,override_type_name, replace);
-endfunction 
-
-
-// set_type_override_by_type (static)
-// -------------------------
-
-function void uvm_component::set_type_override_by_type (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-bit    replace=1);
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-factory.set_type_override_by_type(original_type, override_type, replace);
-endfunction 
-
-
-// set_inst_override
-// -----------------
-
-function void  uvm_component::set_inst_override (string relative_inst_path,  
-    string original_type_name,
-string override_type_name);
-string full_inst_path;
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-
-if (relative_inst_path == "")
-  full_inst_path = get_full_name();
-else
-  full_inst_path = {get_full_name(), ".", relative_inst_path};
-
-factory.set_inst_override_by_name(
-  original_type_name,
-  override_type_name,
-full_inst_path);
-endfunction 
-
-
-// set_inst_override_by_type
-// -------------------------
-
-function void uvm_component::set_inst_override_by_type (string relative_inst_path,  
-    uvm_object_wrapper original_type,
-uvm_object_wrapper override_type);
-string full_inst_path;
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-
-if (relative_inst_path == "")
-  full_inst_path = get_full_name();
-else
-  full_inst_path = {get_full_name(), ".", relative_inst_path};
-
-factory.set_inst_override_by_type(original_type, override_type, full_inst_path);
-
-endfunction
-
-
-
-//------------------------------------------------------------------------------
-//
-// Hierarchical report configuration interface
-//
-//------------------------------------------------------------------------------
-
-// set_report_id_verbosity_hier
-// -------------------------
-
-function void uvm_component::set_report_id_verbosity_hier( string id, int verbosity);
-  set_report_id_verbosity(id, verbosity);
-  foreach( m_children[c] )
-    m_children[c].set_report_id_verbosity_hier(id, verbosity);
-endfunction
-
-
-// set_report_severity_id_verbosity_hier
-// ----------------------------------
-
-function void uvm_component::set_report_severity_id_verbosity_hier( uvm_severity severity,
-    string id,
-int verbosity);
-set_report_severity_id_verbosity(severity, id, verbosity);
-foreach( m_children[c] )
-  m_children[c].set_report_severity_id_verbosity_hier(severity, id, verbosity);
-endfunction
-
-
-// set_report_severity_action_hier
-// -------------------------
-
-function void uvm_component::set_report_severity_action_hier( uvm_severity severity, 
-uvm_action action);
-set_report_severity_action(severity, action);
-foreach( m_children[c] )
-  m_children[c].set_report_severity_action_hier(severity, action);
-endfunction
-
-
-// set_report_id_action_hier
-// -------------------------
-
-function void uvm_component::set_report_id_action_hier( string id, uvm_action action);
-  set_report_id_action(id, action);
-  foreach( m_children[c] )
-    m_children[c].set_report_id_action_hier(id, action);
-endfunction
-
-
-// set_report_severity_id_action_hier
-// ----------------------------------
-
-function void uvm_component::set_report_severity_id_action_hier( uvm_severity severity,
-    string id,
-uvm_action action);
-set_report_severity_id_action(severity, id, action);
-foreach( m_children[c] )
-  m_children[c].set_report_severity_id_action_hier(severity, id, action);
-endfunction
-
-
-// set_report_severity_file_hier
-// -----------------------------
-
-function void uvm_component::set_report_severity_file_hier( uvm_severity severity,
-UVM_FILE file);
-set_report_severity_file(severity, file);
-foreach( m_children[c] )
-  m_children[c].set_report_severity_file_hier(severity, file);
-endfunction
-
-
-// set_report_default_file_hier
-// ----------------------------
-
-function void uvm_component::set_report_default_file_hier( UVM_FILE file);
-  set_report_default_file(file);
-  foreach( m_children[c] )
-    m_children[c].set_report_default_file_hier(file);
-endfunction
-
-
-// set_report_id_file_hier
-// -----------------------
-
-function void uvm_component::set_report_id_file_hier( string id, UVM_FILE file);
-  set_report_id_file(id, file);
-  foreach( m_children[c] )
-    m_children[c].set_report_id_file_hier(id, file);
-endfunction
-
-
-// set_report_severity_id_file_hier
-// --------------------------------
-
-function void uvm_component::set_report_severity_id_file_hier ( uvm_severity severity,
-    string id,
-UVM_FILE file);
-set_report_severity_id_file(severity, id, file);
-foreach( m_children[c] )
-  m_children[c].set_report_severity_id_file_hier(severity, id, file);
-endfunction
-
-
-// set_report_verbosity_level_hier
-// -------------------------------
-
-function void uvm_component::set_report_verbosity_level_hier(int verbosity);
-  set_report_verbosity_level(verbosity);
-  foreach( m_children[c] )
-    m_children[c].set_report_verbosity_level_hier(verbosity);
-endfunction  
-
-
-
-//------------------------------------------------------------------------------
-//
-// Phase interface 
-//
-//------------------------------------------------------------------------------
-
-
-// phase methods
-//--------------
-// these are prototypes for the methods to be implemented in user components
-// build_phase() has a default implementation, the others have an empty default
-
-function void uvm_component::build_phase(uvm_phase phase);
-  m_build_done = 1;
-  build();
-endfunction
-
-// Backward compatibility build function
-
-function void uvm_component::build();
-  m_build_done = 1;
-  apply_config_settings(print_config_matches);
-  if(m_phasing_active == 0) begin
-    uvm_report_warning("UVM_DEPRECATED", "build()/build_phase() has been called explicitly, outside of the phasing system. This usage of build is deprecated and may lead to unexpected behavior.");
-  end
-endfunction
-
-// these phase methods are common to all components in UVM. For backward
-// compatibility, they call the old style name (without the _phse)
-
-function void uvm_component::connect_phase(uvm_phase phase);
-  connect();
-  return; 
-endfunction
-function void uvm_component::start_of_simulation_phase(uvm_phase phase);
-  start_of_simulation();
-  return; 
-endfunction
-function void uvm_component::end_of_elaboration_phase(uvm_phase phase);
-  end_of_elaboration();
-  return; 
-endfunction
-task          uvm_component::run_phase(uvm_phase phase);
-  run();
-  return; 
-endtask
-function void uvm_component::extract_phase(uvm_phase phase);
-  extract();
-  return; 
-endfunction
-function void uvm_component::check_phase(uvm_phase phase);
-  check();
-  return; 
-endfunction
-function void uvm_component::report_phase(uvm_phase phase);
-  report();
-  return; 
-endfunction
-
-
-// These are the old style phase names. In order for runtime phase names
-// to not conflict with user names, the _phase postfix was added.
-
-function void uvm_component::connect();             return; endfunction
-function void uvm_component::start_of_simulation(); return; endfunction
-function void uvm_component::end_of_elaboration();  return; endfunction
-task          uvm_component::run();                 return; endtask
-function void uvm_component::extract();             return; endfunction
-function void uvm_component::check();               return; endfunction
-function void uvm_component::report();              return; endfunction
-function void uvm_component::final_phase(uvm_phase phase);         return; endfunction
-
-// these runtime phase methods are only called if a set_domain() is done
-
-task uvm_component::pre_reset_phase(uvm_phase phase);      return; endtask
-task uvm_component::reset_phase(uvm_phase phase);          return; endtask
-task uvm_component::post_reset_phase(uvm_phase phase);     return; endtask
-task uvm_component::pre_configure_phase(uvm_phase phase);  return; endtask
-task uvm_component::configure_phase(uvm_phase phase);      return; endtask
-task uvm_component::post_configure_phase(uvm_phase phase); return; endtask
-task uvm_component::pre_main_phase(uvm_phase phase);       return; endtask
-task uvm_component::main_phase(uvm_phase phase);           return; endtask
-task uvm_component::post_main_phase(uvm_phase phase);      return; endtask
-task uvm_component::pre_shutdown_phase(uvm_phase phase);   return; endtask
-task uvm_component::shutdown_phase(uvm_phase phase);       return; endtask
-task uvm_component::post_shutdown_phase(uvm_phase phase);  return; endtask
-
-
-//------------------------------
-// current phase convenience API
-//------------------------------
-
-
-// phase_started
-// -------------
-// phase_started() and phase_ended() are extra callbacks called at the
-// beginning and end of each phase, respectively.  Since they are
-// called for all phases the phase is passed in as an argument so the
-// extender can decide what to do, if anything, for each phase.
-
-function void uvm_component::phase_started(uvm_phase phase);
-endfunction
-
-// phase_ended
-// -----------
-
-function void uvm_component::phase_ended(uvm_phase phase);
-endfunction
-
-
-// phase_ready_to_end
-// ------------------
-
-function void uvm_component::phase_ready_to_end (uvm_phase phase);
-endfunction
-
-//------------------------------
-// phase / schedule / domain API
-//------------------------------
-// methods for VIP creators and integrators to use to set up schedule domains
-// - a schedule is a named, organized group of phases for a component base type
-// - a domain is a named instance of a schedule in the master phasing schedule
-
-
-// define_domain
-// -------------
-
-function void uvm_component::define_domain(uvm_domain domain);
-  uvm_phase schedule;
-  //schedule = domain.find(uvm_domain::get_uvm_schedule());
-  schedule = domain.find_by_name("uvm_sched");
-  if (schedule == null) begin
-    uvm_domain common;
-    schedule = new("uvm_sched", UVM_PHASE_SCHEDULE);
-    uvm_domain::add_uvm_phases(schedule);
-    domain.add(schedule);
-    common = uvm_domain::get_common_domain();
-    if (common.find(domain,0) == null)
-      common.add(domain,.with_phase(uvm_run_phase::get()));
-  end
-
-endfunction
-
-
-// set_domain
-// ----------
-// assigns this component [tree] to a domain. adds required schedules into graph
-// If called from build, ~hier~ won't recurse into all chilren (which don't exist yet)
-// If we have components inherit their parent's domain by default, then ~hier~
-// isn't needed and we need a way to prevent children from inheriting this component's domain
-
-function void uvm_component::set_domain(uvm_domain domain, int hier=1);
-
-  // build and store the custom domain
-  m_domain = domain;
-  define_domain(domain);
-  if (hier)
-  foreach (m_children[c])
-    m_children[c].set_domain(domain);
-endfunction
-
-// get_domain
-// ----------
-//
-function uvm_domain uvm_component::get_domain();
-  return m_domain;
-endfunction
-
-
-// set_phase_imp
-// -------------
-
-function void uvm_component::set_phase_imp(uvm_phase phase, uvm_phase imp, int hier=1);
-  m_phase_imps[phase] = imp;
-  if (hier)
-  foreach (m_children[c])
-    m_children[c].set_phase_imp(phase,imp,hier);
-endfunction
-
-
-//--------------------------
-// phase runtime control API
-//--------------------------
-
-`ifndef UVM_NO_DEPRECATED
-  // do_kill_all
-  // -----------
-
-  function void uvm_component::do_kill_all();
-    foreach(m_children[c])
-      m_children[c].do_kill_all();
-    kill();
-  endfunction
-
-
-  // kill
-  // ----
-
-  function void uvm_component::kill();
-    if (m_phase_process != null) begin
-      m_phase_process.kill;
-      m_phase_process = null;
-    end
-  endfunction
-`endif
-
-// suspend
-// -------
-
-task uvm_component::suspend();
-  `uvm_warning("COMP/SPND/UNIMP", "suspend() not implemented")
-endtask
-
-
-// resume
-// ------
-
-task uvm_component::resume();
-  `uvm_warning("COMP/RSUM/UNIMP", "resume() not implemented")
-endtask
-
-
-// status
-//-------
-
-`ifndef UVM_NO_DEPRECATED
-  function string uvm_component::status();
-
-    `ifdef UVM_USE_SUSPEND_RESUME
-      `ifdef UVM_USE_PROCESS_STATE
-        process::state ps;
-
-        if(m_phase_process == null)
-          return "<unknown>";
-
-        ps = m_phase_process.status();
-
-        return ps.name();
-      `else
-        if(m_phase_process == null)
-          return "<unknown>";
-
-        case(m_phase_process.status())
-          0: return "FINISHED";
-          1: return "RUNNING";
-          2: return "WAITING";
-          3: return "SUSPENDED";
-          4: return "KILLED";
-          default: return "<unknown>";
-        endcase
-      `endif
-    `endif 
-
-    return "<unknown>";
-
-  endfunction
-
-  // stop
-  // ----
-
-  task uvm_component::stop(string ph_name);
-    return;
-  endtask
-
-
-  // stop_phase
-  // ----------
-
-  task uvm_component::stop_phase(uvm_phase phase);
-    stop(phase.get_name());
-    return;
-  endtask
-`endif
-
-
-// resolve_bindings
-// ----------------
-
-function void uvm_component::resolve_bindings();
-  return;
-endfunction
-
-
-// do_resolve_bindings
-// -------------------
-
-function void uvm_component::do_resolve_bindings();
-  foreach( m_children[s] )
-    m_children[s].do_resolve_bindings();
-  resolve_bindings();
-endfunction
-
-
-
-//------------------------------------------------------------------------------
-//
-// Recording interface
-//
-//------------------------------------------------------------------------------
-
-// accept_tr
-// ---------
-
-function void uvm_component::accept_tr (uvm_transaction tr,
-time accept_time=0);
-uvm_event#(uvm_object) e;
-tr.accept_tr(accept_time);
-do_accept_tr(tr);
-e = event_pool.get("accept_tr");
-if(e!=null) 
-  e.trigger();
-endfunction
-
-// begin_tr
-// --------
-
-function integer uvm_component::begin_tr (uvm_transaction tr,
-    string stream_name="main",
-    string label="",
-    string desc="",
-    time begin_time=0,
-integer parent_handle=0);
-return m_begin_tr(tr, parent_handle, stream_name, label, desc, begin_time);
-endfunction
-
-// begin_child_tr
-// --------------
-
-function integer uvm_component::begin_child_tr (uvm_transaction tr,
-    integer parent_handle=0,
-    string stream_name="main",
-    string label="",
-    string desc="",
-time begin_time=0);
-return m_begin_tr(tr, parent_handle, stream_name, label, desc, begin_time);
-endfunction
-
-// m_get_tr_database
-// ---------------------
-function uvm_tr_database uvm_component::m_get_tr_database();
-  if (tr_database == null) begin
-    uvm_coreservice_t cs = uvm_coreservice_t::get();
-    tr_database = cs.get_default_tr_database();
-  end
-  return tr_database;
-endfunction : m_get_tr_database
-
-// get_tr_stream
-// ------------
-function uvm_tr_stream uvm_component::get_tr_stream( string name,
-string stream_type_name="" );
-uvm_tr_database db = m_get_tr_database();
-if (!m_streams.exists(name) || !m_streams[name].exists(stream_type_name))
-  m_streams[name][stream_type_name] = db.open_stream(name, this.get_full_name(), stream_type_name);
-return m_streams[name][stream_type_name];
-endfunction : get_tr_stream
-
-// free_tr_stream
-// --------------
-function void uvm_component::free_tr_stream(uvm_tr_stream stream);
-  // Check the null case...
-  if (stream == null)
-    return;
-
-  // Then make sure this name/type_name combo exists
-  if (!m_streams.exists(stream.get_name()) ||
-  !m_streams[stream.get_name()].exists(stream.get_stream_type_name()))
-  return;
-
-  // Then make sure this name/type_name combo is THIS stream
-  if (m_streams[stream.get_name()][stream.get_stream_type_name()] != stream)
-    return;
-
-  // Then delete it from the arrays
-  m_streams[stream.get_name()].delete(stream.get_type_name());
-  if (m_streams[stream.get_name()].size() == 0)
-    m_streams.delete(stream.get_name());
-
-  // Finally, free the stream if necessary
-  if (stream.is_open() || stream.is_closed()) begin
-    stream.free();
-  end
-endfunction : free_tr_stream
-
-// m_begin_tr
-// ----------
-
-function integer uvm_component::m_begin_tr (uvm_transaction tr,
-    integer parent_handle=0,
-    string stream_name="main",
-    string label="",
-    string desc="",
-time begin_time=0);
-uvm_event#(uvm_object) e;
-string    name;
-string    kind;
-uvm_tr_database db;
-integer   handle, link_handle;
-uvm_tr_stream stream;
-uvm_recorder recorder, parent_recorder, link_recorder;
-
-if (tr == null)
-  return 0;
-
-db = m_get_tr_database();
-
-if (parent_handle != 0)
-  parent_recorder = uvm_recorder::get_recorder_from_handle(parent_handle);
-
-if (parent_recorder == null) begin
-  uvm_sequence_item seq;
-  if ($cast(seq,tr)) begin
-    uvm_sequence_base parent_seq = seq.get_parent_sequence();
-    if (parent_seq != null) begin
-      parent_recorder = parent_seq.m_tr_recorder;
-    end
-  end
-end
-
-if(parent_recorder != null) begin
-  link_handle = tr.begin_child_tr(begin_time, parent_recorder.get_handle());
-end
-else begin
-  link_handle = tr.begin_tr(begin_time);
-end
-
-if (link_handle != 0)
-  link_recorder = uvm_recorder::get_recorder_from_handle(link_handle);
-
-
-if (tr.get_name() != "")
-  name = tr.get_name();
-else
-  name = tr.get_type_name();
-
-if (uvm_verbosity'(recording_detail) != UVM_NONE) begin
-  if ((stream_name == "") || (stream_name == "main")) begin
-    if (m_main_stream == null)
-      m_main_stream = db.open_stream("main", this.get_full_name(), "TVM");
-    stream = m_main_stream;
-  end
-  else
-    stream = get_tr_stream(stream_name);
-
-  if (stream != null ) begin
-    kind = (parent_recorder == null) ? "Begin_No_Parent, Link" : "Begin_End, Link";
-
-    recorder = stream.open_recorder(name, begin_time, kind);
-
-    if (recorder != null) begin
-      if (label != "") 
-        recorder.record_string("label", label);
-      if (desc != "")
-        recorder.record_string("desc", desc);
-
-      if (parent_recorder != null) begin
-        tr_database.establish_link(uvm_parent_child_link::get_link(parent_recorder,
-        recorder));
-      end
-
-      if (link_recorder != null) begin
-        tr_database.establish_link(uvm_related_link::get_link(recorder,
-        link_recorder));
-      end
-      m_tr_h[tr] = recorder;
-    end
-  end
-
-  handle = (recorder == null) ? 0 : recorder.get_handle();
-  do_begin_tr(tr, stream_name, handle); 
-
-end
-
-e = event_pool.get("begin_tr");
-if (e!=null) 
-  e.trigger(tr);
-
-return handle;
-
-endfunction
-
-
-// end_tr
-// ------
-
-function void uvm_component::end_tr (uvm_transaction tr,
-    time end_time=0,
-bit free_handle=1);
-uvm_event#(uvm_object) e;
-uvm_recorder recorder;
-uvm_tr_database db = m_get_tr_database();
-
-if (tr == null)
-  return;
-
-tr.end_tr(end_time,free_handle);
-
-if (uvm_verbosity'(recording_detail) != UVM_NONE) begin
-
-  if (m_tr_h.exists(tr)) begin
-
-    recorder = m_tr_h[tr];
-
-    do_end_tr(tr, recorder.get_handle()); // callback
-
-    m_tr_h.delete(tr);
-
-    tr.record(recorder);
-
-    recorder.close(end_time);
-
-    if (free_handle)
-      recorder.free();
-
-  end
-  else begin
-    do_end_tr(tr, 0); // callback
-  end
-
-end
-
-e = event_pool.get("end_tr");
-if(e!=null) 
-  e.trigger();
-
-endfunction
-
-
-// record_error_tr
-// ---------------
-
-function integer uvm_component::record_error_tr (string stream_name="main",
-    uvm_object info=null,
-    string label="error_tr",
-    string desc="",
-    time   error_time=0,
-bit    keep_active=0);
-uvm_recorder recorder;
-string etype;
-uvm_tr_stream stream;
-uvm_tr_database db = m_get_tr_database();
-integer handle;
-
-if(keep_active) etype = "Error, Link";
-else etype = "Error";
-
-if(error_time == 0) error_time = $realtime;
-
-if ((stream_name=="") || (stream_name=="main")) begin
-  if (m_main_stream == null)
-    m_main_stream = tr_database.open_stream("main", this.get_full_name(), "TVM");
-  stream = m_main_stream;
-end
-else
-  stream = get_tr_stream(stream_name);
-
-handle = 0;
-if (stream != null) begin
-
-  recorder = stream.open_recorder(label,
-    error_time,
-  etype);
-
-  if (recorder != null) begin
-    if (label != "")
-      recorder.record_string("label", label);
-    if (desc != "")
-      recorder.record_string("desc", desc);
-    if (info!=null)
-      info.record(recorder);
-
-    recorder.close(error_time);
-
-    if (keep_active == 0) begin
-      recorder.free();
-    end
-    else begin
-      handle = recorder.get_handle();
-    end
-  end // if (recorder != null)
-end // if (stream != null)
-
-return handle;
-endfunction
-
-
-// record_event_tr
-// ---------------
-
-function integer uvm_component::record_event_tr (string stream_name="main",
-    uvm_object info=null,
-    string label="event_tr",
-    string desc="",
-    time   event_time=0,
-bit    keep_active=0);
-uvm_recorder recorder;
-string etype;
-integer handle;
-uvm_tr_stream stream;
-uvm_tr_database db = m_get_tr_database();
-
-if(keep_active) etype = "Event, Link";
-else etype = "Event";
-
-if(event_time == 0) event_time = $realtime;
-
-if ((stream_name=="") || (stream_name=="main")) begin
-  if (m_main_stream == null)
-    m_main_stream = tr_database.open_stream("main", this.get_full_name(), "TVM");
-  stream = m_main_stream;
-end
-else
-  stream = get_tr_stream(stream_name);
-
-handle = 0;
-if (stream != null) begin
-  recorder = stream.open_recorder(label,
-    event_time,
-  etype);
-
-  if (recorder != null) begin
-    if (label != "")
-      recorder.record_string("label", label);
-    if (desc != "")
-      recorder.record_string("desc", desc);
-    if (info!=null)
-      info.record(recorder);
-
-    recorder.close(event_time);
-
-    if (keep_active == 0) begin
-      recorder.free();
-    end
-    else begin
-      handle = recorder.get_handle();
-    end
-  end // if (recorder != null)
-end // if (stream != null)
-
-return handle;
-endfunction
-
-// do_accept_tr
-// ------------
-
-function void uvm_component::do_accept_tr (uvm_transaction tr);
-  return;
-endfunction
-
-
-// do_begin_tr
-// -----------
-
-function void uvm_component::do_begin_tr (uvm_transaction tr,
-    string stream_name,
-integer tr_handle);
-return;
-endfunction
-
-
-// do_end_tr
-// ---------
-
-function void uvm_component::do_end_tr (uvm_transaction tr,
-integer tr_handle);
-return;
-endfunction
-
-
-//------------------------------------------------------------------------------
-//
-// Configuration interface
-//
-//------------------------------------------------------------------------------
-
-
-function string uvm_component::massage_scope(string scope);
-
-  // uvm_top
-  if(scope == "")
-    return "^$";
-
-  if(scope == "*")
-  return {get_full_name(), ".*"};
-
-  // absolute path to the top-level test
-  if(scope == "uvm_test_top")
-    return "uvm_test_top";
-
-  // absolute path to uvm_root
-  if(scope[0] == ".")
-  return {get_full_name(), scope};
-
-  return {get_full_name(), ".", scope};
-
-endfunction
-
-
-// Undocumented struct for storing clone bit along w/
-// object on set_config_object(...) calls
-class uvm_config_object_wrapper;
-  uvm_object obj;
-  bit clone;
-endclass : uvm_config_object_wrapper
-
-
-`ifndef UVM_NO_DEPRECATED
+  // Function: set_report_severity_id_file_hier
   //
-  // set_config_int
+  // These methods recursively associate the specified FILE descriptor with
+  // reports of the given ~severity~, ~id~, or ~severity-id~ pair. A FILE
+  // associated with a particular severity-id pair takes precedence over a FILE
+  // associated with id, which take precedence over an a FILE associated with a
+  // severity, which takes precedence over the default FILE descriptor.
   //
-  function void uvm_component::set_config_int(string inst_name,
-      string field_name,
-  uvm_bitstream_t value);
+  // For a list of severities and other information related to the report
+  // mechanism, refer to <uvm_report_handler>.
 
-  if (!m_config_deprecated_warned) begin
-    `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-    m_config_deprecated_warned = 1;
-  end
-  uvm_config_int::set(this, inst_name, field_name, value);
-endfunction
+  extern function void set_report_severity_id_file_hier(uvm_severity severity,
+                                                        string id,
+                                                        UVM_FILE file);
 
-//
-// set_config_string
-//
-function void uvm_component::set_config_string(string inst_name,
-    string field_name,
-string value);
 
-if (!m_config_deprecated_warned) begin
-  `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-  m_config_deprecated_warned = 1;
-end
-uvm_config_string::set(this, inst_name, field_name, value);
-endfunction
+  // Function: set_report_verbosity_level_hier
+  //
+  // This method recursively sets the maximum verbosity level for reports for
+  // this component and all those below it. Any report from this component
+  // subtree whose verbosity exceeds this maximum will be ignored.
+  // 
+  // See <uvm_report_handler> for a list of predefined message verbosity levels
+  // and their meaning.
 
-//
-// set_config_object
-//
-function void uvm_component::set_config_object(string inst_name,
-    string field_name,
-    uvm_object value,
-bit clone = 1);
-uvm_object tmp;
-uvm_config_object_wrapper wrapper;
+  extern function void set_report_verbosity_level_hier (int verbosity);
 
-if (!m_config_deprecated_warned) begin
-  `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-  m_config_deprecated_warned = 1;
-end
 
-if(value == null)
-  `uvm_warning("NULLCFG", {"A null object was provided as a ",
-$sformatf("configuration object for set_config_object(\"%s\",\"%s\")",
-  inst_name, field_name), ". Verify that this is intended."})
+  // Function: pre_abort
+  //
+  // This callback is executed when the message system is executing a
+  // <UVM_EXIT> action. The exit action causes an immediate termination of
+  // the simulation, but the pre_abort callback hook gives components an 
+  // opportunity to provide additional information to the user before
+  // the termination happens. For example, a test may want to executed
+  // the report function of a particular component even when an error
+  // condition has happened to force a premature termination you would
+  // write a function like:
+  //
+  //| function void mycomponent::pre_abort();
+  //|   report();
+  //| endfunction
+  //
+  // The pre_abort() callback hooks are called in a bottom-up fashion.
 
-if(clone && (value != null)) begin
-  tmp = value.clone();
-  if(tmp == null) begin
-    uvm_component comp;
-    if ($cast(comp,value)) begin
-      `uvm_error("INVCLNC", {"Clone failed during set_config_object ",
-      "with an object that is a uvm_component. Components cannot be cloned."})
+  virtual function void pre_abort;
+  endfunction
+
+  //----------------------------------------------------------------------------
+  // Group: Recording Interface
+  //----------------------------------------------------------------------------
+  // These methods comprise the component-based transaction recording
+  // interface. The methods can be used to record the transactions that
+  // this component "sees", i.e. produces or consumes.
+  //
+  // The API and implementation are subject to change once a vendor-independent
+  // use-model is determined.
+  //----------------------------------------------------------------------------
+
+  // Function: accept_tr
+  //
+  // This function marks the acceptance of a transaction, ~tr~, by this
+  // component. Specifically, it performs the following actions:
+  //
+  // - Calls the ~tr~'s <uvm_transaction::accept_tr> method, passing to it the
+  //   ~accept_time~ argument.
+  //
+  // - Calls this component's <do_accept_tr> method to allow for any post-begin
+  //   action in derived classes.
+  //
+  // - Triggers the component's internal accept_tr event. Any processes waiting
+  //   on this event will resume in the next delta cycle. 
+
+  extern function void accept_tr (uvm_transaction tr, time accept_time = 0);
+
+
+  // Function: do_accept_tr
+  //
+  // The <accept_tr> method calls this function to accommodate any user-defined
+  // post-accept action. Implementations should call super.do_accept_tr to
+  // ensure correct operation.
+
+  extern virtual protected function void do_accept_tr (uvm_transaction tr);
+
+
+  // Function: begin_tr
+  //
+  // This function marks the start of a transaction, ~tr~, by this component.
+  // Specifically, it performs the following actions:
+  //
+  // - Calls ~tr~'s <uvm_transaction::begin_tr> method, passing to it the
+  //   ~begin_time~ argument. The ~begin_time~ should be greater than or equal
+  //   to the accept time. By default, when ~begin_time~ = 0, the current
+  //   simulation time is used.
+  //
+  //   If recording is enabled (recording_detail != UVM_OFF), then a new
+  //   database-transaction is started on the component's transaction stream
+  //   given by the stream argument. No transaction properties are recorded at
+  //   this time.
+  //
+  // - Calls the component's <do_begin_tr> method to allow for any post-begin
+  //   action in derived classes.
+  //
+  // - Triggers the component's internal begin_tr event. Any processes waiting
+  //   on this event will resume in the next delta cycle. 
+  //
+  // A handle to the transaction is returned. The meaning of this handle, as
+  // well as the interpretation of the arguments ~stream_name~, ~label~, and
+  // ~desc~ are vendor specific.
+
+  extern function integer begin_tr (uvm_transaction tr,
+                                    string stream_name="main",
+                                    string label="",
+                                    string desc="",
+                                    time begin_time=0,
+                                    integer parent_handle=0);
+
+
+  // Function: begin_child_tr
+  //
+  // This function marks the start of a child transaction, ~tr~, by this
+  // component. Its operation is identical to that of <begin_tr>, except that
+  // an association is made between this transaction and the provided parent
+  // transaction. This association is vendor-specific.
+
+  extern function integer begin_child_tr (uvm_transaction tr,
+                                          integer parent_handle=0,
+                                          string stream_name="main",
+                                          string label="",
+                                          string desc="",
+                                          time begin_time=0);
+
+
+  // Function: do_begin_tr
+  //
+  // The <begin_tr> and <begin_child_tr> methods call this function to
+  // accommodate any user-defined post-begin action. Implementations should call
+  // super.do_begin_tr to ensure correct operation.
+
+  extern virtual protected 
+  function void do_begin_tr (uvm_transaction tr,
+                             string stream_name,
+                             integer tr_handle);
+
+
+    // Function: end_tr
+    //
+    // This function marks the end of a transaction, ~tr~, by this component.
+    // Specifically, it performs the following actions:
+    //
+    // - Calls ~tr~'s <uvm_transaction::end_tr> method, passing to it the
+    //   ~end_time~ argument. The ~end_time~ must at least be greater than the
+    //   begin time. By default, when ~end_time~ = 0, the current simulation time
+    //   is used.
+    //
+    //   The transaction's properties are recorded to the database-transaction on
+    //   which it was started, and then the transaction is ended. Only those
+    //   properties handled by the transaction's do_record method (and optional
+    //   `uvm_*_field macros) are recorded.
+    //
+    // - Calls the component's <do_end_tr> method to accommodate any post-end
+    //   action in derived classes.
+    //
+    // - Triggers the component's internal end_tr event. Any processes waiting on
+    //   this event will resume in the next delta cycle. 
+    //
+    // The ~free_handle~ bit indicates that this transaction is no longer needed.
+    // The implementation of free_handle is vendor-specific.
+
+    extern function void end_tr (uvm_transaction tr,
+                                 time end_time=0,
+                                 bit free_handle=1);
+
+
+    // Function: do_end_tr
+    //
+    // The <end_tr> method calls this function to accommodate any user-defined
+    // post-end action. Implementations should call super.do_end_tr to ensure
+    // correct operation.
+
+    extern virtual protected function void do_end_tr (uvm_transaction tr,
+                                                      integer tr_handle);
+
+
+    // Function: record_error_tr
+    //
+    // This function marks an error transaction by a component. Properties of the
+    // given uvm_object, ~info~, as implemented in its <uvm_object::do_record> method,
+    // are recorded to the transaction database.
+    //
+    // An ~error_time~ of 0 indicates to use the current simulation time. The
+    // ~keep_active~ bit determines if the handle should remain active. If 0,
+    // then a zero-length error transaction is recorded. A handle to the
+    // database-transaction is returned. 
+    //
+    // Interpretation of this handle, as well as the strings ~stream_name~,
+    // ~label~, and ~desc~, are vendor-specific.
+
+    extern function integer record_error_tr (string stream_name="main",
+                                             uvm_object info=null,
+                                             string label="error_tr",
+                                             string desc="",
+                                             time   error_time=0,
+                                             bit    keep_active=0);
+
+
+    // Function: record_event_tr
+    //
+    // This function marks an event transaction by a component. 
+    //
+    // An ~event_time~ of 0 indicates to use the current simulation time. 
+    //
+    // A handle to the transaction is returned. The ~keep_active~ bit determines
+    // if the handle may be used for other vendor-specific purposes. 
+    //
+    // The strings for ~stream_name~, ~label~, and ~desc~ are vendor-specific
+    // identifiers for the transaction.
+
+    extern function integer record_event_tr (string stream_name="main",
+                                             uvm_object info=null,
+                                             string label="event_tr",
+                                             string desc="",
+                                             time   event_time=0,
+                                             bit    keep_active=0);
+
+    // Function: get_tr_stream
+    // Returns a tr stream with ~this~ component's full name as a scope.
+    //
+    // Streams which are retrieved via this method will be stored internally,
+    // such that later calls to ~get_tr_stream~ will return the same stream
+    // reference.
+    //
+    // The stream can be removed from the internal storage via a call
+    // to <free_tr_stream>.
+    //
+    // Parameters:
+    // name - Name for the stream
+    // stream_type_name - Type name for the stream (Default = "")
+    extern virtual function uvm_tr_stream get_tr_stream(string name,
+                                                        string stream_type_name="");
+
+    // Function: free_tr_stream
+    // Frees the internal references associated with ~stream~.
+    //
+    // The next call to <get_tr_stream> will result in a newly created
+    // <uvm_tr_stream>.  If the current stream is open (or closed),
+    // then it will be freed.
+    extern virtual function void free_tr_stream(uvm_tr_stream stream);
+
+    // Variable: print_enabled
+    //
+    // This bit determines if this component should automatically be printed as a
+    // child of its parent object. 
+    // 
+    // By default, all children are printed. However, this bit allows a parent
+    // component to disable the printing of specific children.
+
+    bit print_enabled = 1;
+
+    // Variable: tr_database
+    //
+    // Specifies the <uvm_tr_database> object to use for <begin_tr>
+    // and other methods in the <Recording Interface>.  
+    // Default is <uvm_coreservice_t::get_default_tr_database>.
+    uvm_tr_database tr_database;
+    extern virtual function uvm_tr_database m_get_tr_database();
+
+    //----------------------------------------------------------------------------
+    //                     PRIVATE or PSUEDO-PRIVATE members
+    //                      *** Do not call directly ***
+    //         Implementation and even existence are subject to change. 
+    //----------------------------------------------------------------------------
+    // Most local methods are prefixed with m_, indicating they are not
+    // user-level methods. SystemVerilog does not support friend classes,
+    // which forces some otherwise internal methods to be exposed (i.e. not
+    // be protected via 'local' keyword). These methods are also prefixed
+    // with m_ to indicate they are not intended for public use.
+    //
+    // Internal methods will not be documented, although their implementa-
+    // tions are freely available via the open-source license.
+    //----------------------------------------------------------------------------
+
+    protected uvm_domain m_domain;    // set_domain stores our domain handle
+
+    /*protected*/ uvm_phase  m_phase_imps[uvm_phase];    // functors to override ovm_root defaults
+
+    //TND review protected, provide read-only accessor.
+    uvm_phase            m_current_phase;            // the most recently executed phase
+    protected process    m_phase_process;
+
+    /*protected*/ bit  m_build_done;
+    /*protected*/ int  m_phasing_active;
+
+    extern                   function void set_int_local(string field_name, 
+                                                         uvm_bitstream_t value,
+                                                         bit recurse=1);
+
+    /*protected*/ uvm_component m_parent;
+    protected     uvm_component m_children[string];
+    protected     uvm_component m_children_by_handle[uvm_component];
+    extern protected virtual function bit  m_add_child(uvm_component child);
+    extern local     virtual function void m_set_full_name();
+
+    extern                   function void do_resolve_bindings();
+    extern                   function void do_flush();
+
+    extern virtual           function void flush ();
+
+    extern local             function void m_extract_name(string name ,
+                                                          output string leaf ,
+                                                          output string remainder );
+
+    // overridden to disable
+    extern virtual function uvm_object create (string name=""); 
+    extern virtual function uvm_object clone  ();
+
+    local uvm_tr_stream m_main_stream;
+    local uvm_tr_stream m_streams[string][string];
+    local uvm_recorder m_tr_h[uvm_transaction];
+    extern protected function integer m_begin_tr (uvm_transaction tr,
+                                                  integer parent_handle=0,
+                                                  string stream_name="main", string label="",
+                                                  string desc="", time begin_time=0);
+
+    string m_name;
+
+    const static string type_name = "uvm_component";
+    virtual function string get_type_name();
+      return type_name;
+    endfunction
+
+    protected uvm_event_pool event_pool;
+
+    int unsigned recording_detail = UVM_NONE;
+    extern         function void   do_print(uvm_printer printer);
+
+    // Internal methods for setting up command line messaging stuff
+    extern function void m_set_cl_msg_args;
+    extern function void m_set_cl_verb;
+    extern function void m_set_cl_action;
+    extern function void m_set_cl_sev;
+    extern function void m_apply_verbosity_settings(uvm_phase phase);
+
+    // The verbosity settings may have a specific phase to start at. 
+    // We will do this work in the phase_started callback. 
+
+    typedef struct {
+      string comp;
+      string phase;
+      time   offset;
+      uvm_verbosity verbosity;
+      string id;
+    } m_verbosity_setting;
+
+    m_verbosity_setting m_verbosity_settings[$];
+    static m_verbosity_setting m_time_settings[$];
+
+    // does the pre abort callback hierarchically
+    extern /*local*/ function void m_do_pre_abort;
+
+
+    typedef struct  {
+      string arg;
+      string args[$];
+      int unsigned used;
+    } uvm_cmdline_parsed_arg_t;
+
+    static uvm_cmdline_parsed_arg_t m_uvm_applied_cl_action[$];
+    static uvm_cmdline_parsed_arg_t m_uvm_applied_cl_sev[$];
+
+  endclass : uvm_component
+
+  `include "base/uvm_root.svh"
+
+  //------------------------------------------------------------------------------
+  // IMPLEMENTATION
+  //------------------------------------------------------------------------------
+
+  //------------------------------------------------------------------------------
+  //
+  // CLASS- uvm_component
+  //
+  //------------------------------------------------------------------------------
+
+
+  // new
+  // ---
+
+  function uvm_component::new (string name, uvm_component parent);
+    string error_str;
+    uvm_root top;
+    uvm_coreservice_t cs;
+
+    super.new(name);
+
+    // If uvm_top, reset name to "" so it doesn't show in full paths then return
+    if (parent==null && name == "__top__") begin
+      set_name(""); // *** VIRTUAL
       return;
     end
-    else begin
-      `uvm_warning("INVCLN", {"Clone failed during set_config_object, ",
-      "the original reference will be used for configuration. Check that ",
-      "the create method for the object type is defined properly."})
-    end
-  end
-  else
-    value = tmp;
-end
 
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();  
 
-uvm_config_object::set(this, inst_name, field_name, value);
-
-wrapper = new;
-wrapper.obj = value;
-wrapper.clone = clone;
-uvm_config_db#(uvm_config_object_wrapper)::set(this, inst_name, field_name, wrapper);
-endfunction
-
-//
-// get_config_int
-//
-function bit uvm_component::get_config_int (string field_name,
-inout uvm_bitstream_t value);
-
-if (!m_config_deprecated_warned) begin
-  `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-  m_config_deprecated_warned = 1;
-end
-return uvm_config_int::get(this, "", field_name, value);
-endfunction
-
-//
-// get_config_string
-//
-function bit uvm_component::get_config_string(string field_name,
-inout string value);
-
-if (!m_config_deprecated_warned) begin
-  `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-  m_config_deprecated_warned = 1;
-end
-return uvm_config_string::get(this, "", field_name, value);
-endfunction
-
-//
-// get_config_object
-//
-//
-// Note that this does not honor the set_config_object clone bit
-function bit uvm_component::get_config_object (string field_name,
-    inout uvm_object value,
-input bit clone=1);
-if (!m_config_deprecated_warned) begin
-  `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
-  m_config_deprecated_warned = 1;
-end
-
-if(!uvm_config_object::get(this, "", field_name, value)) begin
-  return 0;
-end
-
-if(clone && value != null) begin
-  value = value.clone();
-end
-
-return 1;
-endfunction
-`endif
-
-// check_config_usage
-// ------------------
-
-function void uvm_component::check_config_usage ( bit recurse=1 );
-  uvm_resource_pool rp = uvm_resource_pool::get();
-  uvm_queue#(uvm_resource_base) rq;
-
-  rq = rp.find_unused_resources();
-
-  if(rq.size() == 0)
-    return;
-
-  uvm_report_info("CFGNRD"," ::: The following resources have at least one write and no reads :::",UVM_INFO);
-  rp.print_resources(rq, 1);
-endfunction
-
-
-// apply_config_settings
-// ---------------------
-
-function void uvm_component::apply_config_settings (bit verbose=0);
-
-  uvm_resource_pool rp = uvm_resource_pool::get();
-  uvm_queue#(uvm_resource_base) rq;
-  uvm_resource_base r;
-  string name;
-  string search_name;
-  int unsigned i;
-  int unsigned j;
-
-  // populate an internal 'field_array' with list of
-  // fields declared with `uvm_field macros (checking
-  // that there aren't any duplicates along the way)
-  __m_uvm_field_automation (null, UVM_CHECK_FIELDS, "");
-
-  // if no declared fields, nothing to do. 
-  if (__m_uvm_status_container.field_array.size() == 0)
-    return;
-
-  if(verbose)
-    uvm_report_info("CFGAPL","applying configuration settings", UVM_NONE);
-
-  // The following is VERY expensive. Needs refactoring. Should
-  // get config only for the specific field names in 'field_array'.
-  // That's because the resource pool is organized first by field name.
-  // Can further optimize by encoding the value for each 'field_array' 
-  // entry to indicate string, uvm_bitstream_t, or object. That way,
-  // we call 'get' for specific fields of specific types rather than
-  // the search-and-cast approach here.
-  rq = rp.lookup_scope(get_full_name());
-  rp.sort_by_precedence(rq);
-
-  // rq is in precedence order now, so we have to go through in reverse
-  // order to do the settings.
-  for(int i=rq.size()-1; i>=0; --i) begin
-
-    r = rq.get(i);
-    name = r.get_name();
-
-    // does name have brackets [] in it?
-    for(j = 0; j < name.len(); j++)
-    if(name[j] == "[" || name[j] == ".")
-      break;
-
-    // If it does have brackets then we'll use the name
-    // up to the brackets to search __m_uvm_status_container.field_array
-    if(j < name.len())
-      search_name = name.substr(0, j-1);
-    else
-      search_name = name;
-
-    if(!__m_uvm_status_container.field_array.exists(search_name) && 
-    search_name != "recording_detail")
-    continue;
-
-    if(verbose)
-      uvm_report_info("CFGAPL",$sformatf("applying configuration to field %s", name),UVM_NONE);
-
+    // Check that we're not in or past end_of_elaboration
     begin
-      uvm_resource#(uvm_integral_t) rit;
-      if ($cast(rit, r))
-        set_int_local(name, rit.read(this));
-      else begin
-        uvm_resource#(uvm_bitstream_t) rbs;
-        if($cast(rbs, r))
-          set_int_local(name, rbs.read(this));
-        else begin
-          uvm_resource#(int) ri;
-          if($cast(ri, r))
-            set_int_local(name, ri.read(this));
-          else begin
-            uvm_resource#(int unsigned) riu;
-            if($cast(riu, r))
-              set_int_local(name, riu.read(this));
-            else begin
-              uvm_resource#(uvm_active_passive_enum) rap;
-              if ($cast(rap, r))
-                set_int_local(name, rap.read(this));
-              else begin
-                uvm_resource#(string) rs;
-                if($cast(rs, r))
-                  set_string_local(name, rs.read(this));
-                else begin
-                  uvm_resource#(uvm_config_object_wrapper) rcow;
-                  if ($cast(rcow, r)) begin
-                    uvm_config_object_wrapper cow = rcow.read();
-                    set_object_local(name, cow.obj, cow.clone);
-                  end
-                  else begin
-                    uvm_resource#(uvm_object) ro;
-                    if($cast(ro, r)) begin
-                      set_object_local(name, ro.read(this), 0);
-                    end 
-                    else if (verbose) begin
-                      uvm_report_info("CFGAPL", $sformatf("field %s has an unsupported type", name), UVM_NONE);
-                    end
-                  end // else: !if($cast(rcow, r))
-                end // else: !if($cast(rs, r))
-              end // else: !if($cast(rap, r))
-            end // else: !if($cast(riu, r))
-          end // else: !if($cast(ri, r))
-        end // else: !if($cast(rbs, r))
-      end // else: !if($cast(rit, r))
+      uvm_phase bld;
+      uvm_domain common;
+      common = uvm_domain::get_common_domain();
+      bld = common.find(uvm_build_phase::get());
+      if (bld == null)
+      uvm_report_fatal("COMP/INTERNAL",
+      "attempt to find build phase object failed",UVM_NONE);
+      if (bld.get_state() == UVM_PHASE_DONE) begin
+        uvm_report_fatal("ILLCRT", {"It is illegal to create a component ('",
+          name,"' under '",
+          (parent == null ? top.get_full_name() : parent.get_full_name()),
+          "') after the build phase has ended."},
+        UVM_NONE);
+      end
     end
-  end
 
-  __m_uvm_status_container.field_array.delete();
-
-endfunction
-
-
-// print_config
-// ------------
-
-function void uvm_component::print_config(bit recurse = 0, audit = 0);
-
-  uvm_resource_pool rp = uvm_resource_pool::get();
-
-  uvm_report_info("CFGPRT","visible resources:",UVM_INFO);
-  rp.print_resources(rp.lookup_scope(get_full_name()), audit);
-
-  if(recurse) begin
-    uvm_component c;
-    foreach(m_children[name]) begin
-      c = m_children[name];
-      c.print_config(recurse, audit);
+    if (name == "") begin
+      name.itoa(m_inst_count);
+      name = {"COMP_", name};
     end
-  end
 
-endfunction
+    if(parent == this) begin
+      `uvm_fatal("THISPARENT", "cannot set the parent of a component to itself")
+    end
+
+    if (parent == null)
+      parent = top;
+
+    if(uvm_report_enabled(UVM_MEDIUM+1, UVM_INFO, "NEWCOMP"))
+      `uvm_info("NEWCOMP", {"Creating ",
+      (parent==top?"uvm_top":parent.get_full_name()),".",name},UVM_MEDIUM+1)
+
+    if (parent.has_child(name) && this != parent.get_child(name)) begin
+      if (parent == top) begin
+        error_str = {"Name '",name,"' is not unique to other top-level ",
+        "instances. If parent is a module, build a unique name by combining the ",
+        "the module name and component name: $sformatf(\"\%m.\%s\",\"",name,"\")."};
+        `uvm_fatal("CLDEXT",error_str)
+      end
+      else
+        `uvm_fatal("CLDEXT",
+      $sformatf("Cannot set '%s' as a child of '%s', %s",
+        name, parent.get_full_name(),
+        "which already has a child by that name."))
+      return;
+    end
+
+    m_parent = parent;
+
+    set_name(name); // *** VIRTUAL
+
+    if (!m_parent.m_add_child(this))
+      m_parent = null;
+
+    event_pool = new("event_pool");
+
+    m_domain = parent.m_domain;     // by default, inherit domains from parents
+
+    // Now that inst name is established, reseed (if use_uvm_seeding is set)
+    reseed();
+
+    // Do local configuration settings
+    if (!uvm_config_db #(uvm_bitstream_t)::get(this, "", "recording_detail", recording_detail))
+      void'(uvm_config_db #(int)::get(this, "", "recording_detail", recording_detail));
+
+    m_rh.set_name(get_full_name());
+    set_report_verbosity_level(parent.get_report_verbosity_level());
+
+    m_set_cl_msg_args();
+
+  endfunction
 
 
-// print_config_settings
-// ---------------------
+  // m_add_child
+  // -----------
 
-function void uvm_component::print_config_settings (string field="",
-    uvm_component comp=null,
-bit recurse=0);
-static bit have_been_warned;
-if(!have_been_warned) begin
-  uvm_report_warning("deprecated", "uvm_component::print_config_settings has been deprecated.  Use print_config() instead");
-  have_been_warned = 1;
-end
+  function bit uvm_component::m_add_child(uvm_component child);
 
-print_config(recurse, 1);
-endfunction
+    if (m_children.exists(child.get_name()) &&
+    m_children[child.get_name()] != child) begin
+      `uvm_warning("BDCLD",
+      $sformatf("A child with the name '%0s' (type=%0s) already exists.",
+      child.get_name(), m_children[child.get_name()].get_type_name()))
+      return 0;
+    end
+
+    if (m_children_by_handle.exists(child)) begin
+      `uvm_warning("BDCHLD",
+      $sformatf("A child with the name '%0s' %0s %0s'",
+        child.get_name(),
+        "already exists in parent under name '",
+      m_children_by_handle[child].get_name()))
+      return 0;
+    end
+
+    m_children[child.get_name()] = child;
+    m_children_by_handle[child] = child;
+    return 1;
+  endfunction
 
 
-// print_config_with_audit
-// -----------------------
 
-function void uvm_component::print_config_with_audit(bit recurse = 0);
-  print_config(recurse, 1);
-endfunction
+  //------------------------------------------------------------------------------
+  //
+  // Hierarchy Methods
+  // 
+  //------------------------------------------------------------------------------
 
 
-// do_print (override)
-// --------
+  // get_children
+  // ------------
 
-function void uvm_component::do_print(uvm_printer printer);
-  string v;
-  super.do_print(printer);
+  function void uvm_component::get_children(ref uvm_component children[$]);
+    foreach(m_children[i]) 
+      children.push_back(m_children[i]);
+  endfunction
 
-  // It is printed only if its value is other than the default (UVM_NONE)
-  if(uvm_verbosity'(recording_detail) != UVM_NONE)
-  case (recording_detail)
-    UVM_LOW : printer.print_generic("recording_detail", "uvm_verbosity", 
-    $bits(recording_detail), "UVM_LOW");
-    UVM_MEDIUM : printer.print_generic("recording_detail", "uvm_verbosity", 
-    $bits(recording_detail), "UVM_MEDIUM");
-    UVM_HIGH : printer.print_generic("recording_detail", "uvm_verbosity", 
-    $bits(recording_detail), "UVM_HIGH");
-    UVM_FULL : printer.print_generic("recording_detail", "uvm_verbosity", 
-    $bits(recording_detail), "UVM_FULL");
-    default : printer.print_field_int("recording_detail", recording_detail, 
-    $bits(recording_detail), UVM_DEC, , "integral");
-  endcase
+
+  // get_first_child
+  // ---------------
+
+  function int uvm_component::get_first_child(ref string name);
+    return m_children.first(name);
+  endfunction
+
+
+  // get_next_child
+  // --------------
+
+  function int uvm_component::get_next_child(ref string name);
+    return m_children.next(name);
+  endfunction
+
+
+  // get_child
+  // ---------
+
+  function uvm_component uvm_component::get_child(string name);
+    if (m_children.exists(name))
+      return m_children[name];
+    `uvm_warning("NOCHILD",{"Component with name '",name,
+    "' is not a child of component '",get_full_name(),"'"})
+    return null;
+  endfunction
+
+
+  // has_child
+  // ---------
+
+  function int uvm_component::has_child(string name);
+    return m_children.exists(name);
+  endfunction
+
+
+  // get_num_children
+  // ----------------
+
+  function int uvm_component::get_num_children();
+    return m_children.num();
+  endfunction
+
+
+  // get_full_name
+  // -------------
+
+  function string uvm_component::get_full_name ();
+    // Note- Implementation choice to construct full name once since the
+    // full name may be used often for lookups.
+    if(m_name == "")
+      return get_name();
+    else
+      return m_name;
+  endfunction
+
+
+  // get_parent
+  // ----------
+
+  function uvm_component uvm_component::get_parent ();
+    return  m_parent;
+  endfunction
+
+
+  // set_name
+  // --------
+
+  function void uvm_component::set_name (string name);
+    if(m_name != "") begin
+      `uvm_error("INVSTNM", $sformatf("It is illegal to change the name of a component. The component name will not be changed to \"%s\"", name))
+      return;
+    end
+    super.set_name(name);
+    m_set_full_name();
+
+  endfunction
+
+
+  // m_set_full_name
+  // ---------------
+
+  function void uvm_component::m_set_full_name();
+    uvm_root top;
+    top = uvm_top;
+    if (m_parent == top || m_parent==null)
+      m_name = get_name();
+    else 
+      m_name = {m_parent.get_full_name(), ".", get_name()};
+
+    foreach (m_children[c]) begin
+      uvm_component tmp;
+      tmp = m_children[c];
+      tmp.m_set_full_name(); 
+    end
+
+  endfunction
+
+
+  // lookup
+  // ------
+
+  function uvm_component uvm_component::lookup( string name );
+
+    string leaf , remainder;
+    uvm_component comp;
+    uvm_root top;
+    uvm_coreservice_t cs;
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();
+
+    comp = this;
+
+    m_extract_name(name, leaf, remainder);
+
+    if (leaf == "") begin
+      comp = top; // absolute lookup
+      m_extract_name(remainder, leaf, remainder);
+    end
+
+    if (!comp.has_child(leaf)) begin
+      `uvm_warning("Lookup Error", 
+      $sformatf("Cannot find child %0s",leaf))
+      return null;
+    end
+
+    if( remainder != "" )
+      return comp.m_children[leaf].lookup(remainder);
+
+    return comp.m_children[leaf];
+
+  endfunction
+
+
+  // get_depth
+  // ---------
+
+  function int unsigned uvm_component::get_depth();
+    if(m_name == "") return 0;
+    get_depth = 1;
+    foreach(m_name[i]) 
+      if(m_name[i] == ".") ++get_depth;
+  endfunction
+
+
+  // m_extract_name
+  // --------------
+
+  function void uvm_component::m_extract_name(input string name ,
+                                              output string leaf ,
+                                              output string remainder );
+    int i , len;
+    string extract_str;
+    len = name.len();
+
+    for( i = 0; i < name.len(); i++ ) begin  
+      if( name[i] == "." ) begin
+        break;
+      end
+    end
+
+    if( i == len ) begin
+      leaf = name;
+      remainder = "";
+      return;
+    end
+
+    leaf = name.substr( 0 , i - 1 );
+    remainder = name.substr( i + 1 , len - 1 );
+
+    return;
+  endfunction
+
+
+  // flush
+  // -----
+
+  function void uvm_component::flush();
+    return;
+  endfunction
+
+
+  // do_flush  (flush_hier?)
+  // --------
+
+  function void uvm_component::do_flush();
+    foreach( m_children[s] )
+      m_children[s].do_flush();
+    flush();
+  endfunction
+
+
+
+  //------------------------------------------------------------------------------
+  //
+  // Factory Methods
+  // 
+  //------------------------------------------------------------------------------
+
+
+  // create
+  // ------
+
+  function uvm_object  uvm_component::create (string name =""); 
+    `uvm_error("ILLCRT",
+    "create cannot be called on a uvm_component. Use create_component instead.")
+    return null;
+  endfunction
+
+
+  // clone
+  // ------
+
+  function uvm_object  uvm_component::clone ();
+    `uvm_error("ILLCLN", $sformatf("Attempting to clone '%s'.  Clone cannot be called on a uvm_component.  The clone target variable will be set to null.", get_full_name()))
+    return null;
+  endfunction
+
+
+  // print_override_info
+  // -------------------
+
+  function void  uvm_component::print_override_info (string requested_type_name, 
+                                                     string name="");
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    factory.debug_create_by_name(requested_type_name, get_full_name(), name);
+  endfunction
+
+
+  // create_component
+  // ----------------
+
+  function uvm_component uvm_component::create_component (string requested_type_name,
+                                                          string name);
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    return factory.create_component_by_name(requested_type_name, get_full_name(),
+    name, this);
+  endfunction
+
+
+  // create_object
+  // -------------
+
+  function uvm_object uvm_component::create_object (string requested_type_name,
+                                                    string name="");
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    return factory.create_object_by_name(requested_type_name,
+    get_full_name(), name);
+  endfunction
+
+
+  // set_type_override (static)
+  // -----------------
+
+  function void uvm_component::set_type_override (string original_type_name,
+                                                  string override_type_name,
+                                                  bit    replace=1);
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    factory.set_type_override_by_name(original_type_name,override_type_name, replace);
+  endfunction 
+
+
+  // set_type_override_by_type (static)
+  // -------------------------
+
+  function void uvm_component::set_type_override_by_type (uvm_object_wrapper original_type,
+                                                          uvm_object_wrapper override_type,
+                                                          bit    replace=1);
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    factory.set_type_override_by_type(original_type, override_type, replace);
+  endfunction 
+
+
+  // set_inst_override
+  // -----------------
+
+  function void  uvm_component::set_inst_override (string relative_inst_path,  
+                                                   string original_type_name,
+                                                   string override_type_name);
+    string full_inst_path;
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+
+    if (relative_inst_path == "")
+      full_inst_path = get_full_name();
+    else
+      full_inst_path = {get_full_name(), ".", relative_inst_path};
+
+    factory.set_inst_override_by_name(
+      original_type_name,
+      override_type_name,
+    full_inst_path);
+  endfunction 
+
+
+  // set_inst_override_by_type
+  // -------------------------
+
+  function void uvm_component::set_inst_override_by_type (string relative_inst_path,  
+                                                          uvm_object_wrapper original_type,
+                                                          uvm_object_wrapper override_type);
+    string full_inst_path;
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+
+    if (relative_inst_path == "")
+      full_inst_path = get_full_name();
+    else
+      full_inst_path = {get_full_name(), ".", relative_inst_path};
+
+    factory.set_inst_override_by_type(original_type, override_type, full_inst_path);
+
+  endfunction
+
+
+
+  //------------------------------------------------------------------------------
+  //
+  // Hierarchical report configuration interface
+  //
+  //------------------------------------------------------------------------------
+
+  // set_report_id_verbosity_hier
+  // -------------------------
+
+  function void uvm_component::set_report_id_verbosity_hier( string id, int verbosity);
+    set_report_id_verbosity(id, verbosity);
+    foreach( m_children[c] )
+      m_children[c].set_report_id_verbosity_hier(id, verbosity);
+  endfunction
+
+
+  // set_report_severity_id_verbosity_hier
+  // ----------------------------------
+
+  function void uvm_component::set_report_severity_id_verbosity_hier( uvm_severity severity,
+                                                                     string id,
+                                                                     int verbosity);
+    set_report_severity_id_verbosity(severity, id, verbosity);
+    foreach( m_children[c] )
+      m_children[c].set_report_severity_id_verbosity_hier(severity, id, verbosity);
+  endfunction
+
+
+  // set_report_severity_action_hier
+  // -------------------------
+
+  function void uvm_component::set_report_severity_action_hier( uvm_severity severity, 
+                                                               uvm_action action);
+    set_report_severity_action(severity, action);
+    foreach( m_children[c] )
+      m_children[c].set_report_severity_action_hier(severity, action);
+  endfunction
+
+
+  // set_report_id_action_hier
+  // -------------------------
+
+  function void uvm_component::set_report_id_action_hier( string id, uvm_action action);
+    set_report_id_action(id, action);
+    foreach( m_children[c] )
+      m_children[c].set_report_id_action_hier(id, action);
+  endfunction
+
+
+  // set_report_severity_id_action_hier
+  // ----------------------------------
+
+  function void uvm_component::set_report_severity_id_action_hier( uvm_severity severity,
+                                                                  string id,
+                                                                  uvm_action action);
+    set_report_severity_id_action(severity, id, action);
+    foreach( m_children[c] )
+      m_children[c].set_report_severity_id_action_hier(severity, id, action);
+  endfunction
+
+
+  // set_report_severity_file_hier
+  // -----------------------------
+
+  function void uvm_component::set_report_severity_file_hier( uvm_severity severity,
+                                                             UVM_FILE file);
+    set_report_severity_file(severity, file);
+    foreach( m_children[c] )
+      m_children[c].set_report_severity_file_hier(severity, file);
+  endfunction
+
+
+  // set_report_default_file_hier
+  // ----------------------------
+
+  function void uvm_component::set_report_default_file_hier( UVM_FILE file);
+    set_report_default_file(file);
+    foreach( m_children[c] )
+      m_children[c].set_report_default_file_hier(file);
+  endfunction
+
+
+  // set_report_id_file_hier
+  // -----------------------
+
+  function void uvm_component::set_report_id_file_hier( string id, UVM_FILE file);
+    set_report_id_file(id, file);
+    foreach( m_children[c] )
+      m_children[c].set_report_id_file_hier(id, file);
+  endfunction
+
+
+  // set_report_severity_id_file_hier
+  // --------------------------------
+
+  function void uvm_component::set_report_severity_id_file_hier ( uvm_severity severity,
+                                                                 string id,
+                                                                 UVM_FILE file);
+    set_report_severity_id_file(severity, id, file);
+    foreach( m_children[c] )
+      m_children[c].set_report_severity_id_file_hier(severity, id, file);
+  endfunction
+
+
+  // set_report_verbosity_level_hier
+  // -------------------------------
+
+  function void uvm_component::set_report_verbosity_level_hier(int verbosity);
+    set_report_verbosity_level(verbosity);
+    foreach( m_children[c] )
+      m_children[c].set_report_verbosity_level_hier(verbosity);
+  endfunction  
+
+
+
+  //------------------------------------------------------------------------------
+  //
+  // Phase interface 
+  //
+  //------------------------------------------------------------------------------
+
+
+  // phase methods
+  //--------------
+  // these are prototypes for the methods to be implemented in user components
+  // build_phase() has a default implementation, the others have an empty default
+
+  function void uvm_component::build_phase(uvm_phase phase);
+    m_build_done = 1;
+    build();
+  endfunction
+
+  // Backward compatibility build function
+
+  function void uvm_component::build();
+    m_build_done = 1;
+    apply_config_settings(print_config_matches);
+    if(m_phasing_active == 0) begin
+      uvm_report_warning("UVM_DEPRECATED", "build()/build_phase() has been called explicitly, outside of the phasing system. This usage of build is deprecated and may lead to unexpected behavior.");
+    end
+  endfunction
+
+  // these phase methods are common to all components in UVM. For backward
+  // compatibility, they call the old style name (without the _phse)
+
+  function void uvm_component::connect_phase(uvm_phase phase);
+    connect();
+    return; 
+  endfunction
+  function void uvm_component::start_of_simulation_phase(uvm_phase phase);
+    start_of_simulation();
+    return; 
+  endfunction
+  function void uvm_component::end_of_elaboration_phase(uvm_phase phase);
+    end_of_elaboration();
+    return; 
+  endfunction
+  task          uvm_component::run_phase(uvm_phase phase);
+    run();
+    return; 
+  endtask
+  function void uvm_component::extract_phase(uvm_phase phase);
+    extract();
+    return; 
+  endfunction
+  function void uvm_component::check_phase(uvm_phase phase);
+    check();
+    return; 
+  endfunction
+  function void uvm_component::report_phase(uvm_phase phase);
+    report();
+    return; 
+  endfunction
+
+
+  // These are the old style phase names. In order for runtime phase names
+  // to not conflict with user names, the _phase postfix was added.
+
+  function void uvm_component::connect();             return; endfunction
+  function void uvm_component::start_of_simulation(); return; endfunction
+  function void uvm_component::end_of_elaboration();  return; endfunction
+  task          uvm_component::run();                 return; endtask
+  function void uvm_component::extract();             return; endfunction
+  function void uvm_component::check();               return; endfunction
+  function void uvm_component::report();              return; endfunction
+  function void uvm_component::final_phase(uvm_phase phase);         return; endfunction
+
+  // these runtime phase methods are only called if a set_domain() is done
+
+  task uvm_component::pre_reset_phase(uvm_phase phase);      return; endtask
+  task uvm_component::reset_phase(uvm_phase phase);          return; endtask
+  task uvm_component::post_reset_phase(uvm_phase phase);     return; endtask
+  task uvm_component::pre_configure_phase(uvm_phase phase);  return; endtask
+  task uvm_component::configure_phase(uvm_phase phase);      return; endtask
+  task uvm_component::post_configure_phase(uvm_phase phase); return; endtask
+  task uvm_component::pre_main_phase(uvm_phase phase);       return; endtask
+  task uvm_component::main_phase(uvm_phase phase);           return; endtask
+  task uvm_component::post_main_phase(uvm_phase phase);      return; endtask
+  task uvm_component::pre_shutdown_phase(uvm_phase phase);   return; endtask
+  task uvm_component::shutdown_phase(uvm_phase phase);       return; endtask
+  task uvm_component::post_shutdown_phase(uvm_phase phase);  return; endtask
+
+
+  //------------------------------
+  // current phase convenience API
+  //------------------------------
+
+
+  // phase_started
+  // -------------
+  // phase_started() and phase_ended() are extra callbacks called at the
+  // beginning and end of each phase, respectively.  Since they are
+  // called for all phases the phase is passed in as an argument so the
+  // extender can decide what to do, if anything, for each phase.
+
+  function void uvm_component::phase_started(uvm_phase phase);
+  endfunction
+
+  // phase_ended
+  // -----------
+
+  function void uvm_component::phase_ended(uvm_phase phase);
+  endfunction
+
+
+  // phase_ready_to_end
+  // ------------------
+
+  function void uvm_component::phase_ready_to_end (uvm_phase phase);
+  endfunction
+
+  //------------------------------
+  // phase / schedule / domain API
+  //------------------------------
+  // methods for VIP creators and integrators to use to set up schedule domains
+  // - a schedule is a named, organized group of phases for a component base type
+  // - a domain is a named instance of a schedule in the master phasing schedule
+
+
+  // define_domain
+  // -------------
+
+  function void uvm_component::define_domain(uvm_domain domain);
+    uvm_phase schedule;
+    //schedule = domain.find(uvm_domain::get_uvm_schedule());
+    schedule = domain.find_by_name("uvm_sched");
+    if (schedule == null) begin
+      uvm_domain common;
+      schedule = new("uvm_sched", UVM_PHASE_SCHEDULE);
+      uvm_domain::add_uvm_phases(schedule);
+      domain.add(schedule);
+      common = uvm_domain::get_common_domain();
+      if (common.find(domain,0) == null)
+        common.add(domain,.with_phase(uvm_run_phase::get()));
+    end
+
+  endfunction
+
+
+  // set_domain
+  // ----------
+  // assigns this component [tree] to a domain. adds required schedules into graph
+  // If called from build, ~hier~ won't recurse into all chilren (which don't exist yet)
+  // If we have components inherit their parent's domain by default, then ~hier~
+  // isn't needed and we need a way to prevent children from inheriting this component's domain
+
+  function void uvm_component::set_domain(uvm_domain domain, int hier=1);
+
+    // build and store the custom domain
+    m_domain = domain;
+    define_domain(domain);
+    if (hier)
+    foreach (m_children[c])
+      m_children[c].set_domain(domain);
+  endfunction
+
+  // get_domain
+  // ----------
+  //
+  function uvm_domain uvm_component::get_domain();
+    return m_domain;
+  endfunction
+
+
+  // set_phase_imp
+  // -------------
+
+  function void uvm_component::set_phase_imp(uvm_phase phase, uvm_phase imp, int hier=1);
+    m_phase_imps[phase] = imp;
+    if (hier)
+    foreach (m_children[c])
+      m_children[c].set_phase_imp(phase,imp,hier);
+  endfunction
+
+
+  //--------------------------
+  // phase runtime control API
+  //--------------------------
 
   `ifndef UVM_NO_DEPRECATED
-    if (enable_stop_interrupt != 0) begin
-      printer.print_field_int("enable_stop_interrupt", enable_stop_interrupt,
-      $bits(enable_stop_interrupt), UVM_BIN, ".", "bit");
-    end
+    // do_kill_all
+    // -----------
+
+    function void uvm_component::do_kill_all();
+      foreach(m_children[c])
+        m_children[c].do_kill_all();
+      kill();
+    endfunction
+
+
+    // kill
+    // ----
+
+    function void uvm_component::kill();
+      if (m_phase_process != null) begin
+        m_phase_process.kill;
+        m_phase_process = null;
+      end
+    endfunction
   `endif
-endfunction
+
+  // suspend
+  // -------
+
+  task uvm_component::suspend();
+    `uvm_warning("COMP/SPND/UNIMP", "suspend() not implemented")
+  endtask
 
 
-// set_int_local (override)
-// -------------
+  // resume
+  // ------
 
-function void uvm_component::set_int_local (string field_name,
-    uvm_bitstream_t value,
-bit recurse=1);
-
-//call the super function to get child recursion and any registered fields
-super.set_int_local(field_name, value, recurse);
-
-//set the local properties
-if(uvm_is_match(field_name, "recording_detail"))
-  recording_detail = value;
-
-endfunction
+  task uvm_component::resume();
+    `uvm_warning("COMP/RSUM/UNIMP", "resume() not implemented")
+  endtask
 
 
-// Internal methods for setting messagin parameters from command line switches
+  // status
+  //-------
 
-typedef class uvm_cmdline_processor;
+  `ifndef UVM_NO_DEPRECATED
+    function string uvm_component::status();
+
+      `ifdef UVM_USE_SUSPEND_RESUME
+        `ifdef UVM_USE_PROCESS_STATE
+          process::state ps;
+
+          if(m_phase_process == null)
+            return "<unknown>";
+
+          ps = m_phase_process.status();
+
+          return ps.name();
+        `else
+          if(m_phase_process == null)
+            return "<unknown>";
+
+          case(m_phase_process.status())
+            0: return "FINISHED";
+            1: return "RUNNING";
+            2: return "WAITING";
+            3: return "SUSPENDED";
+            4: return "KILLED";
+            default: return "<unknown>";
+          endcase
+        `endif
+      `endif 
+
+      return "<unknown>";
+
+    endfunction
+
+    // stop
+    // ----
+
+    task uvm_component::stop(string ph_name);
+      return;
+    endtask
 
 
-// m_set_cl_msg_args
-// -----------------
+    // stop_phase
+    // ----------
 
-function void uvm_component::m_set_cl_msg_args;
-  m_set_cl_verb();
-  m_set_cl_action();
-  m_set_cl_sev();
-endfunction
+    task uvm_component::stop_phase(uvm_phase phase);
+      stop(phase.get_name());
+      return;
+    endtask
+  `endif
 
 
-// m_set_cl_verb
-// -------------
-function void uvm_component::m_set_cl_verb;
-  // _ALL_ can be used for ids
-  // +uvm_set_verbosity=<comp>,<id>,<verbosity>,<phase|time>,<offset>
-  // +uvm_set_verbosity=uvm_test_top.env0.agent1.*,_ALL_,UVM_FULL,time,800
+  // resolve_bindings
+  // ----------------
 
-  static string values[$];
-  static bit first = 1;
-  string args[$];
-  uvm_cmdline_processor clp = uvm_cmdline_processor::get_inst();
-  uvm_root top;
-  uvm_coreservice_t cs;
-  cs = uvm_coreservice_t::get();
-  top = cs.get_root();
+  function void uvm_component::resolve_bindings();
+    return;
+  endfunction
 
-  if(!values.size())
-    void'(uvm_cmdline_proc.get_arg_values("+uvm_set_verbosity=",values));
 
-  foreach(values[i]) begin
-    m_verbosity_setting setting;
-    args.delete();
-    uvm_split_string(values[i], ",", args);
+  // do_resolve_bindings
+  // -------------------
 
-    // Warning is already issued in uvm_root, so just don't keep it
-    if(first && ( ((args.size() != 4) && (args.size() != 5)) || 
-    (clp.m_convert_verb(args[2], setting.verbosity) == 0))  )
-    begin
-      values.delete(i);
+  function void uvm_component::do_resolve_bindings();
+    foreach( m_children[s] )
+      m_children[s].do_resolve_bindings();
+    resolve_bindings();
+  endfunction
+
+
+
+  //------------------------------------------------------------------------------
+  //
+  // Recording interface
+  //
+  //------------------------------------------------------------------------------
+
+  // accept_tr
+  // ---------
+
+  function void uvm_component::accept_tr (uvm_transaction tr,
+                                          time accept_time=0);
+    uvm_event#(uvm_object) e;
+    tr.accept_tr(accept_time);
+    do_accept_tr(tr);
+    e = event_pool.get("accept_tr");
+    if(e!=null) 
+      e.trigger();
+  endfunction
+
+  // begin_tr
+  // --------
+
+  function integer uvm_component::begin_tr (uvm_transaction tr,
+                                            string stream_name="main",
+                                            string label="",
+                                            string desc="",
+                                            time begin_time=0,
+                                            integer parent_handle=0);
+    return m_begin_tr(tr, parent_handle, stream_name, label, desc, begin_time);
+  endfunction
+
+  // begin_child_tr
+  // --------------
+
+  function integer uvm_component::begin_child_tr (uvm_transaction tr,
+                                                  integer parent_handle=0,
+                                                  string stream_name="main",
+                                                  string label="",
+                                                  string desc="",
+                                                  time begin_time=0);
+    return m_begin_tr(tr, parent_handle, stream_name, label, desc, begin_time);
+  endfunction
+
+  // m_get_tr_database
+  // ---------------------
+  function uvm_tr_database uvm_component::m_get_tr_database();
+    if (tr_database == null) begin
+      uvm_coreservice_t cs = uvm_coreservice_t::get();
+      tr_database = cs.get_default_tr_database();
+    end
+    return tr_database;
+  endfunction : m_get_tr_database
+
+  // get_tr_stream
+  // ------------
+  function uvm_tr_stream uvm_component::get_tr_stream( string name,
+                                                      string stream_type_name="" );
+    uvm_tr_database db = m_get_tr_database();
+    if (!m_streams.exists(name) || !m_streams[name].exists(stream_type_name))
+      m_streams[name][stream_type_name] = db.open_stream(name, this.get_full_name(), stream_type_name);
+    return m_streams[name][stream_type_name];
+  endfunction : get_tr_stream
+
+  // free_tr_stream
+  // --------------
+  function void uvm_component::free_tr_stream(uvm_tr_stream stream);
+    // Check the null case...
+    if (stream == null)
+      return;
+
+    // Then make sure this name/type_name combo exists
+    if (!m_streams.exists(stream.get_name()) ||
+    !m_streams[stream.get_name()].exists(stream.get_stream_type_name()))
+    return;
+
+    // Then make sure this name/type_name combo is THIS stream
+    if (m_streams[stream.get_name()][stream.get_stream_type_name()] != stream)
+      return;
+
+    // Then delete it from the arrays
+    m_streams[stream.get_name()].delete(stream.get_type_name());
+    if (m_streams[stream.get_name()].size() == 0)
+      m_streams.delete(stream.get_name());
+
+    // Finally, free the stream if necessary
+    if (stream.is_open() || stream.is_closed()) begin
+      stream.free();
+    end
+  endfunction : free_tr_stream
+
+  // m_begin_tr
+  // ----------
+
+  function integer uvm_component::m_begin_tr (uvm_transaction tr,
+                                              integer parent_handle=0,
+                                              string stream_name="main",
+                                              string label="",
+                                              string desc="",
+                                              time begin_time=0);
+    uvm_event#(uvm_object) e;
+    string    name;
+    string    kind;
+    uvm_tr_database db;
+    integer   handle, link_handle;
+    uvm_tr_stream stream;
+    uvm_recorder recorder, parent_recorder, link_recorder;
+
+    if (tr == null)
+      return 0;
+
+    db = m_get_tr_database();
+
+    if (parent_handle != 0)
+      parent_recorder = uvm_recorder::get_recorder_from_handle(parent_handle);
+
+    if (parent_recorder == null) begin
+      uvm_sequence_item seq;
+      if ($cast(seq,tr)) begin
+        uvm_sequence_base parent_seq = seq.get_parent_sequence();
+        if (parent_seq != null) begin
+          parent_recorder = parent_seq.m_tr_recorder;
+        end
+      end
+    end
+
+    if(parent_recorder != null) begin
+      link_handle = tr.begin_child_tr(begin_time, parent_recorder.get_handle());
     end
     else begin
-      setting.comp = args[0];
-      setting.id = args[1];
-      void'(clp.m_convert_verb(args[2],setting.verbosity));
-      setting.phase = args[3];
-      setting.offset = 0;
-      if(args.size() == 5) setting.offset = args[4].atoi();
-      if((setting.phase == "time") && (this == top)) begin
-        m_time_settings.push_back(setting);
+      link_handle = tr.begin_tr(begin_time);
+    end
+
+    if (link_handle != 0)
+      link_recorder = uvm_recorder::get_recorder_from_handle(link_handle);
+
+
+    if (tr.get_name() != "")
+      name = tr.get_name();
+    else
+      name = tr.get_type_name();
+
+    if (uvm_verbosity'(recording_detail) != UVM_NONE) begin
+      if ((stream_name == "") || (stream_name == "main")) begin
+        if (m_main_stream == null)
+          m_main_stream = db.open_stream("main", this.get_full_name(), "TVM");
+        stream = m_main_stream;
+      end
+      else
+        stream = get_tr_stream(stream_name);
+
+      if (stream != null ) begin
+        kind = (parent_recorder == null) ? "Begin_No_Parent, Link" : "Begin_End, Link";
+
+        recorder = stream.open_recorder(name, begin_time, kind);
+
+        if (recorder != null) begin
+          if (label != "") 
+            recorder.record_string("label", label);
+          if (desc != "")
+            recorder.record_string("desc", desc);
+
+          if (parent_recorder != null) begin
+            tr_database.establish_link(uvm_parent_child_link::get_link(parent_recorder,
+            recorder));
+          end
+
+          if (link_recorder != null) begin
+            tr_database.establish_link(uvm_related_link::get_link(recorder,
+            link_recorder));
+          end
+          m_tr_h[tr] = recorder;
+        end
       end
 
-      if (uvm_is_match(setting.comp, get_full_name()) ) begin
-        if((setting.phase == "" || setting.phase == "build" || setting.phase == "time") && 
-        (setting.offset == 0) ) 
-        begin
-          if(setting.id == "_ALL_") 
-            set_report_verbosity_level(setting.verbosity);
-          else
-            set_report_id_verbosity(setting.id, setting.verbosity);
+      handle = (recorder == null) ? 0 : recorder.get_handle();
+      do_begin_tr(tr, stream_name, handle); 
+
+    end
+
+    e = event_pool.get("begin_tr");
+    if (e!=null) 
+      e.trigger(tr);
+
+    return handle;
+
+  endfunction
+
+
+  // end_tr
+  // ------
+
+  function void uvm_component::end_tr (uvm_transaction tr,
+                                       time end_time=0,
+                                       bit free_handle=1);
+    uvm_event#(uvm_object) e;
+    uvm_recorder recorder;
+    uvm_tr_database db = m_get_tr_database();
+
+    if (tr == null)
+      return;
+
+    tr.end_tr(end_time,free_handle);
+
+    if (uvm_verbosity'(recording_detail) != UVM_NONE) begin
+
+      if (m_tr_h.exists(tr)) begin
+
+        recorder = m_tr_h[tr];
+
+        do_end_tr(tr, recorder.get_handle()); // callback
+
+        m_tr_h.delete(tr);
+
+        tr.record(recorder);
+
+        recorder.close(end_time);
+
+        if (free_handle)
+          recorder.free();
+
+      end
+      else begin
+        do_end_tr(tr, 0); // callback
+      end
+
+    end
+
+    e = event_pool.get("end_tr");
+    if(e!=null) 
+      e.trigger();
+
+  endfunction
+
+
+  // record_error_tr
+  // ---------------
+
+  function integer uvm_component::record_error_tr (string stream_name="main",
+                                                   uvm_object info=null,
+                                                   string label="error_tr",
+                                                   string desc="",
+                                                   time   error_time=0,
+                                                   bit    keep_active=0);
+    uvm_recorder recorder;
+    string etype;
+    uvm_tr_stream stream;
+    uvm_tr_database db = m_get_tr_database();
+    integer handle;
+
+    if(keep_active) etype = "Error, Link";
+    else etype = "Error";
+
+    if(error_time == 0) error_time = $realtime;
+
+    if ((stream_name=="") || (stream_name=="main")) begin
+      if (m_main_stream == null)
+        m_main_stream = tr_database.open_stream("main", this.get_full_name(), "TVM");
+      stream = m_main_stream;
+    end
+    else
+      stream = get_tr_stream(stream_name);
+
+    handle = 0;
+    if (stream != null) begin
+
+      recorder = stream.open_recorder(label,
+        error_time,
+      etype);
+
+      if (recorder != null) begin
+        if (label != "")
+          recorder.record_string("label", label);
+        if (desc != "")
+          recorder.record_string("desc", desc);
+        if (info!=null)
+          info.record(recorder);
+
+        recorder.close(error_time);
+
+        if (keep_active == 0) begin
+          recorder.free();
         end
         else begin
-          if(setting.phase != "time") begin
-            m_verbosity_settings.push_back(setting);
-          end
+          handle = recorder.get_handle();
         end
-      end
+      end // if (recorder != null)
+    end // if (stream != null)
+
+    return handle;
+  endfunction
+
+
+  // record_event_tr
+  // ---------------
+
+  function integer uvm_component::record_event_tr (string stream_name="main",
+                                                   uvm_object info=null,
+                                                   string label="event_tr",
+                                                   string desc="",
+                                                   time   event_time=0,
+                                                   bit    keep_active=0);
+    uvm_recorder recorder;
+    string etype;
+    integer handle;
+    uvm_tr_stream stream;
+    uvm_tr_database db = m_get_tr_database();
+
+    if(keep_active) etype = "Event, Link";
+    else etype = "Event";
+
+    if(event_time == 0) event_time = $realtime;
+
+    if ((stream_name=="") || (stream_name=="main")) begin
+      if (m_main_stream == null)
+        m_main_stream = tr_database.open_stream("main", this.get_full_name(), "TVM");
+      stream = m_main_stream;
     end
-  end
-  // do time based settings
-  if(this == top) begin
-    fork begin
-      time last_time = 0;
-      if (m_time_settings.size() > 0)
-        m_time_settings.sort() with ( item.offset );
-      foreach(m_time_settings[i]) begin
-        uvm_component comps[$];
-        top.find_all(m_time_settings[i].comp,comps);
-        #(m_time_settings[i].offset - last_time);
-        last_time = m_time_settings[i].offset;
-        if(m_time_settings[i].id == "_ALL_") begin
-          foreach(comps[j]) begin
-            comps[j].set_report_verbosity_level(m_time_settings[i].verbosity);
-          end
+    else
+      stream = get_tr_stream(stream_name);
+
+    handle = 0;
+    if (stream != null) begin
+      recorder = stream.open_recorder(label,
+        event_time,
+      etype);
+
+      if (recorder != null) begin
+        if (label != "")
+          recorder.record_string("label", label);
+        if (desc != "")
+          recorder.record_string("desc", desc);
+        if (info!=null)
+          info.record(recorder);
+
+        recorder.close(event_time);
+
+        if (keep_active == 0) begin
+          recorder.free();
         end
         else begin
-          foreach(comps[j]) begin
-            comps[j].set_report_id_verbosity(m_time_settings[i].id, m_time_settings[i].verbosity);
+          handle = recorder.get_handle();
+        end
+      end // if (recorder != null)
+    end // if (stream != null)
+
+    return handle;
+  endfunction
+
+  // do_accept_tr
+  // ------------
+
+  function void uvm_component::do_accept_tr (uvm_transaction tr);
+    return;
+  endfunction
+
+
+  // do_begin_tr
+  // -----------
+
+  function void uvm_component::do_begin_tr (uvm_transaction tr,
+                                            string stream_name,
+                                            integer tr_handle);
+    return;
+  endfunction
+
+
+  // do_end_tr
+  // ---------
+
+  function void uvm_component::do_end_tr (uvm_transaction tr,
+                                          integer tr_handle);
+    return;
+  endfunction
+
+
+  //------------------------------------------------------------------------------
+  //
+  // Configuration interface
+  //
+  //------------------------------------------------------------------------------
+
+
+  function string uvm_component::massage_scope(string scope);
+
+    // uvm_top
+    if(scope == "")
+      return "^$";
+
+    if(scope == "*")
+    return {get_full_name(), ".*"};
+
+    // absolute path to the top-level test
+    if(scope == "uvm_test_top")
+      return "uvm_test_top";
+
+    // absolute path to uvm_root
+    if(scope[0] == ".")
+    return {get_full_name(), scope};
+
+    return {get_full_name(), ".", scope};
+
+  endfunction
+
+
+  // Undocumented struct for storing clone bit along w/
+  // object on set_config_object(...) calls
+  class uvm_config_object_wrapper;
+    uvm_object obj;
+    bit clone;
+  endclass : uvm_config_object_wrapper
+
+
+  `ifndef UVM_NO_DEPRECATED
+    //
+    // set_config_int
+    //
+    function void uvm_component::set_config_int(string inst_name,
+                                                string field_name,
+                                                uvm_bitstream_t value);
+
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+      uvm_config_int::set(this, inst_name, field_name, value);
+    endfunction
+
+    //
+    // set_config_string
+    //
+    function void uvm_component::set_config_string(string inst_name,
+                                                   string field_name,
+                                                   string value);
+
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+      uvm_config_string::set(this, inst_name, field_name, value);
+    endfunction
+
+    //
+    // set_config_object
+    //
+    function void uvm_component::set_config_object(string inst_name,
+                                                   string field_name,
+                                                   uvm_object value,
+                                                   bit clone = 1);
+      uvm_object tmp;
+      uvm_config_object_wrapper wrapper;
+
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/SET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+
+      if(value == null)
+        `uvm_warning("NULLCFG", {"A null object was provided as a ",
+      $sformatf("configuration object for set_config_object(\"%s\",\"%s\")",
+        inst_name, field_name), ". Verify that this is intended."})
+
+      if(clone && (value != null)) begin
+        tmp = value.clone();
+        if(tmp == null) begin
+          uvm_component comp;
+          if ($cast(comp,value)) begin
+            `uvm_error("INVCLNC", {"Clone failed during set_config_object ",
+            "with an object that is a uvm_component. Components cannot be cloned."})
+            return;
+          end
+          else begin
+            `uvm_warning("INVCLN", {"Clone failed during set_config_object, ",
+            "the original reference will be used for configuration. Check that ",
+            "the create method for the object type is defined properly."})
+          end
+        end
+        else
+          value = tmp;
+      end
+
+
+      uvm_config_object::set(this, inst_name, field_name, value);
+
+      wrapper = new;
+      wrapper.obj = value;
+      wrapper.clone = clone;
+      uvm_config_db#(uvm_config_object_wrapper)::set(this, inst_name, field_name, wrapper);
+    endfunction
+
+    //
+    // get_config_int
+    //
+    function bit uvm_component::get_config_int (string field_name,
+                                                inout uvm_bitstream_t value);
+
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+      return uvm_config_int::get(this, "", field_name, value);
+    endfunction
+
+    //
+    // get_config_string
+    //
+    function bit uvm_component::get_config_string(string field_name,
+                                                  inout string value);
+
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+      return uvm_config_string::get(this, "", field_name, value);
+    endfunction
+
+    //
+    // get_config_object
+    //
+    //
+    // Note that this does not honor the set_config_object clone bit
+    function bit uvm_component::get_config_object (string field_name,
+                                                   inout uvm_object value,
+                                                   input bit clone=1);
+      if (!m_config_deprecated_warned) begin
+        `uvm_warning("UVM/CFG/GET/DPR", "get/set_config_* API has been deprecated. Use uvm_config_db instead.")
+        m_config_deprecated_warned = 1;
+      end
+
+      if(!uvm_config_object::get(this, "", field_name, value)) begin
+        return 0;
+      end
+
+      if(clone && value != null) begin
+        value = value.clone();
+      end
+
+      return 1;
+    endfunction
+  `endif
+
+  // check_config_usage
+  // ------------------
+
+  function void uvm_component::check_config_usage ( bit recurse=1 );
+    uvm_resource_pool rp = uvm_resource_pool::get();
+    uvm_queue#(uvm_resource_base) rq;
+
+    rq = rp.find_unused_resources();
+
+    if(rq.size() == 0)
+      return;
+
+    uvm_report_info("CFGNRD"," ::: The following resources have at least one write and no reads :::",UVM_INFO);
+    rp.print_resources(rq, 1);
+  endfunction
+
+
+  // apply_config_settings
+  // ---------------------
+
+  function void uvm_component::apply_config_settings (bit verbose=0);
+
+    uvm_resource_pool rp = uvm_resource_pool::get();
+    uvm_queue#(uvm_resource_base) rq;
+    uvm_resource_base r;
+    string name;
+    string search_name;
+    int unsigned i;
+    int unsigned j;
+
+    // populate an internal 'field_array' with list of
+    // fields declared with `uvm_field macros (checking
+    // that there aren't any duplicates along the way)
+    __m_uvm_field_automation (null, UVM_CHECK_FIELDS, "");
+
+    // if no declared fields, nothing to do. 
+    if (__m_uvm_status_container.field_array.size() == 0)
+      return;
+
+    if(verbose)
+      uvm_report_info("CFGAPL","applying configuration settings", UVM_NONE);
+
+    // The following is VERY expensive. Needs refactoring. Should
+    // get config only for the specific field names in 'field_array'.
+    // That's because the resource pool is organized first by field name.
+    // Can further optimize by encoding the value for each 'field_array' 
+    // entry to indicate string, uvm_bitstream_t, or object. That way,
+    // we call 'get' for specific fields of specific types rather than
+    // the search-and-cast approach here.
+    rq = rp.lookup_scope(get_full_name());
+    rp.sort_by_precedence(rq);
+
+    // rq is in precedence order now, so we have to go through in reverse
+    // order to do the settings.
+    for(int i=rq.size()-1; i>=0; --i) begin
+
+      r = rq.get(i);
+      name = r.get_name();
+
+      // does name have brackets [] in it?
+      for(j = 0; j < name.len(); j++)
+      if(name[j] == "[" || name[j] == ".")
+        break;
+
+      // If it does have brackets then we'll use the name
+      // up to the brackets to search __m_uvm_status_container.field_array
+      if(j < name.len())
+        search_name = name.substr(0, j-1);
+      else
+        search_name = name;
+
+      if(!__m_uvm_status_container.field_array.exists(search_name) && 
+      search_name != "recording_detail")
+      continue;
+
+      if(verbose)
+        uvm_report_info("CFGAPL",$sformatf("applying configuration to field %s", name),UVM_NONE);
+
+      begin
+        uvm_resource#(uvm_integral_t) rit;
+        if ($cast(rit, r))
+          set_int_local(name, rit.read(this));
+        else begin
+          uvm_resource#(uvm_bitstream_t) rbs;
+          if($cast(rbs, r))
+            set_int_local(name, rbs.read(this));
+          else begin
+            uvm_resource#(int) ri;
+            if($cast(ri, r))
+              set_int_local(name, ri.read(this));
+            else begin
+              uvm_resource#(int unsigned) riu;
+              if($cast(riu, r))
+                set_int_local(name, riu.read(this));
+              else begin
+                uvm_resource#(uvm_active_passive_enum) rap;
+                if ($cast(rap, r))
+                  set_int_local(name, rap.read(this));
+                else begin
+                  uvm_resource#(string) rs;
+                  if($cast(rs, r))
+                    set_string_local(name, rs.read(this));
+                  else begin
+                    uvm_resource#(uvm_config_object_wrapper) rcow;
+                    if ($cast(rcow, r)) begin
+                      uvm_config_object_wrapper cow = rcow.read();
+                      set_object_local(name, cow.obj, cow.clone);
+                    end
+                    else begin
+                      uvm_resource#(uvm_object) ro;
+                      if($cast(ro, r)) begin
+                        set_object_local(name, ro.read(this), 0);
+                      end 
+                      else if (verbose) begin
+                        uvm_report_info("CFGAPL", $sformatf("field %s has an unsupported type", name), UVM_NONE);
+                      end
+                    end // else: !if($cast(rcow, r))
+                  end // else: !if($cast(rs, r))
+                end // else: !if($cast(rap, r))
+              end // else: !if($cast(riu, r))
+            end // else: !if($cast(ri, r))
+          end // else: !if($cast(rbs, r))
+        end // else: !if($cast(rit, r))
+      end
+    end
+
+    __m_uvm_status_container.field_array.delete();
+
+  endfunction
+
+
+  // print_config
+  // ------------
+
+  function void uvm_component::print_config(bit recurse = 0, audit = 0);
+
+    uvm_resource_pool rp = uvm_resource_pool::get();
+
+    uvm_report_info("CFGPRT","visible resources:",UVM_INFO);
+    rp.print_resources(rp.lookup_scope(get_full_name()), audit);
+
+    if(recurse) begin
+      uvm_component c;
+      foreach(m_children[name]) begin
+        c = m_children[name];
+        c.print_config(recurse, audit);
+      end
+    end
+
+  endfunction
+
+
+  // print_config_settings
+  // ---------------------
+
+  function void uvm_component::print_config_settings (string field="",
+                                                      uvm_component comp=null,
+                                                      bit recurse=0);
+    static bit have_been_warned;
+    if(!have_been_warned) begin
+      uvm_report_warning("deprecated", "uvm_component::print_config_settings has been deprecated.  Use print_config() instead");
+      have_been_warned = 1;
+    end
+
+    print_config(recurse, 1);
+  endfunction
+
+
+  // print_config_with_audit
+  // -----------------------
+
+  function void uvm_component::print_config_with_audit(bit recurse = 0);
+    print_config(recurse, 1);
+  endfunction
+
+
+  // do_print (override)
+  // --------
+
+  function void uvm_component::do_print(uvm_printer printer);
+    string v;
+    super.do_print(printer);
+
+    // It is printed only if its value is other than the default (UVM_NONE)
+    if(uvm_verbosity'(recording_detail) != UVM_NONE)
+    case (recording_detail)
+      UVM_LOW : printer.print_generic("recording_detail", "uvm_verbosity", 
+      $bits(recording_detail), "UVM_LOW");
+      UVM_MEDIUM : printer.print_generic("recording_detail", "uvm_verbosity", 
+      $bits(recording_detail), "UVM_MEDIUM");
+      UVM_HIGH : printer.print_generic("recording_detail", "uvm_verbosity", 
+      $bits(recording_detail), "UVM_HIGH");
+      UVM_FULL : printer.print_generic("recording_detail", "uvm_verbosity", 
+      $bits(recording_detail), "UVM_FULL");
+      default : printer.print_field_int("recording_detail", recording_detail, 
+      $bits(recording_detail), UVM_DEC, , "integral");
+    endcase
+
+    `ifndef UVM_NO_DEPRECATED
+      if (enable_stop_interrupt != 0) begin
+        printer.print_field_int("enable_stop_interrupt", enable_stop_interrupt,
+        $bits(enable_stop_interrupt), UVM_BIN, ".", "bit");
+      end
+    `endif
+  endfunction
+
+
+  // set_int_local (override)
+  // -------------
+
+  function void uvm_component::set_int_local (string field_name,
+                                              uvm_bitstream_t value,
+                                              bit recurse=1);
+
+    //call the super function to get child recursion and any registered fields
+    super.set_int_local(field_name, value, recurse);
+
+    //set the local properties
+    if(uvm_is_match(field_name, "recording_detail"))
+      recording_detail = value;
+
+  endfunction
+
+
+  // Internal methods for setting messagin parameters from command line switches
+
+  typedef class uvm_cmdline_processor;
+
+
+  // m_set_cl_msg_args
+  // -----------------
+
+  function void uvm_component::m_set_cl_msg_args;
+    m_set_cl_verb();
+    m_set_cl_action();
+    m_set_cl_sev();
+  endfunction
+
+
+  // m_set_cl_verb
+  // -------------
+  function void uvm_component::m_set_cl_verb;
+    // _ALL_ can be used for ids
+    // +uvm_set_verbosity=<comp>,<id>,<verbosity>,<phase|time>,<offset>
+    // +uvm_set_verbosity=uvm_test_top.env0.agent1.*,_ALL_,UVM_FULL,time,800
+
+    static string values[$];
+    static bit first = 1;
+    string args[$];
+    uvm_cmdline_processor clp = uvm_cmdline_processor::get_inst();
+    uvm_root top;
+    uvm_coreservice_t cs;
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();
+
+    if(!values.size())
+      void'(uvm_cmdline_proc.get_arg_values("+uvm_set_verbosity=",values));
+
+    foreach(values[i]) begin
+      m_verbosity_setting setting;
+      args.delete();
+      uvm_split_string(values[i], ",", args);
+
+      // Warning is already issued in uvm_root, so just don't keep it
+      if(first && ( ((args.size() != 4) && (args.size() != 5)) || 
+      (clp.m_convert_verb(args[2], setting.verbosity) == 0))  )
+      begin
+        values.delete(i);
+      end
+      else begin
+        setting.comp = args[0];
+        setting.id = args[1];
+        void'(clp.m_convert_verb(args[2],setting.verbosity));
+        setting.phase = args[3];
+        setting.offset = 0;
+        if(args.size() == 5) setting.offset = args[4].atoi();
+        if((setting.phase == "time") && (this == top)) begin
+          m_time_settings.push_back(setting);
+        end
+
+        if (uvm_is_match(setting.comp, get_full_name()) ) begin
+          if((setting.phase == "" || setting.phase == "build" || setting.phase == "time") && 
+          (setting.offset == 0) ) 
+          begin
+            if(setting.id == "_ALL_") 
+              set_report_verbosity_level(setting.verbosity);
+            else
+              set_report_id_verbosity(setting.id, setting.verbosity);
+          end
+          else begin
+            if(setting.phase != "time") begin
+              m_verbosity_settings.push_back(setting);
+            end
           end
         end
       end
-    end join_none // fork begin
-  end
+    end
+    // do time based settings
+    if(this == top) begin
+      fork begin
+        time last_time = 0;
+        if (m_time_settings.size() > 0)
+          m_time_settings.sort() with ( item.offset );
+        foreach(m_time_settings[i]) begin
+          uvm_component comps[$];
+          top.find_all(m_time_settings[i].comp,comps);
+          #(m_time_settings[i].offset - last_time);
+          last_time = m_time_settings[i].offset;
+          if(m_time_settings[i].id == "_ALL_") begin
+            foreach(comps[j]) begin
+              comps[j].set_report_verbosity_level(m_time_settings[i].verbosity);
+            end
+          end
+          else begin
+            foreach(comps[j]) begin
+              comps[j].set_report_id_verbosity(m_time_settings[i].id, m_time_settings[i].verbosity);
+            end
+          end
+        end
+      end join_none // fork begin
+    end
 
-  first = 0;
-endfunction
+    first = 0;
+  endfunction
 
-// m_set_cl_action
-// ---------------
+  // m_set_cl_action
+  // ---------------
 
-function void uvm_component::m_set_cl_action;
-  // _ALL_ can be used for ids or severities
-  // +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>
-  // +uvm_set_action=uvm_test_top.env0.*,_ALL_,UVM_ERROR,UVM_NO_ACTION
+  function void uvm_component::m_set_cl_action;
+    // _ALL_ can be used for ids or severities
+    // +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>
+    // +uvm_set_action=uvm_test_top.env0.*,_ALL_,UVM_ERROR,UVM_NO_ACTION
 
-  static bit initialized = 0;
-  uvm_severity sev;
-  uvm_action action;
+    static bit initialized = 0;
+    uvm_severity sev;
+    uvm_action action;
 
-  if(!initialized) begin
-    string values[$];
-    void'(uvm_cmdline_proc.get_arg_values("+uvm_set_action=",values));
-    foreach(values[idx]) begin
-      uvm_cmdline_parsed_arg_t t;
-      string args[$];
-      uvm_split_string(values[idx], ",", args);	
+    if(!initialized) begin
+      string values[$];
+      void'(uvm_cmdline_proc.get_arg_values("+uvm_set_action=",values));
+      foreach(values[idx]) begin
+        uvm_cmdline_parsed_arg_t t;
+        string args[$];
+        uvm_split_string(values[idx], ",", args);	
 
-      if(args.size() != 4) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("+uvm_set_action requires 4 arguments, but %0d given for command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args.size(), values[idx]))
-        continue;
-      end
-      if((args[2] != "_ALL_") && !uvm_string_to_severity(args[2], sev)) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args[2], values[idx]))
-        continue;
-      end
-      if(!uvm_string_to_action(args[3], action)) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("Bad action argument \"%s\" given to command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args[3], values[idx]))
-        continue;
-      end
-      t.args=args;   
-      t.arg=values[idx];
-      m_uvm_applied_cl_action.push_back(t);
-    end 
-    initialized=1;
-  end
+        if(args.size() != 4) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("+uvm_set_action requires 4 arguments, but %0d given for command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args.size(), values[idx]))
+          continue;
+        end
+        if((args[2] != "_ALL_") && !uvm_string_to_severity(args[2], sev)) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args[2], values[idx]))
+          continue;
+        end
+        if(!uvm_string_to_action(args[3], action)) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("Bad action argument \"%s\" given to command +uvm_set_action=%s, Usage: +uvm_set_action=<comp>,<id>,<severity>,<action[|action]>", args[3], values[idx]))
+          continue;
+        end
+        t.args=args;   
+        t.arg=values[idx];
+        m_uvm_applied_cl_action.push_back(t);
+      end 
+      initialized=1;
+    end
 
-  foreach(m_uvm_applied_cl_action[i]) begin
-    string args[$] = m_uvm_applied_cl_action[i].args;
+    foreach(m_uvm_applied_cl_action[i]) begin
+      string args[$] = m_uvm_applied_cl_action[i].args;
 
-    if (!uvm_is_match(args[0], get_full_name()) ) continue; 
+      if (!uvm_is_match(args[0], get_full_name()) ) continue; 
 
-    void'(uvm_string_to_severity(args[2], sev));
-    void'(uvm_string_to_action(args[3], action));
+      void'(uvm_string_to_severity(args[2], sev));
+      void'(uvm_string_to_action(args[3], action));
 
-    m_uvm_applied_cl_action[i].used++;
-    if(args[1] == "_ALL_") begin
-      if(args[2] == "_ALL_") begin
-        set_report_severity_action(UVM_INFO, action);
-        set_report_severity_action(UVM_WARNING, action);
-        set_report_severity_action(UVM_ERROR, action);
-        set_report_severity_action(UVM_FATAL, action);
+      m_uvm_applied_cl_action[i].used++;
+      if(args[1] == "_ALL_") begin
+        if(args[2] == "_ALL_") begin
+          set_report_severity_action(UVM_INFO, action);
+          set_report_severity_action(UVM_WARNING, action);
+          set_report_severity_action(UVM_ERROR, action);
+          set_report_severity_action(UVM_FATAL, action);
+        end
+        else begin
+          set_report_severity_action(sev, action);
+        end
       end
       else begin
-        set_report_severity_action(sev, action);
+        if(args[2] == "_ALL_") begin
+          set_report_id_action(args[1], action);
+        end
+        else begin
+          set_report_severity_id_action(sev, args[1], action);
+        end
       end
     end
-    else begin
-      if(args[2] == "_ALL_") begin
-        set_report_id_action(args[1], action);
+
+  endfunction
+
+
+  // m_set_cl_sev
+  // ------------
+
+  function void uvm_component::m_set_cl_sev;
+    // _ALL_ can be used for ids or severities
+    //  +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>
+    //  +uvm_set_severity=uvm_test_top.env0.*,BAD_CRC,UVM_ERROR,UVM_WARNING
+
+    static bit initialized;
+    uvm_severity orig_sev, sev;
+
+    if(!initialized) begin
+      string values[$];
+      void'(uvm_cmdline_proc.get_arg_values("+uvm_set_severity=",values));
+      foreach(values[idx]) begin
+        uvm_cmdline_parsed_arg_t t;
+        string args[$];
+        uvm_split_string(values[idx], ",", args);	
+        if(args.size() != 4) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("+uvm_set_severity requires 4 arguments, but %0d given for command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args.size(), values[idx]))
+          continue;
+        end
+        if(args[2] != "_ALL_" && !uvm_string_to_severity(args[2], orig_sev)) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args[2], values[idx]))
+          continue;
+        end
+        if(!uvm_string_to_severity(args[3], sev)) begin
+          `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args[3], values[idx]))
+          continue;
+        end
+
+        t.args=args;
+        t.arg=values[idx];
+        m_uvm_applied_cl_sev.push_back(t);
+      end	
+      initialized=1;
+    end
+
+    foreach(m_uvm_applied_cl_sev[i]) begin
+      string args[$]=m_uvm_applied_cl_sev[i].args;
+
+      if (!uvm_is_match(args[0], get_full_name()) ) continue; 
+
+      void'(uvm_string_to_severity(args[2], orig_sev));
+      void'(uvm_string_to_severity(args[3], sev));   	
+      m_uvm_applied_cl_sev[i].used++;
+      if(args[1] == "_ALL_" && args[2] == "_ALL_") begin
+        set_report_severity_override(UVM_INFO,sev);
+        set_report_severity_override(UVM_WARNING,sev);
+        set_report_severity_override(UVM_ERROR,sev);
+        set_report_severity_override(UVM_FATAL,sev);
+      end
+      else if(args[1] == "_ALL_") begin
+        set_report_severity_override(orig_sev,sev);
+      end
+      else if(args[2] == "_ALL_") begin
+        set_report_severity_id_override(UVM_INFO,args[1],sev);
+        set_report_severity_id_override(UVM_WARNING,args[1],sev);
+        set_report_severity_id_override(UVM_ERROR,args[1],sev);
+        set_report_severity_id_override(UVM_FATAL,args[1],sev);
       end
       else begin
-        set_report_severity_id_action(sev, args[1], action);
+        set_report_severity_id_override(orig_sev,args[1],sev);
       end
     end
-  end
-
-endfunction
+  endfunction
 
 
-// m_set_cl_sev
-// ------------
+  // m_apply_verbosity_settings
+  // --------------------------
 
-function void uvm_component::m_set_cl_sev;
-  // _ALL_ can be used for ids or severities
-  //  +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>
-  //  +uvm_set_severity=uvm_test_top.env0.*,BAD_CRC,UVM_ERROR,UVM_WARNING
-
-  static bit initialized;
-  uvm_severity orig_sev, sev;
-
-  if(!initialized) begin
-    string values[$];
-    void'(uvm_cmdline_proc.get_arg_values("+uvm_set_severity=",values));
-    foreach(values[idx]) begin
-      uvm_cmdline_parsed_arg_t t;
-      string args[$];
-      uvm_split_string(values[idx], ",", args);	
-      if(args.size() != 4) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("+uvm_set_severity requires 4 arguments, but %0d given for command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args.size(), values[idx]))
-        continue;
-      end
-      if(args[2] != "_ALL_" && !uvm_string_to_severity(args[2], orig_sev)) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args[2], values[idx]))
-        continue;
-      end
-      if(!uvm_string_to_severity(args[3], sev)) begin
-        `uvm_warning("INVLCMDARGS", $sformatf("Bad severity argument \"%s\" given to command +uvm_set_severity=%s, Usage: +uvm_set_severity=<comp>,<id>,<orig_severity>,<new_severity>", args[3], values[idx]))
-        continue;
-      end
-
-      t.args=args;
-      t.arg=values[idx];
-      m_uvm_applied_cl_sev.push_back(t);
-    end	
-    initialized=1;
-  end
-
-  foreach(m_uvm_applied_cl_sev[i]) begin
-    string args[$]=m_uvm_applied_cl_sev[i].args;
-
-    if (!uvm_is_match(args[0], get_full_name()) ) continue; 
-
-    void'(uvm_string_to_severity(args[2], orig_sev));
-    void'(uvm_string_to_severity(args[3], sev));   	
-    m_uvm_applied_cl_sev[i].used++;
-    if(args[1] == "_ALL_" && args[2] == "_ALL_") begin
-      set_report_severity_override(UVM_INFO,sev);
-      set_report_severity_override(UVM_WARNING,sev);
-      set_report_severity_override(UVM_ERROR,sev);
-      set_report_severity_override(UVM_FATAL,sev);
-    end
-    else if(args[1] == "_ALL_") begin
-      set_report_severity_override(orig_sev,sev);
-    end
-    else if(args[2] == "_ALL_") begin
-      set_report_severity_id_override(UVM_INFO,args[1],sev);
-      set_report_severity_id_override(UVM_WARNING,args[1],sev);
-      set_report_severity_id_override(UVM_ERROR,args[1],sev);
-      set_report_severity_id_override(UVM_FATAL,args[1],sev);
-    end
-    else begin
-      set_report_severity_id_override(orig_sev,args[1],sev);
-    end
-  end
-endfunction
-
-
-// m_apply_verbosity_settings
-// --------------------------
-
-function void uvm_component::m_apply_verbosity_settings(uvm_phase phase);
-  foreach(m_verbosity_settings[i]) begin
-    if(phase.get_name() == m_verbosity_settings[i].phase) begin
-      if( m_verbosity_settings[i].offset == 0 ) begin
-        if(m_verbosity_settings[i].id == "_ALL_") 
-          set_report_verbosity_level(m_verbosity_settings[i].verbosity);
-        else 
-          set_report_id_verbosity(m_verbosity_settings[i].id, m_verbosity_settings[i].verbosity);
-      end
-      else begin
-        process p = process::self();
-        string p_rand = p.get_randstate();
-        fork begin
-          m_verbosity_setting setting = m_verbosity_settings[i];
-          #setting.offset;
-          if(setting.id == "_ALL_") 
-            set_report_verbosity_level(setting.verbosity);
+  function void uvm_component::m_apply_verbosity_settings(uvm_phase phase);
+    foreach(m_verbosity_settings[i]) begin
+      if(phase.get_name() == m_verbosity_settings[i].phase) begin
+        if( m_verbosity_settings[i].offset == 0 ) begin
+          if(m_verbosity_settings[i].id == "_ALL_") 
+            set_report_verbosity_level(m_verbosity_settings[i].verbosity);
           else 
-            set_report_id_verbosity(setting.id, setting.verbosity);
-        end join_none;
-        p.set_randstate(p_rand);
+            set_report_id_verbosity(m_verbosity_settings[i].id, m_verbosity_settings[i].verbosity);
+        end
+        else begin
+          process p = process::self();
+          string p_rand = p.get_randstate();
+          fork begin
+            m_verbosity_setting setting = m_verbosity_settings[i];
+            #setting.offset;
+            if(setting.id == "_ALL_") 
+              set_report_verbosity_level(setting.verbosity);
+            else 
+              set_report_id_verbosity(setting.id, setting.verbosity);
+          end join_none;
+          p.set_randstate(p_rand);
+        end
+        // Remove after use
+        m_verbosity_settings.delete(i);
       end
-      // Remove after use
-      m_verbosity_settings.delete(i);
     end
-  end
-endfunction
+  endfunction
 
 
-// m_do_pre_abort
-// --------------
+  // m_do_pre_abort
+  // --------------
 
-function void uvm_component::m_do_pre_abort;
-  foreach(m_children[i])
-    m_children[i].m_do_pre_abort(); 
-  pre_abort(); 
-endfunction
+  function void uvm_component::m_do_pre_abort;
+    foreach(m_children[i])
+      m_children[i].m_do_pre_abort(); 
+    pre_abort(); 
+  endfunction

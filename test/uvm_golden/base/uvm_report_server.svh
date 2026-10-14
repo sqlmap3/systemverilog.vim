@@ -645,167 +645,167 @@ class uvm_default_report_server extends uvm_report_server;
   // Expert users can overload this method to customize action processing.
 
   virtual function void execute_report_message(uvm_report_message report_message,
-  string composed_message);
+                                               string composed_message);
 
-  process p = process::self();
+    process p = process::self();
 
-  // Update counts 
-  incr_severity_count(report_message.get_severity());
-  incr_id_count(report_message.get_id());
+    // Update counts 
+    incr_severity_count(report_message.get_severity());
+    incr_id_count(report_message.get_id());
 
-  if (record_all_messages)
-    report_message.set_action(report_message.get_action() | UVM_RM_RECORD);
+    if (record_all_messages)
+      report_message.set_action(report_message.get_action() | UVM_RM_RECORD);
 
-  // UVM_RM_RECORD action
-  if(report_message.get_action() & UVM_RM_RECORD) begin
-    uvm_tr_stream stream;
-    uvm_report_object ro = report_message.get_report_object();
-    uvm_report_handler rh = report_message.get_report_handler();
+    // UVM_RM_RECORD action
+    if(report_message.get_action() & UVM_RM_RECORD) begin
+      uvm_tr_stream stream;
+      uvm_report_object ro = report_message.get_report_object();
+      uvm_report_handler rh = report_message.get_report_handler();
 
-    // Check for pre-existing stream
-    if (m_streams.exists(ro.get_name()) && (m_streams[ro.get_name()].exists(rh.get_name())))
-      stream = m_streams[ro.get_name()][rh.get_name()];
+      // Check for pre-existing stream
+      if (m_streams.exists(ro.get_name()) && (m_streams[ro.get_name()].exists(rh.get_name())))
+        stream = m_streams[ro.get_name()][rh.get_name()];
 
-    // If no pre-existing stream (or for some reason pre-existing stream was ~null~)
-    if (stream == null) begin
-      uvm_tr_database db;
+      // If no pre-existing stream (or for some reason pre-existing stream was ~null~)
+      if (stream == null) begin
+        uvm_tr_database db;
 
-      // Grab the database
-      db = get_message_database();
+        // Grab the database
+        db = get_message_database();
 
-      // If database is ~null~, use the default database
-      if (db == null) begin
-        uvm_coreservice_t cs = uvm_coreservice_t::get();
-        db = cs.get_default_tr_database();
+        // If database is ~null~, use the default database
+        if (db == null) begin
+          uvm_coreservice_t cs = uvm_coreservice_t::get();
+          db = cs.get_default_tr_database();
+        end
+        if (db != null) begin
+          // Open the stream.  Name=report object name, scope=report handler name, type=MESSAGES
+          stream = db.open_stream(ro.get_name(), rh.get_name(), "MESSAGES");
+          // Save off the openned stream
+          m_streams[ro.get_name()][rh.get_name()] = stream;
+        end
       end
-      if (db != null) begin
-        // Open the stream.  Name=report object name, scope=report handler name, type=MESSAGES
-        stream = db.open_stream(ro.get_name(), rh.get_name(), "MESSAGES");
-        // Save off the openned stream
-        m_streams[ro.get_name()][rh.get_name()] = stream;
+      if (stream != null) begin
+        uvm_recorder recorder = stream.open_recorder(report_message.get_name(),,report_message.get_type_name());
+        if (recorder != null) begin
+          report_message.record(recorder);
+          recorder.free();
+        end
       end
     end
-    if (stream != null) begin
-      uvm_recorder recorder = stream.open_recorder(report_message.get_name(),,report_message.get_type_name());
-      if (recorder != null) begin
-        report_message.record(recorder);
-        recorder.free();
+
+    // DISPLAY action
+    if(report_message.get_action() & UVM_DISPLAY)
+      $display("%s", composed_message);
+
+    // LOG action
+    // if log is set we need to send to the file but not resend to the
+    // display. So, we need to mask off stdout for an mcd or we need
+    // to ignore the stdout file handle for a file handle.
+    if(report_message.get_action() & UVM_LOG)
+    if( (report_message.get_file() == 0) || 
+    (report_message.get_file() != 32'h8000_0001) ) begin //ignore stdout handle
+      UVM_FILE tmp_file = report_message.get_file();
+      if((report_message.get_file() & 32'h8000_0000) == 0) begin //is an mcd so mask off stdout
+        tmp_file = report_message.get_file() & 32'hffff_fffe;
       end
+      f_display(tmp_file, composed_message);
+    end    
+
+    // Process the UVM_COUNT action
+    if(report_message.get_action() & UVM_COUNT) begin
+      if(get_max_quit_count() != 0) begin
+        incr_quit_count();
+        // If quit count is reached, add the UVM_EXIT action.
+        if(is_quit_count_reached()) begin
+          report_message.set_action(report_message.get_action() | UVM_EXIT);
+        end
+      end  
     end
-  end
 
-  // DISPLAY action
-  if(report_message.get_action() & UVM_DISPLAY)
-    $display("%s", composed_message);
-
-  // LOG action
-  // if log is set we need to send to the file but not resend to the
-  // display. So, we need to mask off stdout for an mcd or we need
-  // to ignore the stdout file handle for a file handle.
-  if(report_message.get_action() & UVM_LOG)
-  if( (report_message.get_file() == 0) || 
-  (report_message.get_file() != 32'h8000_0001) ) begin //ignore stdout handle
-    UVM_FILE tmp_file = report_message.get_file();
-    if((report_message.get_file() & 32'h8000_0000) == 0) begin //is an mcd so mask off stdout
-      tmp_file = report_message.get_file() & 32'hffff_fffe;
+    // Process the UVM_EXIT action
+    if(report_message.get_action() & UVM_EXIT) begin
+      uvm_root l_root;
+      uvm_coreservice_t cs;
+      cs = uvm_coreservice_t::get();
+      l_root = cs.get_root();
+      l_root.die();
     end
-    f_display(tmp_file, composed_message);
-  end    
 
-  // Process the UVM_COUNT action
-  if(report_message.get_action() & UVM_COUNT) begin
-    if(get_max_quit_count() != 0) begin
-      incr_quit_count();
-      // If quit count is reached, add the UVM_EXIT action.
-      if(is_quit_count_reached()) begin
-        report_message.set_action(report_message.get_action() | UVM_EXIT);
-      end
-    end  
-  end
+    // Process the UVM_STOP action
+    if (report_message.get_action() & UVM_STOP) 
+      $stop;
 
-  // Process the UVM_EXIT action
-  if(report_message.get_action() & UVM_EXIT) begin
-    uvm_root l_root;
-    uvm_coreservice_t cs;
-    cs = uvm_coreservice_t::get();
-    l_root = cs.get_root();
-    l_root.die();
-  end
-
-  // Process the UVM_STOP action
-  if (report_message.get_action() & UVM_STOP) 
-    $stop;
-
-endfunction
+  endfunction
 
 
-// Function: compose_report_message
-//
-// Constructs the actual string sent to the file or command line
-// from the severity, component name, report id, and the message itself. 
-//
-// Expert users can overload this method to customize report formatting.
+  // Function: compose_report_message
+  //
+  // Constructs the actual string sent to the file or command line
+  // from the severity, component name, report id, and the message itself. 
+  //
+  // Expert users can overload this method to customize report formatting.
 
-virtual function string compose_report_message(uvm_report_message report_message,
-string report_object_name = "");
+  virtual function string compose_report_message(uvm_report_message report_message,
+                                                 string report_object_name = "");
 
-string sev_string;
-uvm_severity l_severity;
-uvm_verbosity l_verbosity;
-string filename_line_string;
-string time_str;
-string line_str;
-string context_str;
-string verbosity_str;
-string terminator_str;
-string msg_body_str;
-uvm_report_message_element_container el_container;
-string prefix;
-uvm_report_handler l_report_handler;
+    string sev_string;
+    uvm_severity l_severity;
+    uvm_verbosity l_verbosity;
+    string filename_line_string;
+    string time_str;
+    string line_str;
+    string context_str;
+    string verbosity_str;
+    string terminator_str;
+    string msg_body_str;
+    uvm_report_message_element_container el_container;
+    string prefix;
+    uvm_report_handler l_report_handler;
 
-l_severity = report_message.get_severity();
-sev_string = l_severity.name();
+    l_severity = report_message.get_severity();
+    sev_string = l_severity.name();
 
-if (report_message.get_filename() != "") begin
-  line_str.itoa(report_message.get_line());
-  filename_line_string = {report_message.get_filename(), "(", line_str, ") "};
-end
+    if (report_message.get_filename() != "") begin
+      line_str.itoa(report_message.get_line());
+      filename_line_string = {report_message.get_filename(), "(", line_str, ") "};
+    end
 
-// Make definable in terms of units.
-$swrite(time_str, "%0t", $time);
+    // Make definable in terms of units.
+    $swrite(time_str, "%0t", $time);
 
-if (report_message.get_context() != "")
-  context_str = {"@@", report_message.get_context()};
+    if (report_message.get_context() != "")
+      context_str = {"@@", report_message.get_context()};
 
-if (show_verbosity) begin
-  if ($cast(l_verbosity, report_message.get_verbosity()))
-    verbosity_str = l_verbosity.name();
-  else
-    verbosity_str.itoa(report_message.get_verbosity());
-  verbosity_str = {"(", verbosity_str, ")"};
-end
+    if (show_verbosity) begin
+      if ($cast(l_verbosity, report_message.get_verbosity()))
+        verbosity_str = l_verbosity.name();
+      else
+        verbosity_str.itoa(report_message.get_verbosity());
+      verbosity_str = {"(", verbosity_str, ")"};
+    end
 
-if (show_terminator)
-  terminator_str = {" -",sev_string};
+    if (show_terminator)
+      terminator_str = {" -",sev_string};
 
-el_container = report_message.get_element_container();
-if (el_container.size() == 0)
-  msg_body_str = report_message.get_message();
-else begin
-  prefix = uvm_default_printer.knobs.prefix;
-  uvm_default_printer.knobs.prefix = " +";
-  msg_body_str = {report_message.get_message(), "\n", el_container.sprint()};
-  uvm_default_printer.knobs.prefix = prefix;
-end
+    el_container = report_message.get_element_container();
+    if (el_container.size() == 0)
+      msg_body_str = report_message.get_message();
+    else begin
+      prefix = uvm_default_printer.knobs.prefix;
+      uvm_default_printer.knobs.prefix = " +";
+      msg_body_str = {report_message.get_message(), "\n", el_container.sprint()};
+      uvm_default_printer.knobs.prefix = prefix;
+    end
 
-if (report_object_name == "") begin
-  l_report_handler = report_message.get_report_handler();
-  report_object_name = l_report_handler.get_full_name();
-end
+    if (report_object_name == "") begin
+      l_report_handler = report_message.get_report_handler();
+      report_object_name = l_report_handler.get_full_name();
+    end
 
-compose_report_message = {sev_string, verbosity_str, " ", filename_line_string, "@ ", 
-time_str, ": ", report_object_name, context_str,
-" [", report_message.get_id(), "] ", msg_body_str, terminator_str};
+    compose_report_message = {sev_string, verbosity_str, " ", filename_line_string, "@ ", 
+    time_str, ": ", report_object_name, context_str,
+    " [", report_message.get_id(), "] ", msg_body_str, terminator_str};
 
   endfunction 
 
@@ -860,56 +860,56 @@ time_str, ": ", report_object_name, context_str,
     // reporting system processes reports and the actions enabled for them.
 
     virtual function void process_report(
-        uvm_severity severity,
-        string name,
-        string id,
-        string message,
-        uvm_action action,
-        UVM_FILE file,
-        string filename,
-        int line,
-        string composed_message,
-        int verbosity_level,
-        uvm_report_object client
-      );
-      uvm_report_message l_report_message;
+                                         uvm_severity severity,
+                                         string name,
+                                         string id,
+                                         string message,
+                                         uvm_action action,
+                                         UVM_FILE file,
+                                         string filename,
+                                         int line,
+                                         string composed_message,
+                                         int verbosity_level,
+                                         uvm_report_object client
+                                         );
+                                         uvm_report_message l_report_message;
 
-      l_report_message = uvm_report_message::new_report_message();
-      l_report_message.set_report_message(severity, id, message, 
-      verbosity_level, filename, line, "");
-      l_report_message.set_report_object(client);
-      l_report_message.set_report_handler(client.get_report_handler());
-      l_report_message.set_file(file);
-      l_report_message.set_action(action);
-      l_report_message.set_report_server(this);
+                                         l_report_message = uvm_report_message::new_report_message();
+                                         l_report_message.set_report_message(severity, id, message, 
+                                         verbosity_level, filename, line, "");
+                                         l_report_message.set_report_object(client);
+                                         l_report_message.set_report_handler(client.get_report_handler());
+                                         l_report_message.set_file(file);
+                                         l_report_message.set_action(action);
+                                         l_report_message.set_report_server(this);
 
-      execute_report_message(l_report_message, composed_message);
-    endfunction
+                                         execute_report_message(l_report_message, composed_message);
+                                       endfunction
 
 
-    // Function- compose_message
-    //
-    // Constructs the actual string sent to the file or command line
-    // from the severity, component name, report id, and the message itself. 
-    //
-    // Expert users can overload this method to customize report formatting.
+                                       // Function- compose_message
+                                       //
+                                       // Constructs the actual string sent to the file or command line
+                                       // from the severity, component name, report id, and the message itself. 
+                                       //
+                                       // Expert users can overload this method to customize report formatting.
 
-    virtual function string compose_message(
-        uvm_severity severity,
-        string name,
-        string id,
-        string message,
-        string filename,
-        int    line
-      );
-      uvm_report_message l_report_message;
+                                       virtual function string compose_message(
+                                                                               uvm_severity severity,
+                                                                               string name,
+                                                                               string id,
+                                                                               string message,
+                                                                               string filename,
+                                                                               int    line
+                                                                               );
+                                                                               uvm_report_message l_report_message;
 
-      l_report_message = uvm_report_message::new_report_message();
-      l_report_message.set_report_message(severity, id, message, 
-      UVM_NONE, filename, line, "");
+                                                                               l_report_message = uvm_report_message::new_report_message();
+                                                                               l_report_message.set_report_message(severity, id, message, 
+                                                                               UVM_NONE, filename, line, "");
 
-      return compose_report_message(l_report_message, name);
-    endfunction 
+                                                                               return compose_report_message(l_report_message, name);
+                                                                             endfunction 
 
 
   `endif

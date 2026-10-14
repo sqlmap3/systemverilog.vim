@@ -704,111 +704,111 @@ class uvm_callbacks #(type T=uvm_object, type CB=uvm_callback)
   // for more details on searching by name.
 
   static function void add_by_name(string name,
-      uvm_callback cb,
-      uvm_component root,
-  uvm_apprepend ordering=UVM_APPEND);
-  uvm_component cq[$];
-  uvm_root top;
-  uvm_coreservice_t cs;
-  T t;
-  void'(get());
-  cs = uvm_coreservice_t::get();
-  top = cs.get_root();
+                                   uvm_callback cb,
+                                   uvm_component root,
+                                   uvm_apprepend ordering=UVM_APPEND);
+    uvm_component cq[$];
+    uvm_root top;
+    uvm_coreservice_t cs;
+    T t;
+    void'(get());
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();
 
-  if(cb==null) begin
-    uvm_report_error("CBUNREG", { "Null callback object cannot be registered with object(s) ",
-    name }, UVM_NONE);
-    return;
-  end
-  `uvm_cb_trace_noobj(cb,$sformatf("Add (%s) callback %0s by name to object(s) %0s ",
-  ordering.name(), cb.get_name(), name))
-  top.find_all(name,cq,root);
-  if(cq.size() == 0) begin
-    uvm_report_warning("CBNOMTC", { "add_by_name failed to find any components matching the name ",
-    name, ", callback ", cb.get_name(), " will not be registered." }, UVM_NONE);
-  end
-  foreach(cq[i]) begin
-    if($cast(t,cq[i])) begin 
-      add(t,cb,ordering); 
+    if(cb==null) begin
+      uvm_report_error("CBUNREG", { "Null callback object cannot be registered with object(s) ",
+      name }, UVM_NONE);
+      return;
     end
-  end
-endfunction
-
-
-// Function: delete
-//
-// Deletes the given callback object, ~cb~, from the queue associated with
-//  the given ~obj~ handle. The ~obj~ handle can be ~null~, which allows
-// de-registration of callbacks without an object context. 
-// The ~cb~ is the callback handle; it must be non-~null~, and if the callback
-// has already been removed from the object instance then a warning is
-// issued. Note that the CB parameter is optional. For example, the 
-// following are equivalent:
-//
-//| uvm_callbacks#(my_comp)::delete(comp_a, cb);
-//| uvm_callbacks#(my_comp, my_callback)::delete(comp_a,cb);
-
-static function void delete(T obj, uvm_callback cb);
-  uvm_object b_obj = obj;
-  uvm_queue#(uvm_callback) q;
-  bit found;
-  int pos;
-  void'(get());
-
-  if(obj == null) begin
-    `uvm_cb_trace_noobj(cb,$sformatf("Delete typewide callback %0s for type %s",
-    cb.get_name(), m_base_inst.m_typename))
-    found = m_t_inst.m_delete_tw_cbs(cb);
-  end
-  else begin
-    `uvm_cb_trace_noobj(cb,$sformatf("Delete callback %0s from object %0s ",
-    cb.get_name(), obj.get_full_name()))
-    q = m_base_inst.m_pool.get(b_obj);
-    pos = m_cb_find(q,cb);
-    if(pos != -1) begin
-      q.delete(pos);
-      found = 1;
+    `uvm_cb_trace_noobj(cb,$sformatf("Add (%s) callback %0s by name to object(s) %0s ",
+    ordering.name(), cb.get_name(), name))
+    top.find_all(name,cq,root);
+    if(cq.size() == 0) begin
+      uvm_report_warning("CBNOMTC", { "add_by_name failed to find any components matching the name ",
+      name, ", callback ", cb.get_name(), " will not be registered." }, UVM_NONE);
     end
-  end
-  if(!found) begin
-    string nm;
-    if(obj==null) nm = "(*)"; else nm = obj.get_full_name();
-    uvm_report_warning("CBUNREG", { "Callback ", cb.get_name(), " cannot be removed from object ",
-    nm, " because it is not currently registered to that object." }, UVM_NONE);
-  end
-endfunction
+    foreach(cq[i]) begin
+      if($cast(t,cq[i])) begin 
+        add(t,cb,ordering); 
+      end
+    end
+  endfunction
 
 
-// Function: delete_by_name
-//
-// Removes the given callback object, ~cb~, associated with one or more 
-// uvm_component callback queues. As with <delete> the CB parameter is 
-// optional. ~root~ specifies the location in the component hierarchy to start 
-// the search for ~name~. See <uvm_root::find_all> for more details on searching 
-// by name.
+  // Function: delete
+  //
+  // Deletes the given callback object, ~cb~, from the queue associated with
+  //  the given ~obj~ handle. The ~obj~ handle can be ~null~, which allows
+  // de-registration of callbacks without an object context. 
+  // The ~cb~ is the callback handle; it must be non-~null~, and if the callback
+  // has already been removed from the object instance then a warning is
+  // issued. Note that the CB parameter is optional. For example, the 
+  // following are equivalent:
+  //
+  //| uvm_callbacks#(my_comp)::delete(comp_a, cb);
+  //| uvm_callbacks#(my_comp, my_callback)::delete(comp_a,cb);
 
-static function void delete_by_name(string name, uvm_callback cb,
-uvm_component root);
-uvm_component cq[$];
-uvm_root top;
-T t;
-uvm_coreservice_t cs;
-void'(get());
-cs = uvm_coreservice_t::get();
-top = cs.get_root();
+  static function void delete(T obj, uvm_callback cb);
+    uvm_object b_obj = obj;
+    uvm_queue#(uvm_callback) q;
+    bit found;
+    int pos;
+    void'(get());
 
-`uvm_cb_trace_noobj(cb,$sformatf("Delete callback %0s by name from object(s) %0s ",
-cb.get_name(), name))
-top.find_all(name,cq,root);
-if(cq.size() == 0) begin
-  uvm_report_warning("CBNOMTC", { "delete_by_name failed to find any components matching the name ",
-  name, ", callback ", cb.get_name(), " will not be unregistered." }, UVM_NONE);
-end
-foreach(cq[i]) begin
-  if($cast(t,cq[i])) begin 
-    delete(t,cb); 
-  end
-end
+    if(obj == null) begin
+      `uvm_cb_trace_noobj(cb,$sformatf("Delete typewide callback %0s for type %s",
+      cb.get_name(), m_base_inst.m_typename))
+      found = m_t_inst.m_delete_tw_cbs(cb);
+    end
+    else begin
+      `uvm_cb_trace_noobj(cb,$sformatf("Delete callback %0s from object %0s ",
+      cb.get_name(), obj.get_full_name()))
+      q = m_base_inst.m_pool.get(b_obj);
+      pos = m_cb_find(q,cb);
+      if(pos != -1) begin
+        q.delete(pos);
+        found = 1;
+      end
+    end
+    if(!found) begin
+      string nm;
+      if(obj==null) nm = "(*)"; else nm = obj.get_full_name();
+      uvm_report_warning("CBUNREG", { "Callback ", cb.get_name(), " cannot be removed from object ",
+      nm, " because it is not currently registered to that object." }, UVM_NONE);
+    end
+  endfunction
+
+
+  // Function: delete_by_name
+  //
+  // Removes the given callback object, ~cb~, associated with one or more 
+  // uvm_component callback queues. As with <delete> the CB parameter is 
+  // optional. ~root~ specifies the location in the component hierarchy to start 
+  // the search for ~name~. See <uvm_root::find_all> for more details on searching 
+  // by name.
+
+  static function void delete_by_name(string name, uvm_callback cb,
+                                      uvm_component root);
+    uvm_component cq[$];
+    uvm_root top;
+    T t;
+    uvm_coreservice_t cs;
+    void'(get());
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();
+
+    `uvm_cb_trace_noobj(cb,$sformatf("Delete callback %0s by name from object(s) %0s ",
+    cb.get_name(), name))
+    top.find_all(name,cq,root);
+    if(cq.size() == 0) begin
+      uvm_report_warning("CBNOMTC", { "delete_by_name failed to find any components matching the name ",
+      name, ", callback ", cb.get_name(), " will not be unregistered." }, UVM_NONE);
+    end
+    foreach(cq[i]) begin
+      if($cast(t,cq[i])) begin 
+        delete(t,cb); 
+      end
+    end
   endfunction
 
 

@@ -256,694 +256,694 @@ class uvm_sequence_base extends uvm_sequence_item;
   // <body> is called.
 
   virtual task start (uvm_sequencer_base sequencer,
-      uvm_sequence_base parent_sequence = null,
-      int this_priority = -1,
-  bit call_pre_post = 1);
-  bit                  old_automatic_phase_objection;
+                      uvm_sequence_base parent_sequence = null,
+                      int this_priority = -1,
+                      bit call_pre_post = 1);
+    bit                  old_automatic_phase_objection;
 
-  set_item_context(parent_sequence, sequencer);
+    set_item_context(parent_sequence, sequencer);
 
-  if (!(m_sequence_state inside {UVM_CREATED,UVM_STOPPED,UVM_FINISHED})) begin
-    uvm_report_fatal("SEQ_NOT_DONE", 
-    {"Sequence ", get_full_name(), " already started"},UVM_NONE);
-  end
-
-  if (m_parent_sequence != null) begin
-    m_parent_sequence.children_array[this] = 1;
-  end
-
-  if (this_priority < -1) begin
-    uvm_report_fatal("SEQPRI", $sformatf("Sequence %s start has illegal priority: %0d",
-      get_full_name(),
-    this_priority), UVM_NONE);
-  end
-  if (this_priority < 0) begin
-    if (parent_sequence == null) this_priority = 100;
-    else this_priority = parent_sequence.get_priority();
-  end
-
-  // Check that the response queue is empty from earlier runs
-  clear_response_queue();
-
-  m_priority           = this_priority;
-
-  if (m_sequencer != null) begin
-    integer handle;
-    uvm_tr_stream stream;
-    if (m_parent_sequence == null) begin
-      stream = m_sequencer.get_tr_stream(get_name(), "Transactions");
-      handle = m_sequencer.begin_tr(this, get_name());
-      m_tr_recorder = uvm_recorder::get_recorder_from_handle(handle);
-    end else begin
-      stream = m_sequencer.get_tr_stream(get_root_sequence_name(), "Transactions");
-      handle = m_sequencer.begin_child_tr(this, 
-        (m_parent_sequence.m_tr_recorder == null) ? 0 : m_parent_sequence.m_tr_recorder.get_handle(), 
-      get_root_sequence_name());
-      m_tr_recorder = uvm_recorder::get_recorder_from_handle(handle);
+    if (!(m_sequence_state inside {UVM_CREATED,UVM_STOPPED,UVM_FINISHED})) begin
+      uvm_report_fatal("SEQ_NOT_DONE", 
+      {"Sequence ", get_full_name(), " already started"},UVM_NONE);
     end
-  end
 
-  // Ensure that the sequence_id is intialized in case this sequence has been stopped previously
-  set_sequence_id(-1);
-  // Remove all sqr_seq_ids
-  m_sqr_seq_ids.delete();
+    if (m_parent_sequence != null) begin
+      m_parent_sequence.children_array[this] = 1;
+    end
 
-  // Register the sequence with the sequencer if defined.
-  if (m_sequencer != null) begin
-    void'(m_sequencer.m_register_sequence(this));
-  end
+    if (this_priority < -1) begin
+      uvm_report_fatal("SEQPRI", $sformatf("Sequence %s start has illegal priority: %0d",
+        get_full_name(),
+      this_priority), UVM_NONE);
+    end
+    if (this_priority < 0) begin
+      if (parent_sequence == null) this_priority = 100;
+      else this_priority = parent_sequence.get_priority();
+    end
 
-  // Change the state to PRE_START, do this before the fork so that
-  // the "if (!(m_sequence_state inside {...}" works
-  m_sequence_state = UVM_PRE_START;
-  fork
-    begin
-      m_sequence_process = process::self();
+    // Check that the response queue is empty from earlier runs
+    clear_response_queue();
 
-      // absorb delta to ensure PRE_START was seen
-      #0;
+    m_priority           = this_priority;
 
-      // Raise the objection if enabled
-      // (This will lock the uvm_get_to_lock_dap)
-      if (get_automatic_phase_objection()) begin
-        m_safe_raise_starting_phase("automatic phase objection");
+    if (m_sequencer != null) begin
+      integer handle;
+      uvm_tr_stream stream;
+      if (m_parent_sequence == null) begin
+        stream = m_sequencer.get_tr_stream(get_name(), "Transactions");
+        handle = m_sequencer.begin_tr(this, get_name());
+        m_tr_recorder = uvm_recorder::get_recorder_from_handle(handle);
+      end else begin
+        stream = m_sequencer.get_tr_stream(get_root_sequence_name(), "Transactions");
+        handle = m_sequencer.begin_child_tr(this, 
+          (m_parent_sequence.m_tr_recorder == null) ? 0 : m_parent_sequence.m_tr_recorder.get_handle(), 
+        get_root_sequence_name());
+        m_tr_recorder = uvm_recorder::get_recorder_from_handle(handle);
       end
+    end
 
-      pre_start();
+    // Ensure that the sequence_id is intialized in case this sequence has been stopped previously
+    set_sequence_id(-1);
+    // Remove all sqr_seq_ids
+    m_sqr_seq_ids.delete();
 
-      if (call_pre_post == 1) begin
-        m_sequence_state = UVM_PRE_BODY;
+    // Register the sequence with the sequencer if defined.
+    if (m_sequencer != null) begin
+      void'(m_sequencer.m_register_sequence(this));
+    end
+
+    // Change the state to PRE_START, do this before the fork so that
+    // the "if (!(m_sequence_state inside {...}" works
+    m_sequence_state = UVM_PRE_START;
+    fork
+      begin
+        m_sequence_process = process::self();
+
+        // absorb delta to ensure PRE_START was seen
         #0;
-        pre_body();
-      end
 
-      if (parent_sequence != null) begin
-        parent_sequence.pre_do(0);    // task
-        parent_sequence.mid_do(this); // function
-      end
+        // Raise the objection if enabled
+        // (This will lock the uvm_get_to_lock_dap)
+        if (get_automatic_phase_objection()) begin
+          m_safe_raise_starting_phase("automatic phase objection");
+        end
 
-      m_sequence_state = UVM_BODY;
-      #0;
-      body();
+        pre_start();
 
-      m_sequence_state = UVM_ENDED;
-      #0;
+        if (call_pre_post == 1) begin
+          m_sequence_state = UVM_PRE_BODY;
+          #0;
+          pre_body();
+        end
 
-      if (parent_sequence != null) begin
-        parent_sequence.post_do(this);
-      end
+        if (parent_sequence != null) begin
+          parent_sequence.pre_do(0);    // task
+          parent_sequence.mid_do(this); // function
+        end
 
-      if (call_pre_post == 1) begin
-        m_sequence_state = UVM_POST_BODY;
+        m_sequence_state = UVM_BODY;
         #0;
-        post_body();
-      end
+        body();
 
-      m_sequence_state = UVM_POST_START;
-      #0;
-      post_start();
+        m_sequence_state = UVM_ENDED;
+        #0;
 
-      // Drop the objection if enabled
-      if (get_automatic_phase_objection()) begin
-        m_safe_drop_starting_phase("automatic phase objection");
-      end
-
-      m_sequence_state = UVM_FINISHED;
-      #0;
-
-    end
-  join
-
-  if (m_sequencer != null) begin      
-    m_sequencer.end_tr(this);
-  end
-
-  // Clean up any sequencer queues after exiting; if we
-  // were forcibly stoped, this step has already taken place
-  if (m_sequence_state != UVM_STOPPED) begin
-    if (m_sequencer != null)
-      m_sequencer.m_sequence_exiting(this);
-  end
-
-  #0; // allow stopped and finish waiters to resume
-
-  if ((m_parent_sequence != null) && (m_parent_sequence.children_array.exists(this))) begin
-    m_parent_sequence.children_array.delete(this);
-  end
-
-  old_automatic_phase_objection = get_automatic_phase_objection();
-  m_init_phase_daps(1);
-  set_automatic_phase_objection(old_automatic_phase_objection);
-endtask
-
-
-// Task: pre_start
-//
-// This task is a user-definable callback that is called before the
-// optional execution of <pre_body>.
-// This method should not be called directly by the user.
-
-virtual task pre_start();  
-  return;
-endtask
-
-
-// Task: pre_body
-//
-// This task is a user-definable callback that is called before the
-// execution of <body> ~only~ when the sequence is started with <start>.
-// If <start> is called with ~call_pre_post~ set to 0, ~pre_body~ is not
-// called.
-// This method should not be called directly by the user.
-
-virtual task pre_body();  
-  return;
-endtask
-
-
-// Task: pre_do
-//
-// This task is a user-definable callback task that is called ~on the
-// parent sequence~, if any
-// sequence has issued a wait_for_grant() call and after the sequencer has
-// selected this sequence, and before the item is randomized.
-//
-// Although pre_do is a task, consuming simulation cycles may result in
-// unexpected behavior on the driver.
-//
-// This method should not be called directly by the user.
-
-virtual task pre_do(bit is_item);
-  return;
-endtask
-
-
-// Function: mid_do
-//
-// This function is a user-definable callback function that is called after
-// the sequence item has been randomized, and just before the item is sent
-// to the driver.  This method should not be called directly by the user.
-
-virtual function void mid_do(uvm_sequence_item this_item);
-  return;
-endfunction
-
-
-// Task: body
-//
-// This is the user-defined task where the main sequence code resides.
-// This method should not be called directly by the user.
-
-virtual task body();
-  uvm_report_warning("uvm_sequence_base", "Body definition undefined");
-  return;
-endtask  
-
-
-// Function: post_do
-//
-// This function is a user-definable callback function that is called after
-// the driver has indicated that it has completed the item, using either
-// this item_done or put methods. This method should not be called directly
-// by the user.
-
-virtual function void post_do(uvm_sequence_item this_item);
-  return;
-endfunction
-
-
-// Task: post_body
-//
-// This task is a user-definable callback task that is called after the
-// execution of <body> ~only~ when the sequence is started with <start>.
-// If <start> is called with ~call_pre_post~ set to 0, ~post_body~ is not
-// called.
-// This task is a user-definable callback task that is called after the
-// execution of the body, unless the sequence is started with call_pre_post=0.
-// This method should not be called directly by the user.
-
-virtual task post_body();
-  return;
-endtask
-
-
-// Task: post_start
-//
-// This task is a user-definable callback that is called after the
-// optional execution of <post_body>.
-// This method should not be called directly by the user.
-
-virtual task post_start();  
-  return;
-endtask
-
-
-// Group: Run-Time Phasing
-//
-
-// Automatic Phase Objection DAP
-local uvm_get_to_lock_dap#(bit) m_automatic_phase_objection_dap;
-// Starting Phase DAP
-local uvm_get_to_lock_dap#(uvm_phase) m_starting_phase_dap;
-
-// Function- m_init_phase_daps
-// Either creates or renames DAPS
-function void m_init_phase_daps(bit create);
-  string apo_name = $sformatf("%s.automatic_phase_objection", get_full_name());
-  string sp_name = $sformatf("%s.starting_phase", get_full_name());
-
-  if (create) begin
-    m_automatic_phase_objection_dap = uvm_get_to_lock_dap#(bit)::type_id::create(apo_name, get_sequencer());
-    m_starting_phase_dap = uvm_get_to_lock_dap#(uvm_phase)::type_id::create(sp_name, get_sequencer());
-  end
-  else begin
-    m_automatic_phase_objection_dap.set_name(apo_name);
-    m_starting_phase_dap.set_name(sp_name);
-  end
-endfunction : m_init_phase_daps
-
-`ifndef UVM_NO_DEPRECATED
-`define UVM_DEPRECATED_STARTING_PHASE
-`endif
-
-`ifdef UVM_DEPRECATED_STARTING_PHASE
-  // DEPRECATED!! Use get/set_starting_phase accessors instead!
-  uvm_phase starting_phase;
-  // Value set via set_starting_phase
-  uvm_phase m_set_starting_phase;
-  // Ensures we only warn once per sequence
-  bit m_warn_deprecated_set;
-`endif 
-
-// Function: get_starting_phase
-// Returns the 'starting phase'.
-//
-// If non-~null~, the starting phase specifies the phase in which this
-// sequence was started.  The starting phase is set automatically when
-// this sequence is started as the default sequence on a sequencer.
-// See <uvm_sequencer_base::start_phase_sequence> for more information.
-//
-// Internally, the <uvm_sequence_base> uses an <uvm_get_to_lock_dap> to 
-// protect the starting phase value from being modified 
-// after the reference has been read.  Once the sequence has ended 
-// its execution (either via natural termination, or being killed),
-// then the starting phase value can be modified again.
-//
-function uvm_phase get_starting_phase();
-  `ifdef UVM_DEPRECATED_STARTING_PHASE
-    begin
-      bit throw_error;
-
-      if (starting_phase != m_set_starting_phase) begin
-        if (!m_warn_deprecated_set) begin
-          `uvm_warning("UVM_DEPRECATED", "'starting_phase' is deprecated and not part of the UVM standard.  See documentation for uvm_sequence_base::set_starting_phase")
-          m_warn_deprecated_set = 1;
+        if (parent_sequence != null) begin
+          parent_sequence.post_do(this);
         end
 
-        if (m_starting_phase_dap.try_set(starting_phase))
-          m_set_starting_phase = starting_phase;
-        else begin
-          uvm_phase dap_phase = m_starting_phase_dap.get();
-          `uvm_error("UVM/SEQ/LOCK_DEPR",
-          {"The deprecated 'starting_phase' variable has been set to '",
-          (starting_phase == null) ? "<null>" : starting_phase.get_full_name(), 
-          "' after a call to get_starting_phase locked the value to '",
-          (dap_phase == null) ? "<null>" : dap_phase.get_full_name(), 
-          "'.  See documentation for uvm_sequence_base::set_starting_phase."})
-        end
-      end
-
-    end
-  `endif
-  return m_starting_phase_dap.get();
-endfunction : get_starting_phase
-
-// Function: set_starting_phase
-// Sets the 'starting phase'.
-//
-// Internally, the <uvm_sequence_base> uses a <uvm_get_to_lock_dap> to 
-// protect the starting phase value from being modified 
-// after the reference has been read.  Once the sequence has ended 
-// its execution (either via natural termination, or being killed),
-// then the starting phase value can be modified again.
-//
-function void set_starting_phase(uvm_phase phase);
-  `ifdef UVM_DEPRECATED_STARTING_PHASE
-    begin
-      if (starting_phase != m_set_starting_phase) begin
-        if (!m_warn_deprecated_set) begin
-          `uvm_warning("UVM_DEPRECATED", 
-          {"The deprecated 'starting_phase' variable has been set to '",
-          starting_phase.get_full_name(),
-          "' manually.  See documentation for uvm_sequence_base::set_starting_phase."})
-          m_warn_deprecated_set = 1;
+        if (call_pre_post == 1) begin
+          m_sequence_state = UVM_POST_BODY;
+          #0;
+          post_body();
         end
 
-        starting_phase = phase;
-        m_set_starting_phase = phase;
+        m_sequence_state = UVM_POST_START;
+        #0;
+        post_start();
+
+        // Drop the objection if enabled
+        if (get_automatic_phase_objection()) begin
+          m_safe_drop_starting_phase("automatic phase objection");
+        end
+
+        m_sequence_state = UVM_FINISHED;
+        #0;
+
       end
+    join
+
+    if (m_sequencer != null) begin      
+      m_sequencer.end_tr(this);
     end
+
+    // Clean up any sequencer queues after exiting; if we
+    // were forcibly stoped, this step has already taken place
+    if (m_sequence_state != UVM_STOPPED) begin
+      if (m_sequencer != null)
+        m_sequencer.m_sequence_exiting(this);
+    end
+
+    #0; // allow stopped and finish waiters to resume
+
+    if ((m_parent_sequence != null) && (m_parent_sequence.children_array.exists(this))) begin
+      m_parent_sequence.children_array.delete(this);
+    end
+
+    old_automatic_phase_objection = get_automatic_phase_objection();
+    m_init_phase_daps(1);
+    set_automatic_phase_objection(old_automatic_phase_objection);
+  endtask
+
+
+  // Task: pre_start
+  //
+  // This task is a user-definable callback that is called before the
+  // optional execution of <pre_body>.
+  // This method should not be called directly by the user.
+
+  virtual task pre_start();  
+    return;
+  endtask
+
+
+  // Task: pre_body
+  //
+  // This task is a user-definable callback that is called before the
+  // execution of <body> ~only~ when the sequence is started with <start>.
+  // If <start> is called with ~call_pre_post~ set to 0, ~pre_body~ is not
+  // called.
+  // This method should not be called directly by the user.
+
+  virtual task pre_body();  
+    return;
+  endtask
+
+
+  // Task: pre_do
+  //
+  // This task is a user-definable callback task that is called ~on the
+  // parent sequence~, if any
+  // sequence has issued a wait_for_grant() call and after the sequencer has
+  // selected this sequence, and before the item is randomized.
+  //
+  // Although pre_do is a task, consuming simulation cycles may result in
+  // unexpected behavior on the driver.
+  //
+  // This method should not be called directly by the user.
+
+  virtual task pre_do(bit is_item);
+    return;
+  endtask
+
+
+  // Function: mid_do
+  //
+  // This function is a user-definable callback function that is called after
+  // the sequence item has been randomized, and just before the item is sent
+  // to the driver.  This method should not be called directly by the user.
+
+  virtual function void mid_do(uvm_sequence_item this_item);
+    return;
+  endfunction
+
+
+  // Task: body
+  //
+  // This is the user-defined task where the main sequence code resides.
+  // This method should not be called directly by the user.
+
+  virtual task body();
+    uvm_report_warning("uvm_sequence_base", "Body definition undefined");
+    return;
+  endtask  
+
+
+  // Function: post_do
+  //
+  // This function is a user-definable callback function that is called after
+  // the driver has indicated that it has completed the item, using either
+  // this item_done or put methods. This method should not be called directly
+  // by the user.
+
+  virtual function void post_do(uvm_sequence_item this_item);
+    return;
+  endfunction
+
+
+  // Task: post_body
+  //
+  // This task is a user-definable callback task that is called after the
+  // execution of <body> ~only~ when the sequence is started with <start>.
+  // If <start> is called with ~call_pre_post~ set to 0, ~post_body~ is not
+  // called.
+  // This task is a user-definable callback task that is called after the
+  // execution of the body, unless the sequence is started with call_pre_post=0.
+  // This method should not be called directly by the user.
+
+  virtual task post_body();
+    return;
+  endtask
+
+
+  // Task: post_start
+  //
+  // This task is a user-definable callback that is called after the
+  // optional execution of <post_body>.
+  // This method should not be called directly by the user.
+
+  virtual task post_start();  
+    return;
+  endtask
+
+
+  // Group: Run-Time Phasing
+  //
+
+  // Automatic Phase Objection DAP
+  local uvm_get_to_lock_dap#(bit) m_automatic_phase_objection_dap;
+  // Starting Phase DAP
+  local uvm_get_to_lock_dap#(uvm_phase) m_starting_phase_dap;
+
+  // Function- m_init_phase_daps
+  // Either creates or renames DAPS
+  function void m_init_phase_daps(bit create);
+    string apo_name = $sformatf("%s.automatic_phase_objection", get_full_name());
+    string sp_name = $sformatf("%s.starting_phase", get_full_name());
+
+    if (create) begin
+      m_automatic_phase_objection_dap = uvm_get_to_lock_dap#(bit)::type_id::create(apo_name, get_sequencer());
+      m_starting_phase_dap = uvm_get_to_lock_dap#(uvm_phase)::type_id::create(sp_name, get_sequencer());
+    end
+    else begin
+      m_automatic_phase_objection_dap.set_name(apo_name);
+      m_starting_phase_dap.set_name(sp_name);
+    end
+  endfunction : m_init_phase_daps
+
+  `ifndef UVM_NO_DEPRECATED
+  `define UVM_DEPRECATED_STARTING_PHASE
   `endif
 
-  m_starting_phase_dap.set(phase);
-endfunction : set_starting_phase
+  `ifdef UVM_DEPRECATED_STARTING_PHASE
+    // DEPRECATED!! Use get/set_starting_phase accessors instead!
+    uvm_phase starting_phase;
+    // Value set via set_starting_phase
+    uvm_phase m_set_starting_phase;
+    // Ensures we only warn once per sequence
+    bit m_warn_deprecated_set;
+  `endif 
 
-// Function: set_automatic_phase_objection
-// Sets the 'automatically object to starting phase' bit.
-//
-// The most common interaction with the starting phase
-// within a sequence is to simply ~raise~ the phase's objection
-// prior to executing the sequence, and ~drop~ the objection
-// after ending the sequence (either naturally, or
-// via a call to <kill>). In order to 
-// simplify this interaction for the user, the UVM
-// provides the ability to perform this functionality
-// automatically.
-//
-// For example:
-//| function my_sequence::new(string name="unnamed");
-//|   super.new(name);
-//|   set_automatic_phase_objection(1);
-//| endfunction : new
-//
-// From a timeline point of view, the automatic phase objection
-// looks like:
-//| start() is executed
-//|   --! Objection is raised !--
-//|   pre_start() is executed
-//|   pre_body() is optionally executed
-//|   body() is executed
-//|   post_body() is optionally executed
-//|   post_start() is executed
-//|   --! Objection is dropped !--
-//| start() unblocks
-//
-// This functionality can also be enabled in sequences
-// which were not written with UVM Run-Time Phasing in mind:
-//| my_legacy_seq_type seq = new("seq");
-//| seq.set_automatic_phase_objection(1);
-//| seq.start(my_sequencer);
-//
-// Internally, the <uvm_sequence_base> uses a <uvm_get_to_lock_dap> to 
-// protect the ~automatic_phase_objection~ value from being modified 
-// after the reference has been read.  Once the sequence has ended 
-// its execution (either via natural termination, or being killed),
-// then the ~automatic_phase_objection~ value can be modified again.
-//
-// NEVER set the automatic phase objection bit to 1 if your sequence
-// runs with a forever loop inside of the body, as the objection will
-// never get dropped!
-function void set_automatic_phase_objection(bit value);
-  m_automatic_phase_objection_dap.set(value);
-endfunction : set_automatic_phase_objection
+  // Function: get_starting_phase
+  // Returns the 'starting phase'.
+  //
+  // If non-~null~, the starting phase specifies the phase in which this
+  // sequence was started.  The starting phase is set automatically when
+  // this sequence is started as the default sequence on a sequencer.
+  // See <uvm_sequencer_base::start_phase_sequence> for more information.
+  //
+  // Internally, the <uvm_sequence_base> uses an <uvm_get_to_lock_dap> to 
+  // protect the starting phase value from being modified 
+  // after the reference has been read.  Once the sequence has ended 
+  // its execution (either via natural termination, or being killed),
+  // then the starting phase value can be modified again.
+  //
+  function uvm_phase get_starting_phase();
+    `ifdef UVM_DEPRECATED_STARTING_PHASE
+      begin
+        bit throw_error;
 
-// Function: get_automatic_phase_objection
-// Returns (and locks) the value of the 'automatically object to 
-// starting phase' bit.
-//
-// If 1, then the sequence will automatically raise an objection
-// to the starting phase (if the starting phase is not ~null~) immediately
-// prior to <pre_start> being called.  The objection will be dropped
-// after <post_start> has executed, or <kill> has been called.
-//
-function bit get_automatic_phase_objection();
-  return m_automatic_phase_objection_dap.get();
-endfunction : get_automatic_phase_objection
+        if (starting_phase != m_set_starting_phase) begin
+          if (!m_warn_deprecated_set) begin
+            `uvm_warning("UVM_DEPRECATED", "'starting_phase' is deprecated and not part of the UVM standard.  See documentation for uvm_sequence_base::set_starting_phase")
+            m_warn_deprecated_set = 1;
+          end
 
-// m_safe_raise_starting_phase
-function void m_safe_raise_starting_phase(string description = "",
-int count = 1);
-uvm_phase starting_phase = get_starting_phase();
-if (starting_phase != null)
-  starting_phase.raise_objection(this, description, count);
+          if (m_starting_phase_dap.try_set(starting_phase))
+            m_set_starting_phase = starting_phase;
+          else begin
+            uvm_phase dap_phase = m_starting_phase_dap.get();
+            `uvm_error("UVM/SEQ/LOCK_DEPR",
+            {"The deprecated 'starting_phase' variable has been set to '",
+            (starting_phase == null) ? "<null>" : starting_phase.get_full_name(), 
+            "' after a call to get_starting_phase locked the value to '",
+            (dap_phase == null) ? "<null>" : dap_phase.get_full_name(), 
+            "'.  See documentation for uvm_sequence_base::set_starting_phase."})
+          end
+        end
+
+      end
+    `endif
+    return m_starting_phase_dap.get();
+  endfunction : get_starting_phase
+
+  // Function: set_starting_phase
+  // Sets the 'starting phase'.
+  //
+  // Internally, the <uvm_sequence_base> uses a <uvm_get_to_lock_dap> to 
+  // protect the starting phase value from being modified 
+  // after the reference has been read.  Once the sequence has ended 
+  // its execution (either via natural termination, or being killed),
+  // then the starting phase value can be modified again.
+  //
+  function void set_starting_phase(uvm_phase phase);
+    `ifdef UVM_DEPRECATED_STARTING_PHASE
+      begin
+        if (starting_phase != m_set_starting_phase) begin
+          if (!m_warn_deprecated_set) begin
+            `uvm_warning("UVM_DEPRECATED", 
+            {"The deprecated 'starting_phase' variable has been set to '",
+            starting_phase.get_full_name(),
+            "' manually.  See documentation for uvm_sequence_base::set_starting_phase."})
+            m_warn_deprecated_set = 1;
+          end
+
+          starting_phase = phase;
+          m_set_starting_phase = phase;
+        end
+      end
+    `endif
+
+    m_starting_phase_dap.set(phase);
+  endfunction : set_starting_phase
+
+  // Function: set_automatic_phase_objection
+  // Sets the 'automatically object to starting phase' bit.
+  //
+  // The most common interaction with the starting phase
+  // within a sequence is to simply ~raise~ the phase's objection
+  // prior to executing the sequence, and ~drop~ the objection
+  // after ending the sequence (either naturally, or
+  // via a call to <kill>). In order to 
+  // simplify this interaction for the user, the UVM
+  // provides the ability to perform this functionality
+  // automatically.
+  //
+  // For example:
+  //| function my_sequence::new(string name="unnamed");
+  //|   super.new(name);
+  //|   set_automatic_phase_objection(1);
+  //| endfunction : new
+  //
+  // From a timeline point of view, the automatic phase objection
+  // looks like:
+  //| start() is executed
+  //|   --! Objection is raised !--
+  //|   pre_start() is executed
+  //|   pre_body() is optionally executed
+  //|   body() is executed
+  //|   post_body() is optionally executed
+  //|   post_start() is executed
+  //|   --! Objection is dropped !--
+  //| start() unblocks
+  //
+  // This functionality can also be enabled in sequences
+  // which were not written with UVM Run-Time Phasing in mind:
+  //| my_legacy_seq_type seq = new("seq");
+  //| seq.set_automatic_phase_objection(1);
+  //| seq.start(my_sequencer);
+  //
+  // Internally, the <uvm_sequence_base> uses a <uvm_get_to_lock_dap> to 
+  // protect the ~automatic_phase_objection~ value from being modified 
+  // after the reference has been read.  Once the sequence has ended 
+  // its execution (either via natural termination, or being killed),
+  // then the ~automatic_phase_objection~ value can be modified again.
+  //
+  // NEVER set the automatic phase objection bit to 1 if your sequence
+  // runs with a forever loop inside of the body, as the objection will
+  // never get dropped!
+  function void set_automatic_phase_objection(bit value);
+    m_automatic_phase_objection_dap.set(value);
+  endfunction : set_automatic_phase_objection
+
+  // Function: get_automatic_phase_objection
+  // Returns (and locks) the value of the 'automatically object to 
+  // starting phase' bit.
+  //
+  // If 1, then the sequence will automatically raise an objection
+  // to the starting phase (if the starting phase is not ~null~) immediately
+  // prior to <pre_start> being called.  The objection will be dropped
+  // after <post_start> has executed, or <kill> has been called.
+  //
+  function bit get_automatic_phase_objection();
+    return m_automatic_phase_objection_dap.get();
+  endfunction : get_automatic_phase_objection
+
+  // m_safe_raise_starting_phase
+  function void m_safe_raise_starting_phase(string description = "",
+                                            int count = 1);
+    uvm_phase starting_phase = get_starting_phase();
+    if (starting_phase != null)
+      starting_phase.raise_objection(this, description, count);
   endfunction : m_safe_raise_starting_phase
 
   // m_safe_drop_starting_phase
   function void m_safe_drop_starting_phase(string description = "",
-  int count = 1);
-  uvm_phase starting_phase = get_starting_phase();
-  if (starting_phase != null)
-    starting_phase.drop_objection(this, description, count);
-endfunction : m_safe_drop_starting_phase
+                                           int count = 1);
+    uvm_phase starting_phase = get_starting_phase();
+    if (starting_phase != null)
+      starting_phase.drop_objection(this, description, count);
+  endfunction : m_safe_drop_starting_phase
 
-//------------------------
-// Group: Sequence Control
-//------------------------
+  //------------------------
+  // Group: Sequence Control
+  //------------------------
 
-// Function: set_priority
-//
-// The priority of a sequence may be changed at any point in time.  When the
-// priority of a sequence is changed, the new priority will be used by the
-// sequencer the next time that it arbitrates between sequences.
-//
-// The default priority value for a sequence is 100.  Higher values result
-// in higher priorities.
+  // Function: set_priority
+  //
+  // The priority of a sequence may be changed at any point in time.  When the
+  // priority of a sequence is changed, the new priority will be used by the
+  // sequencer the next time that it arbitrates between sequences.
+  //
+  // The default priority value for a sequence is 100.  Higher values result
+  // in higher priorities.
 
-function void set_priority (int value);
-  m_priority = value;
-endfunction
-
-
-// Function: get_priority
-//
-// This function returns the current priority of the sequence.
-
-function int get_priority();
-  return m_priority;
-endfunction
+  function void set_priority (int value);
+    m_priority = value;
+  endfunction
 
 
-// Function: is_relevant
-//
-// The default is_relevant implementation returns 1, indicating that the
-// sequence is always relevant.
-//
-// Users may choose to override with their own virtual function to indicate
-// to the sequencer that the sequence is not currently relevant after a
-// request has been made.
-//
-// When the sequencer arbitrates, it will call is_relevant on each requesting,
-// unblocked sequence to see if it is relevant. If a 0 is returned, then the
-// sequence will not be chosen.
-//
-// If all requesting sequences are not relevant, then the sequencer will call
-// wait_for_relevant on all sequences and re-arbitrate upon its return.
-//
-// Any sequence that implements is_relevant must also implement
-// wait_for_relevant so that the sequencer has a way to wait for a
-// sequence to become relevant.
+  // Function: get_priority
+  //
+  // This function returns the current priority of the sequence.
 
-virtual function bit is_relevant(); 
-  is_rel_default = 1;
-  return 1;
-endfunction
+  function int get_priority();
+    return m_priority;
+  endfunction
 
 
-// Task: wait_for_relevant
-//
-// This method is called by the sequencer when all available sequences are
-// not relevant.  When wait_for_relevant returns the sequencer attempt to
-// re-arbitrate. 
-//
-// Returning from this call does not guarantee a sequence is relevant,
-// although that would be the ideal. The method provide some delay to
-// prevent an infinite loop.
-//
-// If a sequence defines is_relevant so that it is not always relevant (by
-// default, a sequence is always relevant), then the sequence must also supply
-// a wait_for_relevant method.  
+  // Function: is_relevant
+  //
+  // The default is_relevant implementation returns 1, indicating that the
+  // sequence is always relevant.
+  //
+  // Users may choose to override with their own virtual function to indicate
+  // to the sequencer that the sequence is not currently relevant after a
+  // request has been made.
+  //
+  // When the sequencer arbitrates, it will call is_relevant on each requesting,
+  // unblocked sequence to see if it is relevant. If a 0 is returned, then the
+  // sequence will not be chosen.
+  //
+  // If all requesting sequences are not relevant, then the sequencer will call
+  // wait_for_relevant on all sequences and re-arbitrate upon its return.
+  //
+  // Any sequence that implements is_relevant must also implement
+  // wait_for_relevant so that the sequencer has a way to wait for a
+  // sequence to become relevant.
 
-virtual task wait_for_relevant();
-  event e;
-  wait_rel_default = 1;
-  if (is_rel_default != wait_rel_default)
-  uvm_report_fatal("RELMSM", 
-  "is_relevant() was implemented without defining wait_for_relevant()", UVM_NONE);
-  @e;  // this is intended to never return
-endtask
-
-
-// Task: lock
-//
-// Requests a lock on the specified sequencer. If sequencer is ~null~, the lock
-// will be requested on the current default sequencer.
-//
-// A lock request will be arbitrated the same as any other request.  A lock is
-// granted after all earlier requests are completed and no other locks or
-// grabs are blocking this sequence.
-//
-// The lock call will return when the lock has been granted.
-
-task lock(uvm_sequencer_base sequencer = null);
-  if (sequencer == null)
-    sequencer = m_sequencer;
-
-  if (sequencer == null)
-    uvm_report_fatal("LOCKSEQR", "Null m_sequencer reference", UVM_NONE);
-
-  sequencer.lock(this);
-endtask
+  virtual function bit is_relevant(); 
+    is_rel_default = 1;
+    return 1;
+  endfunction
 
 
-// Task: grab
-// 
-// Requests a lock on the specified sequencer.  If no argument is supplied,
-// the lock will be requested on the current default sequencer.
-//
-// A grab request is put in front of the arbitration queue. It will be
-// arbitrated before any other requests. A grab is granted when no other grabs
-// or locks are blocking this sequence.
-//
-// The grab call will return when the grab has been granted.
+  // Task: wait_for_relevant
+  //
+  // This method is called by the sequencer when all available sequences are
+  // not relevant.  When wait_for_relevant returns the sequencer attempt to
+  // re-arbitrate. 
+  //
+  // Returning from this call does not guarantee a sequence is relevant,
+  // although that would be the ideal. The method provide some delay to
+  // prevent an infinite loop.
+  //
+  // If a sequence defines is_relevant so that it is not always relevant (by
+  // default, a sequence is always relevant), then the sequence must also supply
+  // a wait_for_relevant method.  
 
-task grab(uvm_sequencer_base sequencer = null);
-  if (sequencer == null) begin
-    if (m_sequencer == null) begin
-      uvm_report_fatal("GRAB", "Null m_sequencer reference", UVM_NONE);
+  virtual task wait_for_relevant();
+    event e;
+    wait_rel_default = 1;
+    if (is_rel_default != wait_rel_default)
+    uvm_report_fatal("RELMSM", 
+    "is_relevant() was implemented without defining wait_for_relevant()", UVM_NONE);
+    @e;  // this is intended to never return
+  endtask
+
+
+  // Task: lock
+  //
+  // Requests a lock on the specified sequencer. If sequencer is ~null~, the lock
+  // will be requested on the current default sequencer.
+  //
+  // A lock request will be arbitrated the same as any other request.  A lock is
+  // granted after all earlier requests are completed and no other locks or
+  // grabs are blocking this sequence.
+  //
+  // The lock call will return when the lock has been granted.
+
+  task lock(uvm_sequencer_base sequencer = null);
+    if (sequencer == null)
+      sequencer = m_sequencer;
+
+    if (sequencer == null)
+      uvm_report_fatal("LOCKSEQR", "Null m_sequencer reference", UVM_NONE);
+
+    sequencer.lock(this);
+  endtask
+
+
+  // Task: grab
+  // 
+  // Requests a lock on the specified sequencer.  If no argument is supplied,
+  // the lock will be requested on the current default sequencer.
+  //
+  // A grab request is put in front of the arbitration queue. It will be
+  // arbitrated before any other requests. A grab is granted when no other grabs
+  // or locks are blocking this sequence.
+  //
+  // The grab call will return when the grab has been granted.
+
+  task grab(uvm_sequencer_base sequencer = null);
+    if (sequencer == null) begin
+      if (m_sequencer == null) begin
+        uvm_report_fatal("GRAB", "Null m_sequencer reference", UVM_NONE);
+      end
+      m_sequencer.grab(this);
     end
-    m_sequencer.grab(this);
-  end
-  else begin
-    sequencer.grab(this);
-  end
-endtask
-
-
-// Function: unlock
-//
-// Removes any locks or grabs obtained by this sequence on the specified
-// sequencer. If sequencer is ~null~, then the unlock will be done on the
-// current default sequencer.
-
-function void  unlock(uvm_sequencer_base sequencer = null);
-  if (sequencer == null) begin
-    if (m_sequencer == null) begin
-      uvm_report_fatal("UNLOCK", "Null m_sequencer reference", UVM_NONE);
+    else begin
+      sequencer.grab(this);
     end
-    m_sequencer.unlock(this);
-  end else begin
-    sequencer.unlock(this);
-  end
-endfunction
+  endtask
 
 
-// Function: ungrab
-//
-// Removes any locks or grabs obtained by this sequence on the specified
-// sequencer. If sequencer is ~null~, then the unlock will be done on the
-// current default sequencer.
+  // Function: unlock
+  //
+  // Removes any locks or grabs obtained by this sequence on the specified
+  // sequencer. If sequencer is ~null~, then the unlock will be done on the
+  // current default sequencer.
 
-function void  ungrab(uvm_sequencer_base sequencer = null);
-  unlock(sequencer);
-endfunction
-
-
-// Function: is_blocked
-//
-// Returns a bit indicating whether this sequence is currently prevented from
-// running due to another lock or grab. A 1 is returned if the sequence is
-// currently blocked. A 0 is returned if no lock or grab prevents this
-// sequence from executing. Note that even if a sequence is not blocked, it
-// is possible for another sequence to issue a lock or grab before this
-// sequence can issue a request.
-
-function bit is_blocked();
-  return m_sequencer.is_blocked(this);
-endfunction
+  function void  unlock(uvm_sequencer_base sequencer = null);
+    if (sequencer == null) begin
+      if (m_sequencer == null) begin
+        uvm_report_fatal("UNLOCK", "Null m_sequencer reference", UVM_NONE);
+      end
+      m_sequencer.unlock(this);
+    end else begin
+      sequencer.unlock(this);
+    end
+  endfunction
 
 
-// Function: has_lock
-//
-// Returns 1 if this sequence has a lock, 0 otherwise.
-//
-// Note that even if this sequence has a lock, a child sequence may also have
-// a lock, in which case the sequence is still blocked from issuing
-// operations on the sequencer.
+  // Function: ungrab
+  //
+  // Removes any locks or grabs obtained by this sequence on the specified
+  // sequencer. If sequencer is ~null~, then the unlock will be done on the
+  // current default sequencer.
 
-function bit has_lock();
-  return m_sequencer.has_lock(this);
-endfunction
+  function void  ungrab(uvm_sequencer_base sequencer = null);
+    unlock(sequencer);
+  endfunction
 
 
-// Function: kill
-//
-// This function will kill the sequence, and cause all current locks and
-// requests in the sequence's default sequencer to be removed. The sequence
-// state will change to UVM_STOPPED, and the post_body() and post_start() callback
-// methods will not be executed.
-//
-// If a sequence has issued locks, grabs, or requests on sequencers other than
-// the default sequencer, then care must be taken to unregister the sequence
-// with the other sequencer(s) using the sequencer unregister_sequence() 
-// method.
+  // Function: is_blocked
+  //
+  // Returns a bit indicating whether this sequence is currently prevented from
+  // running due to another lock or grab. A 1 is returned if the sequence is
+  // currently blocked. A 0 is returned if no lock or grab prevents this
+  // sequence from executing. Note that even if a sequence is not blocked, it
+  // is possible for another sequence to issue a lock or grab before this
+  // sequence can issue a request.
 
-function void kill();
-  if (m_sequence_process != null) begin
-    // If we are not connected to a sequencer, then issue
-    // kill locally.
-    if (m_sequencer == null) begin
-      m_kill();
+  function bit is_blocked();
+    return m_sequencer.is_blocked(this);
+  endfunction
+
+
+  // Function: has_lock
+  //
+  // Returns 1 if this sequence has a lock, 0 otherwise.
+  //
+  // Note that even if this sequence has a lock, a child sequence may also have
+  // a lock, in which case the sequence is still blocked from issuing
+  // operations on the sequencer.
+
+  function bit has_lock();
+    return m_sequencer.has_lock(this);
+  endfunction
+
+
+  // Function: kill
+  //
+  // This function will kill the sequence, and cause all current locks and
+  // requests in the sequence's default sequencer to be removed. The sequence
+  // state will change to UVM_STOPPED, and the post_body() and post_start() callback
+  // methods will not be executed.
+  //
+  // If a sequence has issued locks, grabs, or requests on sequencers other than
+  // the default sequencer, then care must be taken to unregister the sequence
+  // with the other sequencer(s) using the sequencer unregister_sequence() 
+  // method.
+
+  function void kill();
+    if (m_sequence_process != null) begin
+      // If we are not connected to a sequencer, then issue
+      // kill locally.
+      if (m_sequencer == null) begin
+        m_kill();
+        // We need to drop the objection if we raised it...
+        if (get_automatic_phase_objection()) begin
+          m_safe_drop_starting_phase("automatic phase objection");
+        end
+        return;
+      end
+      // If we are attached to a sequencer, then the sequencer
+      // will clear out queues, and then kill this sequence
+      m_sequencer.kill_sequence(this);
       // We need to drop the objection if we raised it...
       if (get_automatic_phase_objection()) begin
         m_safe_drop_starting_phase("automatic phase objection");
       end
       return;
     end
-    // If we are attached to a sequencer, then the sequencer
-    // will clear out queues, and then kill this sequence
-    m_sequencer.kill_sequence(this);
-    // We need to drop the objection if we raised it...
-    if (get_automatic_phase_objection()) begin
-      m_safe_drop_starting_phase("automatic phase objection");
-    end
+  endfunction
+
+
+  // Function: do_kill
+  // 
+  // This function is a user hook that is called whenever a sequence is
+  // terminated by using either sequence.kill() or sequencer.stop_sequences()
+  // (which effectively calls sequence.kill()).
+
+  virtual function void do_kill();
     return;
-  end
-endfunction
+  endfunction
+
+  function void m_kill();
+    do_kill();
+    foreach(children_array[i]) begin
+      i.kill();
+    end
+    if (m_sequence_process != null) begin
+      m_sequence_process.kill;
+      m_sequence_process = null;
+    end
+    m_sequence_state = UVM_STOPPED;
+    if ((m_parent_sequence != null) && (m_parent_sequence.children_array.exists(this)))
+      m_parent_sequence.children_array.delete(this);
+  endfunction
 
 
-// Function: do_kill
-// 
-// This function is a user hook that is called whenever a sequence is
-// terminated by using either sequence.kill() or sequencer.stop_sequences()
-// (which effectively calls sequence.kill()).
+  //-------------------------------
+  // Group: Sequence Item Execution
+  //-------------------------------
 
-virtual function void do_kill();
-  return;
-endfunction
+  // Function: create_item
+  //
+  // Create_item will create and initialize a sequence_item or sequence
+  // using the factory.  The sequence_item or sequence will be initialized
+  // to communicate with the specified sequencer.
 
-function void m_kill();
-  do_kill();
-  foreach(children_array[i]) begin
-    i.kill();
-  end
-  if (m_sequence_process != null) begin
-    m_sequence_process.kill;
-    m_sequence_process = null;
-  end
-  m_sequence_state = UVM_STOPPED;
-  if ((m_parent_sequence != null) && (m_parent_sequence.children_array.exists(this)))
-    m_parent_sequence.children_array.delete(this);
-endfunction
+  protected function uvm_sequence_item create_item(uvm_object_wrapper type_var, 
+                                                   uvm_sequencer_base l_sequencer, string name);
 
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+    $cast(create_item,  factory.create_object_by_type( type_var, this.get_full_name(), name ));
 
-//-------------------------------
-// Group: Sequence Item Execution
-//-------------------------------
-
-// Function: create_item
-//
-// Create_item will create and initialize a sequence_item or sequence
-// using the factory.  The sequence_item or sequence will be initialized
-// to communicate with the specified sequencer.
-
-protected function uvm_sequence_item create_item(uvm_object_wrapper type_var, 
-uvm_sequencer_base l_sequencer, string name);
-
-uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-uvm_factory factory=cs.get_factory();
-$cast(create_item,  factory.create_object_by_type( type_var, this.get_full_name(), name ));
-
-create_item.set_item_context(this, l_sequencer);
+    create_item.set_item_context(this, l_sequencer);
   endfunction
 
 
@@ -957,81 +957,81 @@ create_item.set_item_context(this, l_sequencer);
   //
 
   virtual task start_item (uvm_sequence_item item,
-      int set_priority = -1,
-  uvm_sequencer_base sequencer=null);
-  uvm_sequence_base seq;
+                           int set_priority = -1,
+                           uvm_sequencer_base sequencer=null);
+    uvm_sequence_base seq;
 
-  if(item == null) begin
-    uvm_report_fatal("NULLITM",
-      {"attempting to start a null item from sequence '",
-    get_full_name(), "'"}, UVM_NONE);
-    return;
-  end
+    if(item == null) begin
+      uvm_report_fatal("NULLITM",
+        {"attempting to start a null item from sequence '",
+      get_full_name(), "'"}, UVM_NONE);
+      return;
+    end
 
-  if($cast(seq, item)) begin
-    uvm_report_fatal("SEQNOTITM",
-      {"attempting to start a sequence using start_item() from sequence '",
-    get_full_name(), "'. Use seq.start() instead."}, UVM_NONE);
-    return;
-  end
+    if($cast(seq, item)) begin
+      uvm_report_fatal("SEQNOTITM",
+        {"attempting to start a sequence using start_item() from sequence '",
+      get_full_name(), "'. Use seq.start() instead."}, UVM_NONE);
+      return;
+    end
 
-  if (sequencer == null)
+    if (sequencer == null)
+      sequencer = item.get_sequencer();
+
+    if(sequencer == null)
+      sequencer = get_sequencer();   
+
+    if(sequencer == null) begin
+      uvm_report_fatal("SEQ",{"neither the item's sequencer nor dedicated sequencer has been supplied to start item in ",get_full_name()},UVM_NONE);
+      return;
+    end
+
+    item.set_item_context(this, sequencer);
+
+    if (set_priority < 0)
+      set_priority = get_priority();
+
+    sequencer.wait_for_grant(this, set_priority);
+
+    if (sequencer.is_auto_item_recording_enabled()) begin
+      void'(sequencer.begin_child_tr(item, 
+        (m_tr_recorder == null) ? 0 : m_tr_recorder.get_handle(), 
+      item.get_root_sequence_name(), "Transactions"));
+    end
+
+    pre_do(1);
+
+  endtask  
+
+
+  // Function: finish_item
+  //
+  // finish_item, together with start_item together will initiate operation of 
+  // a sequence_item.  Finish_item must be called
+  // after start_item with no delays or delta-cycles.  Randomization, or other
+  // functions may be called between the start_item and finish_item calls.
+  //
+
+  virtual task finish_item (uvm_sequence_item item,
+                            int set_priority = -1);
+
+    uvm_sequencer_base sequencer;
+
     sequencer = item.get_sequencer();
 
-  if(sequencer == null)
-    sequencer = get_sequencer();   
+    if (sequencer == null) begin
+      uvm_report_fatal("STRITM", "sequence_item has null sequencer", UVM_NONE);
+    end
 
-  if(sequencer == null) begin
-    uvm_report_fatal("SEQ",{"neither the item's sequencer nor dedicated sequencer has been supplied to start item in ",get_full_name()},UVM_NONE);
-    return;
-  end
+    mid_do(item);
+    sequencer.send_request(this, item);
+    sequencer.wait_for_item_done(this, -1);
 
-  item.set_item_context(this, sequencer);
+    if (sequencer.is_auto_item_recording_enabled()) begin
+      sequencer.end_tr(item);
+    end
 
-  if (set_priority < 0)
-    set_priority = get_priority();
-
-  sequencer.wait_for_grant(this, set_priority);
-
-  if (sequencer.is_auto_item_recording_enabled()) begin
-    void'(sequencer.begin_child_tr(item, 
-      (m_tr_recorder == null) ? 0 : m_tr_recorder.get_handle(), 
-    item.get_root_sequence_name(), "Transactions"));
-  end
-
-  pre_do(1);
-
-endtask  
-
-
-// Function: finish_item
-//
-// finish_item, together with start_item together will initiate operation of 
-// a sequence_item.  Finish_item must be called
-// after start_item with no delays or delta-cycles.  Randomization, or other
-// functions may be called between the start_item and finish_item calls.
-//
-
-virtual task finish_item (uvm_sequence_item item,
-int set_priority = -1);
-
-uvm_sequencer_base sequencer;
-
-sequencer = item.get_sequencer();
-
-if (sequencer == null) begin
-  uvm_report_fatal("STRITM", "sequence_item has null sequencer", UVM_NONE);
-end
-
-mid_do(item);
-sequencer.send_request(this, item);
-sequencer.wait_for_item_done(this, -1);
-
-if (sequencer.is_auto_item_recording_enabled()) begin
-  sequencer.end_tr(item);
-end
-
-post_do(item);
+    post_do(item);
 
   endtask
 

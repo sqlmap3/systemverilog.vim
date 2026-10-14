@@ -265,42 +265,42 @@ endfunction
 // ------------
 
 function void uvm_sequencer_param_base::send_request(uvm_sequence_base sequence_ptr,
-    uvm_sequence_item t,
-bit rerandomize = 0);
-REQ param_t;
+                                                     uvm_sequence_item t,
+                                                     bit rerandomize = 0);
+  REQ param_t;
 
-if (sequence_ptr == null) begin
-  uvm_report_fatal("SNDREQ", "Send request sequence_ptr is null", UVM_NONE);
-end
+  if (sequence_ptr == null) begin
+    uvm_report_fatal("SNDREQ", "Send request sequence_ptr is null", UVM_NONE);
+  end
 
-if (sequence_ptr.m_wait_for_grant_semaphore < 1) begin
-  uvm_report_fatal("SNDREQ", "Send request called without wait_for_grant", UVM_NONE);
-end
-sequence_ptr.m_wait_for_grant_semaphore--;
+  if (sequence_ptr.m_wait_for_grant_semaphore < 1) begin
+    uvm_report_fatal("SNDREQ", "Send request called without wait_for_grant", UVM_NONE);
+  end
+  sequence_ptr.m_wait_for_grant_semaphore--;
 
-if ($cast(param_t, t)) begin
-  if (rerandomize == 1) begin
-    if (!param_t.randomize()) begin
-      uvm_report_warning("SQRSNDREQ", "Failed to rerandomize sequence item in send_request");
+  if ($cast(param_t, t)) begin
+    if (rerandomize == 1) begin
+      if (!param_t.randomize()) begin
+        uvm_report_warning("SQRSNDREQ", "Failed to rerandomize sequence item in send_request");
+      end
     end
+    if (param_t.get_transaction_id() == -1) begin
+      param_t.set_transaction_id(sequence_ptr.m_next_transaction_id++);
+    end
+    m_last_req_push_front(param_t);
+  end else begin
+    uvm_report_fatal(get_name(),$sformatf("send_request failed to cast sequence item"), UVM_NONE);
   end
-  if (param_t.get_transaction_id() == -1) begin
-    param_t.set_transaction_id(sequence_ptr.m_next_transaction_id++);
+
+  param_t.set_sequence_id(sequence_ptr.m_get_sqr_sequence_id(m_sequencer_id, 1));
+  t.set_sequencer(this);
+  if (m_req_fifo.try_put(param_t) != 1) begin
+    uvm_report_fatal(get_full_name(), "Concurrent calls to get_next_item() not supported. Consider using a semaphore to ensure that concurrent processes take turns in the driver", UVM_NONE);
   end
-  m_last_req_push_front(param_t);
-end else begin
-  uvm_report_fatal(get_name(),$sformatf("send_request failed to cast sequence item"), UVM_NONE);
-end
 
-param_t.set_sequence_id(sequence_ptr.m_get_sqr_sequence_id(m_sequencer_id, 1));
-t.set_sequencer(this);
-if (m_req_fifo.try_put(param_t) != 1) begin
-  uvm_report_fatal(get_full_name(), "Concurrent calls to get_next_item() not supported. Consider using a semaphore to ensure that concurrent processes take turns in the driver", UVM_NONE);
-end
-
-m_num_reqs_sent++;
-// Grant any locks as soon as possible
-grant_queued_locks();
+  m_num_reqs_sent++;
+  // Grant any locks as soon as possible
+  grant_queued_locks();
 endfunction
 
 

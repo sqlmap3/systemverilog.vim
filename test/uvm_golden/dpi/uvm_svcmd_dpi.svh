@@ -62,4 +62,4 @@
   function int uvm_dpi_regexec(chandle preg, string str); return 0; endfunction
   function void uvm_dpi_regfree(chandle preg); endfunction
 
-`endif
+  `endif

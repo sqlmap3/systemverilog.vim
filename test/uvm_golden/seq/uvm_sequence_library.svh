@@ -371,14 +371,14 @@ class uvm_sequence_library_cfg extends uvm_object;
   int unsigned min_random_count;
   int unsigned max_random_count;
   function new(string name="",
-      uvm_sequence_lib_mode mode=UVM_SEQ_LIB_RAND,
-      int unsigned min=1,
-  int unsigned max=10);
-  super.new(name);
-  selection_mode = mode;
-  min_random_count = min;
-  max_random_count = max;
-endfunction
+               uvm_sequence_lib_mode mode=UVM_SEQ_LIB_RAND,
+               int unsigned min=1,
+               int unsigned max=10);
+    super.new(name);
+    selection_mode = mode;
+    min_random_count = min;
+    max_random_count = max;
+  endfunction
 endclass
 
 

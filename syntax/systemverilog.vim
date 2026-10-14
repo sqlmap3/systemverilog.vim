@@ -11,9 +11,18 @@ endif
 let b:current_syntax = "systemverilog"
 
 syntax match svTodo "\c\<\(todo\|fixme\|fix\|xxx\|bug\|hack\|note\|warn\|warning\|optimize\|review\|tbd\)\>" contained
+syntax match svDocTag "\c[@\\]\(param\(\[[a-z, ]\+\]\)\?\|return\|returns\|brief\|details\|see\|author\|version\|date\|note\|warning\|todo\|deprecated\|throws\|exception\)\>" contained
 syntax match svLineComment "//.*" contains=svTodo
 syntax region svBlockComment start="/\*" end="\*/" contains=svTodo
-syntax region svString start=+"+ skip=+\\"+ end=+"+ contains=NONE
+syntax match svDocLineComment "///.*" contains=svTodo,svDocTag
+syntax region svDocBlockComment start="/\*\*" end="\*/" contains=svTodo,svDocTag
+syntax match svFormatSpecifier "%[0-9]*\(\.[0-9]\+\)\?[cdieEfgGhHoxXsuUvVzZtTmbB%]" contained
+syntax match svStringEscape "\\[ntrfbaev\\"'?]" contained
+syntax match svStringEscape "\\x[0-9a-fA-F]\{1,2\}" contained
+syntax match svStringEscape "\\[0-7]\{1,3\}" contained
+syntax region svString start=+"+ skip=+\\"+ end=+"+ contains=svFormatSpecifier,svStringEscape
+syntax match svUserType "\<\h\w*_[tes]\>"
+syntax match svScopePrefix "\<\h\w*\ze::"
 syntax keyword svType real realtime event reg wire integer logic bit time byte chandle genvar signed unsigned shortint shortreal string void int specparam
 syntax keyword svDirection input output inout ref
 syntax keyword svStorageClass virtual var protected rand const static automatic extern forkjoin export import
@@ -106,6 +115,7 @@ syntax match svOperator "\(\~\|&\|||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\
 syntax match svDelimiter "\({\|}\|(\|)\)"
 
 syntax match svSVAOp "\(|->\||=>\|#[-=]#\|##\(\d\+\|\[\d\+\(:\d\+\)\?\]\)\?\|\[\%(\*\|+\|=\|->\)\d*\(:\d\+\)\?\]\)"
+
 
 " Covergroup / coverpoint / bins names
 syntax keyword svCovergroupKw covergroup nextgroup=svCovergroupName skipwhite skipempty
@@ -374,8 +384,15 @@ highlight! default link uvmMethodInfo Global
 highlight! default link svTodo Todo
 highlight! default link svLineComment Comment
 highlight! default link svBlockComment Comment
+highlight! default link svDocLineComment Comment
+highlight! default link svDocBlockComment Comment
+highlight! default link svDocTag SpecialComment
 highlight! default link svString String
+highlight! default link svFormatSpecifier SpecialChar
+highlight! default link svStringEscape SpecialChar
 highlight! default link svType Type
+highlight! default link svUserType Type
+highlight! default link svScopePrefix Structure
 highlight! default link svDirection StorageClass
 highlight! default link svStorageClass StorageClass
 highlight! default link svPreProc PreProc

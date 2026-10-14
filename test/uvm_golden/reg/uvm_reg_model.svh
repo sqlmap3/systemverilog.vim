@@ -367,15 +367,15 @@ class uvm_hdl_path_concat;
   // Append the specified ~path~ to the path concatenation,
   // for the specified number of bits at the specified ~offset~.
   function void add_path(string path,
-      int unsigned offset = -1,
-  int unsigned size = -1);
-  uvm_hdl_path_slice t;
-  t.offset = offset;
-  t.path   = path;
-  t.size   = size;
+                         int unsigned offset = -1,
+                         int unsigned size = -1);
+    uvm_hdl_path_slice t;
+    t.offset = offset;
+    t.path   = path;
+    t.size   = size;
 
-  add_slice(t);
-endfunction
+    add_slice(t);
+  endfunction
 
 endclass
 

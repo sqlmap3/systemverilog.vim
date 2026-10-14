@@ -170,42 +170,42 @@ class uvm_parent_child_link extends uvm_link_base;
   // name - Optional name for the link object
   //
   static function uvm_parent_child_link get_link(uvm_object lhs,
-      uvm_object rhs,
-  string name="pc_link");
-  uvm_parent_child_link pc_link = new(name);
-  pc_link.set(lhs, rhs);
-  return pc_link;
-endfunction : get_link
+                                                 uvm_object rhs,
+                                                 string name="pc_link");
+    uvm_parent_child_link pc_link = new(name);
+    pc_link.set(lhs, rhs);
+    return pc_link;
+  endfunction : get_link
 
-// Group: Implementation Callbacks
+  // Group: Implementation Callbacks
 
-// Function: do_set_lhs
-// Sets the left-hand-side (Parent)
-//
-virtual function void do_set_lhs(uvm_object lhs);
-  m_lhs = lhs;
-endfunction : do_set_lhs
+  // Function: do_set_lhs
+  // Sets the left-hand-side (Parent)
+  //
+  virtual function void do_set_lhs(uvm_object lhs);
+    m_lhs = lhs;
+  endfunction : do_set_lhs
 
-// Function: do_get_lhs
-// Retrieves the left-hand-side (Parent)
-//
-virtual function uvm_object do_get_lhs();
-  return m_lhs;
-endfunction : do_get_lhs
+  // Function: do_get_lhs
+  // Retrieves the left-hand-side (Parent)
+  //
+  virtual function uvm_object do_get_lhs();
+    return m_lhs;
+  endfunction : do_get_lhs
 
-// Function: do_set_rhs
-// Sets the right-hand-side (Child)
-//
-virtual function void do_set_rhs(uvm_object rhs);
-  m_rhs = rhs;
-endfunction : do_set_rhs
+  // Function: do_set_rhs
+  // Sets the right-hand-side (Child)
+  //
+  virtual function void do_set_rhs(uvm_object rhs);
+    m_rhs = rhs;
+  endfunction : do_set_rhs
 
-// Function: do_get_rhs
-// Retrieves the right-hand-side (Child)
-//
-virtual function uvm_object do_get_rhs();
-  return m_rhs;
-endfunction : do_get_rhs
+  // Function: do_get_rhs
+  // Retrieves the right-hand-side (Child)
+  //
+  virtual function uvm_object do_get_rhs();
+    return m_rhs;
+  endfunction : do_get_rhs
 
 endclass : uvm_parent_child_link
 
@@ -249,42 +249,42 @@ class uvm_cause_effect_link extends uvm_link_base;
   // name - Optional name for the link object
   //
   static function uvm_cause_effect_link get_link(uvm_object lhs,
-      uvm_object rhs,
-  string name="ce_link");
-  uvm_cause_effect_link ce_link = new(name);
-  ce_link.set(lhs, rhs);
-  return ce_link;
-endfunction : get_link
+                                                 uvm_object rhs,
+                                                 string name="ce_link");
+    uvm_cause_effect_link ce_link = new(name);
+    ce_link.set(lhs, rhs);
+    return ce_link;
+  endfunction : get_link
 
-// Group: Implementation Callbacks
+  // Group: Implementation Callbacks
 
-// Function: do_set_lhs
-// Sets the left-hand-side (Cause)
-//
-virtual function void do_set_lhs(uvm_object lhs);
-  m_lhs = lhs;
-endfunction : do_set_lhs
+  // Function: do_set_lhs
+  // Sets the left-hand-side (Cause)
+  //
+  virtual function void do_set_lhs(uvm_object lhs);
+    m_lhs = lhs;
+  endfunction : do_set_lhs
 
-// Function: do_get_lhs
-// Retrieves the left-hand-side (Cause)
-//
-virtual function uvm_object do_get_lhs();
-  return m_lhs;
-endfunction : do_get_lhs
+  // Function: do_get_lhs
+  // Retrieves the left-hand-side (Cause)
+  //
+  virtual function uvm_object do_get_lhs();
+    return m_lhs;
+  endfunction : do_get_lhs
 
-// Function: do_set_rhs
-// Sets the right-hand-side (Effect)
-//
-virtual function void do_set_rhs(uvm_object rhs);
-  m_rhs = rhs;
-endfunction : do_set_rhs
+  // Function: do_set_rhs
+  // Sets the right-hand-side (Effect)
+  //
+  virtual function void do_set_rhs(uvm_object rhs);
+    m_rhs = rhs;
+  endfunction : do_set_rhs
 
-// Function: do_get_rhs
-// Retrieves the right-hand-side (Effect)
-//
-virtual function uvm_object do_get_rhs();
-  return m_rhs;
-endfunction : do_get_rhs
+  // Function: do_get_rhs
+  // Retrieves the right-hand-side (Effect)
+  //
+  virtual function uvm_object do_get_rhs();
+    return m_rhs;
+  endfunction : do_get_rhs
 
 endclass : uvm_cause_effect_link
 
@@ -328,42 +328,42 @@ class uvm_related_link extends uvm_link_base;
   // name - Optional name for the link object
   //
   static function uvm_related_link get_link(uvm_object lhs,
-      uvm_object rhs,
-  string name="ce_link");
-  uvm_related_link ce_link = new(name);
-  ce_link.set(lhs, rhs);
-  return ce_link;
-endfunction : get_link
+                                            uvm_object rhs,
+                                            string name="ce_link");
+    uvm_related_link ce_link = new(name);
+    ce_link.set(lhs, rhs);
+    return ce_link;
+  endfunction : get_link
 
-// Group: Implementation Callbacks
+  // Group: Implementation Callbacks
 
-// Function: do_set_lhs
-// Sets the left-hand-side
-//
-virtual function void do_set_lhs(uvm_object lhs);
-  m_lhs = lhs;
-endfunction : do_set_lhs
+  // Function: do_set_lhs
+  // Sets the left-hand-side
+  //
+  virtual function void do_set_lhs(uvm_object lhs);
+    m_lhs = lhs;
+  endfunction : do_set_lhs
 
-// Function: do_get_lhs
-// Retrieves the left-hand-side
-//
-virtual function uvm_object do_get_lhs();
-  return m_lhs;
-endfunction : do_get_lhs
+  // Function: do_get_lhs
+  // Retrieves the left-hand-side
+  //
+  virtual function uvm_object do_get_lhs();
+    return m_lhs;
+  endfunction : do_get_lhs
 
-// Function: do_set_rhs
-// Sets the right-hand-side
-//
-virtual function void do_set_rhs(uvm_object rhs);
-  m_rhs = rhs;
-endfunction : do_set_rhs
+  // Function: do_set_rhs
+  // Sets the right-hand-side
+  //
+  virtual function void do_set_rhs(uvm_object rhs);
+    m_rhs = rhs;
+  endfunction : do_set_rhs
 
-// Function: do_get_rhs
-// Retrieves the right-hand-side
-//
-virtual function uvm_object do_get_rhs();
-  return m_rhs;
-endfunction : do_get_rhs
+  // Function: do_get_rhs
+  // Retrieves the right-hand-side
+  //
+  virtual function uvm_object do_get_rhs();
+    return m_rhs;
+  endfunction : do_get_rhs
 
 endclass : uvm_related_link
 

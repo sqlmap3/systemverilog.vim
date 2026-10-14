@@ -23,7 +23,7 @@ let g:colors_name = "systemverilog_uvm"
 " ---------------------------------------------------------------------------
 if &background ==# 'dark'
   let s:P = {
-        \ 'bg':        ['#1e1e1e', 234], 'fg': ['#d4d4d4', 252],
+        \ 'bg':        ['#1e1e24', 234], 'fg': ['#dcdfe4', 252],
         \ 'comment':   ['#6a9955', 65 ], 'string': ['#ce9178', 173],
         \ 'number':    ['#b5cea8', 151], 'keyword': ['#c586c0', 175],
         \ 'type':      ['#4ec9b0', 79 ], 'storage': ['#569cd6', 75 ],
@@ -36,8 +36,14 @@ if &background ==# 'dark'
         \ 'uvmtlm':    ['#61afef', 75 ], 'uvmreg':  ['#56b6c2', 73 ],
         \ 'uvmconfig': ['#c678dd', 176], 'uvmresource': ['#e5c07b', 180],
         \ 'uvmphase':  ['#d19a66', 173], 'uvmobjection': ['#e06c75', 168],
-        \ 'uvmfactory':['#d19a66', 173], 'ident':  ['#d4d4d4', 252],
+        \ 'uvmfactory':['#d19a66', 173], 'ident':  ['#dcdfe4', 252],
         \ 'todo':      ['#d16969', 167],
+        \ 'direction': ['#56b6c2', 73 ], 'instance': ['#e5c07b', 180],
+        \ 'namedport': ['#7ee787', 120], 'structfield': ['#9cdcfe', 117],
+        \ 'paramname': ['#d2a8ff', 183], 'bins':   ['#a8ff60', 155],
+        \ 'formatspec':['#ffcb6b', 221], 'escape': ['#f78c6c', 209],
+        \ 'doccomment':['#7ca668', 107], 'doctag': ['#56b6c2', 73 ],
+        \ 'scope':     ['#c678dd', 176], 'property': ['#e5c07b', 180],
         \ }
 else
   let s:P = {
@@ -56,6 +62,12 @@ else
         \ 'uvmphase':  ['#a75500', 130], 'uvmobjection': ['#ca1243', 161],
         \ 'uvmfactory':['#5b4a9e', 61 ], 'ident':  ['#383a42', 237],
         \ 'todo':      ['#d01010', 160],
+        \ 'direction': ['#0086a8', 31 ], 'instance': ['#953800', 130],
+        \ 'namedport': ['#1a7f37', 28 ], 'structfield': ['#0969da', 26 ],
+        \ 'paramname': ['#8250df', 97 ], 'bins':   ['#116329', 28 ],
+        \ 'formatspec':['#b76b01', 136], 'escape': ['#d01010', 160],
+        \ 'doccomment':['#5c6370', 241], 'doctag': ['#0086a8', 31 ],
+        \ 'scope':     ['#6f42c1', 98 ], 'property': ['#953800', 130],
         \ }
 endif
 
@@ -94,7 +106,12 @@ hi Todo        guifg=#d16969 ctermfg=167 gui=bold
 call s:h('Comment',      'comment', 'gui=italic')
 call s:h('svLineComment','comment', 'gui=italic')
 call s:h('svBlockComment','comment', 'gui=italic')
+call s:h('svDocLineComment','doccomment', 'gui=italic')
+call s:h('svDocBlockComment','doccomment', 'gui=italic')
+call s:h('svDocTag',     'doctag', 'gui=bold,italic')
 call s:h('svString',     'string')
+call s:h('svFormatSpecifier','formatspec', 'gui=bold')
+call s:h('svStringEscape','escape')
 call s:h('svIncludeString','string')
 call s:h('svIncludeAngle','string')
 call s:h('svInteger',    'number')
@@ -106,12 +123,14 @@ call s:h('svRepeat',     'storage')
 call s:h('svOperator',   'fg')
 call s:h('svDelimiter',  'fg')
 call s:h('svType',       'type')
+call s:h('svUserType',   'type')
+call s:h('svScopePrefix','scope')
 call s:h('svVirtualIfaceType','type')
 call s:h('svClassName',  'type')
 call s:h('svTypedefName','type')
 call s:h('svCovergroupName','type')
 call s:h('svStorageClass','storage')
-call s:h('svDirection',  'storage')
+call s:h('svDirection',  'direction', 'gui=italic')
 call s:h('svStructure',  'struct')
 call s:h('svTypedef',    'keyword')
 call s:h('svFunctionName','func')
@@ -144,19 +163,24 @@ call s:h('svIfndefTok',  'keyword')
 call s:h('svIncludeExt', 'special')
 call s:h('svTimeUnitHash','special')
 call s:h('svTimeUnitPlain','special')
-call s:h('svModuleName', 'ident')
-call s:h('svInterfaceName','ident')
-call s:h('svPackageName','ident')
-call s:h('svParamName',  'ident')
-call s:h('svPortName',   'ident')
-call s:h('svInstanceName','ident')
-call s:h('svStructField','ident')
-call s:h('svNamedPort',  'ident')
-call s:h('svBinsName',   'ident')
-call s:h('svBinsofExpr', 'ident')
-call s:h('svIntersectExpr','ident')
-call s:h('svCoverWithPred','ident')
-call s:h('svCoverIffPred','ident')
+call s:h('svModuleName', 'type', 'gui=bold')
+call s:h('svInterfaceName','type', 'gui=bold')
+call s:h('svPackageName','type', 'gui=bold')
+call s:h('svParamName',  'paramname')
+call s:h('svPortName',   'namedport')
+call s:h('svInstanceName','instance', 'gui=bold')
+call s:h('svStructField','structfield')
+call s:h('svArgName',    'structfield')
+call s:h('svNamedPort',  'namedport', 'gui=bold')
+call s:h('svBinsName',   'bins')
+call s:h('svBinsofExpr', 'bins')
+call s:h('svIntersectExpr','bins')
+call s:h('svCoverWithPred','bins')
+call s:h('svCoverIffPred','bins')
+call s:h('svModuleKw',   'keyword', 'gui=bold')
+call s:h('svInterfaceKw','keyword', 'gui=bold')
+call s:h('svPackageKw',  'keyword', 'gui=bold')
+call s:h('svClassKw',    'keyword', 'gui=bold')
 
 " ---------------------------------------------------------------------------
 " UVM groups - high distinction: each semantic category gets its own color

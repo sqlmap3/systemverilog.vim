@@ -141,43 +141,43 @@ class uvm_reg_single_bit_bash_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_
 
 
   task bash_kth_bit(uvm_reg         rg,
-      int             k,
-      string          mode,
-      uvm_reg_map     map,
-  uvm_reg_data_t  dc_mask);
-  uvm_status_e status;
-  uvm_reg_data_t  val, exp, v;
-  bit bit_val;
+                    int             k,
+                    string          mode,
+                    uvm_reg_map     map,
+                    uvm_reg_data_t  dc_mask);
+    uvm_status_e status;
+    uvm_reg_data_t  val, exp, v;
+    bit bit_val;
 
-  `uvm_info("uvm_reg_bit_bash_seq", $sformatf("...Bashing %s bit #%0d", mode, k),UVM_HIGH);
+    `uvm_info("uvm_reg_bit_bash_seq", $sformatf("...Bashing %s bit #%0d", mode, k),UVM_HIGH);
 
-  repeat (2) begin
-    val = rg.get();
-    v   = val;
-    exp = val;
-    val[k] = ~val[k];
-    bit_val = val[k];
+    repeat (2) begin
+      val = rg.get();
+      v   = val;
+      exp = val;
+      val[k] = ~val[k];
+      bit_val = val[k];
 
-    rg.write(status, val, UVM_FRONTDOOR, map, this);
-    if (status != UVM_IS_OK) begin
-      `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Status was %s when writing to register \"%s\" through map \"%s\".",
-      status.name(), rg.get_full_name(), map.get_full_name()));
+      rg.write(status, val, UVM_FRONTDOOR, map, this);
+      if (status != UVM_IS_OK) begin
+        `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Status was %s when writing to register \"%s\" through map \"%s\".",
+        status.name(), rg.get_full_name(), map.get_full_name()));
+      end
+
+      exp = rg.get() & ~dc_mask;
+      rg.read(status, val, UVM_FRONTDOOR, map, this);
+      if (status != UVM_IS_OK) begin
+        `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Status was %s when reading register \"%s\" through map \"%s\".",
+        status.name(), rg.get_full_name(), map.get_full_name()));
+      end
+
+      val &= ~dc_mask;
+      if (val !== exp) begin
+        `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Writing a %b in bit #%0d of register \"%s\" with initial value 'h%h yielded 'h%h instead of 'h%h",
+        bit_val, k, rg.get_full_name(), v, val, exp));
+      end
     end
-
-    exp = rg.get() & ~dc_mask;
-    rg.read(status, val, UVM_FRONTDOOR, map, this);
-    if (status != UVM_IS_OK) begin
-      `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Status was %s when reading register \"%s\" through map \"%s\".",
-      status.name(), rg.get_full_name(), map.get_full_name()));
-    end
-
-    val &= ~dc_mask;
-    if (val !== exp) begin
-      `uvm_error("uvm_reg_bit_bash_seq", $sformatf("Writing a %b in bit #%0d of register \"%s\" with initial value 'h%h yielded 'h%h instead of 'h%h",
-      bit_val, k, rg.get_full_name(), v, val, exp));
-    end
-  end
-endtask: bash_kth_bit
+  endtask: bash_kth_bit
 
 endclass: uvm_reg_single_bit_bash_seq
 

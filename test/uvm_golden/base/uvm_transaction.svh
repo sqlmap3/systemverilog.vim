@@ -479,13 +479,13 @@ endclass
 // ---
 
 function uvm_transaction::new (string name="", 
-uvm_component initiator = null);
+                               uvm_component initiator = null);
 
-super.new(name);
-this.initiator = initiator;
-m_transaction_id = -1;
-begin_event = events.get("begin");
-end_event = events.get("end");
+  super.new(name);
+  this.initiator = initiator;
+  m_transaction_id = -1;
+  begin_event = events.get("begin");
+  end_event = events.get("end");
 
 endfunction // uvm_transaction
 
@@ -691,63 +691,63 @@ endfunction
 
 //Use a parent handle of zero to link to the parent after begin
 function integer uvm_transaction::begin_child_tr (time begin_time=0,
-integer parent_handle=0); 
-return m_begin_tr(begin_time, parent_handle);
+                                                  integer parent_handle=0); 
+  return m_begin_tr(begin_time, parent_handle);
 endfunction
 
 // m_begin_tr
 // -----------
 
 function integer uvm_transaction::m_begin_tr (time begin_time=0, 
-integer parent_handle=0);
-time tmp_time = (begin_time == 0) ? $realtime : begin_time;
-uvm_recorder parent_recorder;
+                                              integer parent_handle=0);
+  time tmp_time = (begin_time == 0) ? $realtime : begin_time;
+  uvm_recorder parent_recorder;
 
-if (parent_handle != 0)
-  parent_recorder = uvm_recorder::get_recorder_from_handle(parent_handle);
+  if (parent_handle != 0)
+    parent_recorder = uvm_recorder::get_recorder_from_handle(parent_handle);
 
-// If we haven't ended the previous record, end it.
-if (tr_recorder != null)
-  // Don't free the handle, someone else may be using it...
-  end_tr(tmp_time);
+  // If we haven't ended the previous record, end it.
+  if (tr_recorder != null)
+    // Don't free the handle, someone else may be using it...
+    end_tr(tmp_time);
 
-// May want to establish predecessor/successor relation 
-// (don't free handle until then)
-if(is_recording_enabled()) begin 
-  uvm_tr_database db = stream_handle.get_db();
+  // May want to establish predecessor/successor relation 
+  // (don't free handle until then)
+  if(is_recording_enabled()) begin 
+    uvm_tr_database db = stream_handle.get_db();
 
-  this.end_time = -1;
-  this.begin_time = tmp_time;
+    this.end_time = -1;
+    this.begin_time = tmp_time;
 
-  if(parent_recorder == null)
-  tr_recorder = stream_handle.open_recorder(get_type_name(),
-    this.begin_time,
-  "Begin_No_Parent, Link");
-  else begin
+    if(parent_recorder == null)
     tr_recorder = stream_handle.open_recorder(get_type_name(),
       this.begin_time,
-    "Begin_End, Link");
+    "Begin_No_Parent, Link");
+    else begin
+      tr_recorder = stream_handle.open_recorder(get_type_name(),
+        this.begin_time,
+      "Begin_End, Link");
+
+      if (tr_recorder != null)
+        db.establish_link(uvm_parent_child_link::get_link(parent_recorder, tr_recorder));
+    end
 
     if (tr_recorder != null)
-      db.establish_link(uvm_parent_child_link::get_link(parent_recorder, tr_recorder));
+      m_begin_tr = tr_recorder.get_handle();
+    else
+      m_begin_tr = 0;
+  end
+  else begin
+    tr_recorder = null;
+    this.end_time = -1;
+    this.begin_time = tmp_time;
+
+    m_begin_tr = 0;
   end
 
-  if (tr_recorder != null)
-    m_begin_tr = tr_recorder.get_handle();
-  else
-    m_begin_tr = 0;
-end
-else begin
-  tr_recorder = null;
-  this.end_time = -1;
-  this.begin_time = tmp_time;
+  do_begin_tr(); //execute callback before event trigger
 
-  m_begin_tr = 0;
-end
-
-do_begin_tr(); //execute callback before event trigger
-
-begin_event.trigger();
+  begin_event.trigger();
 
 endfunction
 

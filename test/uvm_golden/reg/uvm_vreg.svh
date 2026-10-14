@@ -525,258 +525,258 @@ class uvm_vreg extends uvm_object;
   // before the corresponding pre-write memory callbacks
   //
   virtual task pre_write(longint unsigned     idx,
-      ref uvm_reg_data_t   wdat,
-      ref uvm_path_e  path,
-  ref uvm_reg_map      map);
-endtask: pre_write
+                         ref uvm_reg_data_t   wdat,
+                         ref uvm_path_e  path,
+                         ref uvm_reg_map      map);
+  endtask: pre_write
+
+  //
+  // TASK: post_write
+  // Called after virtual register write.
+  //
+  // If the specified ~status~ is modified,
+  // the updated status will be
+  // returned by the virtual register operation.
+  //
+  // The registered callback methods are invoked before the invocation
+  // of this method.
+  // All register callbacks are executed before the corresponding
+  // field callbacks
+  // The post-write virtual register and field callbacks are executed
+  // after the corresponding post-write memory callbacks
+  //
+  virtual task post_write(longint unsigned       idx,
+                          uvm_reg_data_t         wdat,
+                          uvm_path_e        path,
+                          uvm_reg_map            map,
+                          ref uvm_status_e  status);
+  endtask: post_write
+
+  //
+  // TASK: pre_read
+  // Called before virtual register read.
+  //
+  // If the specified access ~path~ or address ~map~ are modified,
+  // the updated access path or address map will be used to perform
+  // the register operation.
+  //
+  // The registered callback methods are invoked after the invocation
+  // of this method.
+  // All register callbacks are executed after the corresponding
+  // field callbacks
+  // The pre-read virtual register and field callbacks are executed
+  // before the corresponding pre-read memory callbacks
+  //
+  virtual task pre_read(longint unsigned     idx,
+                        ref uvm_path_e  path,
+                        ref uvm_reg_map      map);
+  endtask: pre_read
+
+  //
+  // TASK: post_read
+  // Called after virtual register read.
+  //
+  // If the specified readback data or ~status~ is modified,
+  // the updated readback data or status will be
+  // returned by the register operation.
+  //
+  // The registered callback methods are invoked before the invocation
+  // of this method.
+  // All register callbacks are executed before the corresponding
+  // field callbacks
+  // The post-read virtual register and field callbacks are executed
+  // after the corresponding post-read memory callbacks
+  //
+  virtual task post_read(longint unsigned       idx,
+                         ref uvm_reg_data_t     rdat,
+                         input uvm_path_e  path,
+                         input uvm_reg_map      map,
+                         ref uvm_status_e  status);
+  endtask: post_read
+
+  extern virtual function void do_print (uvm_printer printer);
+  extern virtual function string convert2string;
+  extern virtual function uvm_object clone();
+  extern virtual function void do_copy   (uvm_object rhs);
+  extern virtual function bit do_compare (uvm_object  rhs,
+                                          uvm_comparer comparer);
+  extern virtual function void do_pack (uvm_packer packer);
+  extern virtual function void do_unpack (uvm_packer packer);
+
+endclass: uvm_vreg
+
+
+
+//------------------------------------------------------------------------------
+// Class: uvm_vreg_cbs
+//
+// Pre/post read/write callback facade class
+//
+//------------------------------------------------------------------------------
+
+class uvm_vreg_cbs extends uvm_callback;
+
+  string fname;
+  int    lineno;
+
+  function new(string name = "uvm_reg_cbs");
+    super.new(name);
+  endfunction
+
+
+  //
+  // Task: pre_write
+  // Callback called before a write operation.
+  //
+  // The registered callback methods are invoked after the invocation
+  // of the <uvm_vreg::pre_write()> method.
+  // All virtual register callbacks are executed after the corresponding
+  // virtual field callbacks
+  // The pre-write virtual register and field callbacks are executed
+  // before the corresponding pre-write memory callbacks
+  //
+  // The written value ~wdat~, access ~path~ and address ~map~,
+  // if modified, modifies the actual value, access path or address map
+  // used in the virtual register operation.
+  //
+  virtual task pre_write(uvm_vreg         rg,
+                         longint unsigned     idx,
+                         ref uvm_reg_data_t   wdat,
+                         ref uvm_path_e  path,
+                         ref uvm_reg_map   map);
+  endtask: pre_write
+
+
+  //
+  // TASK: post_write
+  // Called after register write.
+  //
+  // The registered callback methods are invoked before the invocation
+  // of the <uvm_reg::post_write()> method.
+  // All register callbacks are executed before the corresponding
+  // virtual field callbacks
+  // The post-write virtual register and field callbacks are executed
+  // after the corresponding post-write memory callbacks
+  //
+  // The ~status~ of the operation,
+  // if modified, modifies the actual returned status.
+  //
+  virtual task post_write(uvm_vreg           rg,
+                          longint unsigned       idx,
+                          uvm_reg_data_t         wdat,
+                          uvm_path_e        path,
+                          uvm_reg_map         map,
+                          ref uvm_status_e  status);
+  endtask: post_write
+
+
+  //
+  // TASK: pre_read
+  // Called before register read.
+  //
+  // The registered callback methods are invoked after the invocation
+  // of the <uvm_reg::pre_read()> method.
+  // All register callbacks are executed after the corresponding
+  // virtual field callbacks
+  // The pre-read virtual register and field callbacks are executed
+  // before the corresponding pre-read memory callbacks
+  //
+  // The access ~path~ and address ~map~,
+  // if modified, modifies the actual access path or address map
+  // used in the register operation.
+  //
+  virtual task pre_read(uvm_vreg         rg,
+                        longint unsigned     idx,
+                        ref uvm_path_e  path,
+                        ref uvm_reg_map   map);
+  endtask: pre_read
+
+
+  //
+  // TASK: post_read
+  // Called after register read.
+  //
+  // The registered callback methods are invoked before the invocation
+  // of the <uvm_reg::post_read()> method.
+  // All register callbacks are executed before the corresponding
+  // virtual field callbacks
+  // The post-read virtual register and field callbacks are executed
+  // after the corresponding post-read memory callbacks
+  //
+  // The readback value ~rdat~ and the ~status~ of the operation,
+  // if modified, modifies the actual returned readback value and status.
+  //
+  virtual task post_read(uvm_vreg           rg,
+                         longint unsigned       idx,
+                         ref uvm_reg_data_t     rdat,
+                         input uvm_path_e  path,
+                         input uvm_reg_map   map,
+                         ref uvm_status_e  status);
+  endtask: post_read
+endclass: uvm_vreg_cbs
+
 
 //
-// TASK: post_write
-// Called after virtual register write.
+// Type: uvm_vreg_cb
+// Convenience callback type declaration
 //
-// If the specified ~status~ is modified,
-// the updated status will be
-// returned by the virtual register operation.
+// Use this declaration to register virtual register callbacks rather than
+// the more verbose parameterized class
 //
-// The registered callback methods are invoked before the invocation
-// of this method.
-// All register callbacks are executed before the corresponding
-// field callbacks
-// The post-write virtual register and field callbacks are executed
-// after the corresponding post-write memory callbacks
+typedef uvm_callbacks#(uvm_vreg, uvm_vreg_cbs) uvm_vreg_cb;
+
 //
-virtual task post_write(longint unsigned       idx,
-    uvm_reg_data_t         wdat,
-    uvm_path_e        path,
-    uvm_reg_map            map,
-ref uvm_status_e  status);
-   endtask: post_write
-
-   //
-   // TASK: pre_read
-   // Called before virtual register read.
-   //
-   // If the specified access ~path~ or address ~map~ are modified,
-   // the updated access path or address map will be used to perform
-   // the register operation.
-   //
-   // The registered callback methods are invoked after the invocation
-   // of this method.
-   // All register callbacks are executed after the corresponding
-   // field callbacks
-   // The pre-read virtual register and field callbacks are executed
-   // before the corresponding pre-read memory callbacks
-   //
-   virtual task pre_read(longint unsigned     idx,
-       ref uvm_path_e  path,
-   ref uvm_reg_map      map);
- endtask: pre_read
-
- //
- // TASK: post_read
- // Called after virtual register read.
- //
- // If the specified readback data or ~status~ is modified,
- // the updated readback data or status will be
- // returned by the register operation.
- //
- // The registered callback methods are invoked before the invocation
- // of this method.
- // All register callbacks are executed before the corresponding
- // field callbacks
- // The post-read virtual register and field callbacks are executed
- // after the corresponding post-read memory callbacks
- //
- virtual task post_read(longint unsigned       idx,
-     ref uvm_reg_data_t     rdat,
-     input uvm_path_e  path,
-     input uvm_reg_map      map,
- ref uvm_status_e  status);
-   endtask: post_read
-
-   extern virtual function void do_print (uvm_printer printer);
-   extern virtual function string convert2string;
-   extern virtual function uvm_object clone();
-   extern virtual function void do_copy   (uvm_object rhs);
-   extern virtual function bit do_compare (uvm_object  rhs,
-                                           uvm_comparer comparer);
-   extern virtual function void do_pack (uvm_packer packer);
-   extern virtual function void do_unpack (uvm_packer packer);
-
- endclass: uvm_vreg
+// Type: uvm_vreg_cb_iter
+// Convenience callback iterator type declaration
+//
+// Use this declaration to iterate over registered virtual register callbacks
+// rather than the more verbose parameterized class
+//
+typedef uvm_callback_iter#(uvm_vreg, uvm_vreg_cbs) uvm_vreg_cb_iter;
 
 
 
- //------------------------------------------------------------------------------
- // Class: uvm_vreg_cbs
- //
- // Pre/post read/write callback facade class
- //
- //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// IMPLEMENTATION
+//------------------------------------------------------------------------------
 
- class uvm_vreg_cbs extends uvm_callback;
+function uvm_vreg::new(string       name,
+                       int unsigned n_bits);
+  super.new(name);
 
-   string fname;
-   int    lineno;
+  if (n_bits == 0) begin
+    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" cannot have 0 bits", this.get_full_name()));
+    n_bits = 1;
+  end
+  if (n_bits > `UVM_REG_DATA_WIDTH) begin
+    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" cannot have more than %0d bits (%0d)", this.get_full_name(), `UVM_REG_DATA_WIDTH, n_bits));
+    n_bits = `UVM_REG_DATA_WIDTH;
+  end
+  this.n_bits = n_bits;
 
-   function new(string name = "uvm_reg_cbs");
-     super.new(name);
-   endfunction
-
-
-   //
-   // Task: pre_write
-   // Callback called before a write operation.
-   //
-   // The registered callback methods are invoked after the invocation
-   // of the <uvm_vreg::pre_write()> method.
-   // All virtual register callbacks are executed after the corresponding
-   // virtual field callbacks
-   // The pre-write virtual register and field callbacks are executed
-   // before the corresponding pre-write memory callbacks
-   //
-   // The written value ~wdat~, access ~path~ and address ~map~,
-   // if modified, modifies the actual value, access path or address map
-   // used in the virtual register operation.
-   //
-   virtual task pre_write(uvm_vreg         rg,
-       longint unsigned     idx,
-       ref uvm_reg_data_t   wdat,
-       ref uvm_path_e  path,
-   ref uvm_reg_map   map);
- endtask: pre_write
-
-
- //
- // TASK: post_write
- // Called after register write.
- //
- // The registered callback methods are invoked before the invocation
- // of the <uvm_reg::post_write()> method.
- // All register callbacks are executed before the corresponding
- // virtual field callbacks
- // The post-write virtual register and field callbacks are executed
- // after the corresponding post-write memory callbacks
- //
- // The ~status~ of the operation,
- // if modified, modifies the actual returned status.
- //
- virtual task post_write(uvm_vreg           rg,
-     longint unsigned       idx,
-     uvm_reg_data_t         wdat,
-     uvm_path_e        path,
-     uvm_reg_map         map,
- ref uvm_status_e  status);
-   endtask: post_write
-
-
-   //
-   // TASK: pre_read
-   // Called before register read.
-   //
-   // The registered callback methods are invoked after the invocation
-   // of the <uvm_reg::pre_read()> method.
-   // All register callbacks are executed after the corresponding
-   // virtual field callbacks
-   // The pre-read virtual register and field callbacks are executed
-   // before the corresponding pre-read memory callbacks
-   //
-   // The access ~path~ and address ~map~,
-   // if modified, modifies the actual access path or address map
-   // used in the register operation.
-   //
-   virtual task pre_read(uvm_vreg         rg,
-       longint unsigned     idx,
-       ref uvm_path_e  path,
-   ref uvm_reg_map   map);
- endtask: pre_read
-
-
- //
- // TASK: post_read
- // Called after register read.
- //
- // The registered callback methods are invoked before the invocation
- // of the <uvm_reg::post_read()> method.
- // All register callbacks are executed before the corresponding
- // virtual field callbacks
- // The post-read virtual register and field callbacks are executed
- // after the corresponding post-read memory callbacks
- //
- // The readback value ~rdat~ and the ~status~ of the operation,
- // if modified, modifies the actual returned readback value and status.
- //
- virtual task post_read(uvm_vreg           rg,
-     longint unsigned       idx,
-     ref uvm_reg_data_t     rdat,
-     input uvm_path_e  path,
-     input uvm_reg_map   map,
- ref uvm_status_e  status);
-   endtask: post_read
- endclass: uvm_vreg_cbs
-
-
- //
- // Type: uvm_vreg_cb
- // Convenience callback type declaration
- //
- // Use this declaration to register virtual register callbacks rather than
- // the more verbose parameterized class
- //
- typedef uvm_callbacks#(uvm_vreg, uvm_vreg_cbs) uvm_vreg_cb;
-
- //
- // Type: uvm_vreg_cb_iter
- // Convenience callback iterator type declaration
- //
- // Use this declaration to iterate over registered virtual register callbacks
- // rather than the more verbose parameterized class
- //
- typedef uvm_callback_iter#(uvm_vreg, uvm_vreg_cbs) uvm_vreg_cb_iter;
-
-
-
- //------------------------------------------------------------------------------
- // IMPLEMENTATION
- //------------------------------------------------------------------------------
-
- function uvm_vreg::new(string       name,
- int unsigned n_bits);
- super.new(name);
-
- if (n_bits == 0) begin
-   `uvm_error("RegModel", $sformatf("Virtual register \"%s\" cannot have 0 bits", this.get_full_name()));
-   n_bits = 1;
- end
- if (n_bits > `UVM_REG_DATA_WIDTH) begin
-   `uvm_error("RegModel", $sformatf("Virtual register \"%s\" cannot have more than %0d bits (%0d)", this.get_full_name(), `UVM_REG_DATA_WIDTH, n_bits));
-   n_bits = `UVM_REG_DATA_WIDTH;
- end
- this.n_bits = n_bits;
-
- this.locked    = 0;
+  this.locked    = 0;
 endfunction: new
 
 function void uvm_vreg::configure(uvm_reg_block      parent,
-    uvm_mem        mem = null,
-    longint unsigned   size = 0,
-    uvm_reg_addr_t     offset = 0,
-int unsigned       incr = 0);
-this.parent = parent;
+                                  uvm_mem        mem = null,
+                                  longint unsigned   size = 0,
+                                  uvm_reg_addr_t     offset = 0,
+                                  int unsigned       incr = 0);
+  this.parent = parent;
 
-this.n_used_bits = 0;
+  this.n_used_bits = 0;
 
-if (mem != null) begin
-  void'(this.implement(size, mem, offset, incr));
-  this.is_static = 1;
-end
-else begin
-  this.mem = null;
-  this.is_static = 0;
-end
-this.parent.add_vreg(this);
+  if (mem != null) begin
+    void'(this.implement(size, mem, offset, incr));
+    this.is_static = 1;
+  end
+  else begin
+    this.mem = null;
+    this.is_static = 0;
+  end
+  this.parent.add_vreg(this);
 
-this.atomic = new(1);
+  this.atomic = new(1);
 endfunction: configure
 
 
@@ -892,146 +892,146 @@ endfunction: get_block
 
 
 function bit uvm_vreg::implement(longint unsigned n,
-    uvm_mem      mem = null,
-    uvm_reg_addr_t   offset = 0,
-int unsigned     incr = 0);
+                                 uvm_mem      mem = null,
+                                 uvm_reg_addr_t   offset = 0,
+                                 int unsigned     incr = 0);
 
-uvm_mem_region region;
+  uvm_mem_region region;
 
-if(n < 1)
-begin
-  `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" with a subscript less than one doesn't make sense",this.get_full_name()));
-  return 0;
-end
-
-if (mem == null) begin
-  `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" using a NULL uvm_mem reference", this.get_full_name()));
-  return 0;
-end
-
-if (this.is_static) begin
-  `uvm_error("RegModel", $sformatf("Virtual register \"%s\" is static and cannot be dynamically implemented", this.get_full_name()));
-  return 0;
-end
-
-if (mem.get_block() != this.parent) begin
-  `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" on memory \"%s\" in a different block",
-  this.get_full_name(),
-  mem.get_full_name()));
-  return 0;
-end
-
-begin
-  int min_incr = (this.get_n_bytes()-1) / mem.get_n_bytes() + 1;
-  if (incr == 0) incr = min_incr;
-  if (min_incr > incr) begin
-    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" increment is too small (%0d): Each virtual register requires at least %0d locations in memory \"%s\".",
-    this.get_full_name(), incr,
-    min_incr, mem.get_full_name()));
+  if(n < 1)
+  begin
+    `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" with a subscript less than one doesn't make sense",this.get_full_name()));
     return 0;
   end
-end
 
-// Is the memory big enough for ya?
-if (offset + (n * incr) > mem.get_size()) begin
-  `uvm_error("RegModel", $sformatf("Given Offset for Virtual register \"%s[%0d]\" is too big for memory %s@'h%0h", this.get_full_name(), n, mem.get_full_name(), offset));
-  return 0;
-end
+  if (mem == null) begin
+    `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" using a NULL uvm_mem reference", this.get_full_name()));
+    return 0;
+  end
 
-region = mem.mam.reserve_region(offset,n*incr*mem.get_n_bytes());
+  if (this.is_static) begin
+    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" is static and cannot be dynamically implemented", this.get_full_name()));
+    return 0;
+  end
 
-if (region == null) begin
-  `uvm_error("RegModel", $sformatf("Could not allocate a memory region for virtual register \"%s\"", this.get_full_name()));
-  return 0;
-end
+  if (mem.get_block() != this.parent) begin
+    `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" on memory \"%s\" in a different block",
+    this.get_full_name(),
+    mem.get_full_name()));
+    return 0;
+  end
 
-if (this.mem != null) begin
-  `uvm_info("RegModel", $sformatf("Virtual register \"%s\" is being moved re-implemented from %s@'h%0h to %s@'h%0h",
-  this.get_full_name(),
-  this.mem.get_full_name(),
-  this.offset,
-  mem.get_full_name(), offset),UVM_MEDIUM);
-  this.release_region();
-end
+  begin
+    int min_incr = (this.get_n_bytes()-1) / mem.get_n_bytes() + 1;
+    if (incr == 0) incr = min_incr;
+    if (min_incr > incr) begin
+      `uvm_error("RegModel", $sformatf("Virtual register \"%s\" increment is too small (%0d): Each virtual register requires at least %0d locations in memory \"%s\".",
+      this.get_full_name(), incr,
+      min_incr, mem.get_full_name()));
+      return 0;
+    end
+  end
 
-this.region = region;
-this.mem    = mem;
-this.size   = n;
-this.offset = offset;
-this.incr   = incr;
-this.mem.Xadd_vregX(this);
+  // Is the memory big enough for ya?
+  if (offset + (n * incr) > mem.get_size()) begin
+    `uvm_error("RegModel", $sformatf("Given Offset for Virtual register \"%s[%0d]\" is too big for memory %s@'h%0h", this.get_full_name(), n, mem.get_full_name(), offset));
+    return 0;
+  end
 
-return 1;
+  region = mem.mam.reserve_region(offset,n*incr*mem.get_n_bytes());
+
+  if (region == null) begin
+    `uvm_error("RegModel", $sformatf("Could not allocate a memory region for virtual register \"%s\"", this.get_full_name()));
+    return 0;
+  end
+
+  if (this.mem != null) begin
+    `uvm_info("RegModel", $sformatf("Virtual register \"%s\" is being moved re-implemented from %s@'h%0h to %s@'h%0h",
+    this.get_full_name(),
+    this.mem.get_full_name(),
+    this.offset,
+    mem.get_full_name(), offset),UVM_MEDIUM);
+    this.release_region();
+  end
+
+  this.region = region;
+  this.mem    = mem;
+  this.size   = n;
+  this.offset = offset;
+  this.incr   = incr;
+  this.mem.Xadd_vregX(this);
+
+  return 1;
 endfunction: implement
 
 
 function uvm_mem_region uvm_vreg::allocate(longint unsigned   n,
-    uvm_mem_mam        mam,
-uvm_mem_mam_policy alloc=null);
+                                           uvm_mem_mam        mam,
+                                           uvm_mem_mam_policy alloc=null);
 
-uvm_mem mem;
+  uvm_mem mem;
 
-if(n < 1)
-begin
-  `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" with a subscript less than one doesn't make sense",this.get_full_name()));
-  return null;
-end
-
-if (mam == null) begin
-  `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" using a NULL uvm_mem_mam reference", this.get_full_name()));
-  return null;
-end
-
-if (this.is_static) begin
-  `uvm_error("RegModel", $sformatf("Virtual register \"%s\" is static and cannot be dynamically allocated", this.get_full_name()));
-  return null;
-end
-
-mem = mam.get_memory();
-if (mem.get_block() != this.parent) begin
-  `uvm_error("RegModel", $sformatf("Attempting to allocate virtual register \"%s\" on memory \"%s\" in a different block",
-  this.get_full_name(),
-  mem.get_full_name()));
-  return null;
-end
-
-begin
-  int min_incr = (this.get_n_bytes()-1) / mem.get_n_bytes() + 1;
-  if (incr == 0) incr = min_incr;
-  if (min_incr < incr) begin
-    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" increment is too small (%0d): Each virtual register requires at least %0d locations in memory \"%s\".",
-    this.get_full_name(), incr,
-    min_incr, mem.get_full_name()));
+  if(n < 1)
+  begin
+    `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" with a subscript less than one doesn't make sense",this.get_full_name()));
     return null;
   end
-end
 
-// Need memory at least of size num_vregs*sizeof(vreg) in bytes.
-allocate = mam.request_region(n*incr*mem.get_n_bytes(), alloc);
-if (allocate == null) begin
-  `uvm_error("RegModel", $sformatf("Could not allocate a memory region for virtual register \"%s\"", this.get_full_name()));
-  return null;
-end
+  if (mam == null) begin
+    `uvm_error("RegModel", $sformatf("Attempting to implement virtual register \"%s\" using a NULL uvm_mem_mam reference", this.get_full_name()));
+    return null;
+  end
 
-if (this.mem != null) begin
-  `uvm_info("RegModel", $sformatf("Virtual register \"%s\" is being moved from %s@'h%0h to %s@'h%0h",
-  this.get_full_name(),
-  this.mem.get_full_name(),
-  this.offset,
-  mem.get_full_name(),
-  allocate.get_start_offset()),UVM_MEDIUM);
+  if (this.is_static) begin
+    `uvm_error("RegModel", $sformatf("Virtual register \"%s\" is static and cannot be dynamically allocated", this.get_full_name()));
+    return null;
+  end
 
-  this.release_region();
-end
+  mem = mam.get_memory();
+  if (mem.get_block() != this.parent) begin
+    `uvm_error("RegModel", $sformatf("Attempting to allocate virtual register \"%s\" on memory \"%s\" in a different block",
+    this.get_full_name(),
+    mem.get_full_name()));
+    return null;
+  end
 
-this.region = allocate;
+  begin
+    int min_incr = (this.get_n_bytes()-1) / mem.get_n_bytes() + 1;
+    if (incr == 0) incr = min_incr;
+    if (min_incr < incr) begin
+      `uvm_error("RegModel", $sformatf("Virtual register \"%s\" increment is too small (%0d): Each virtual register requires at least %0d locations in memory \"%s\".",
+      this.get_full_name(), incr,
+      min_incr, mem.get_full_name()));
+      return null;
+    end
+  end
 
-this.mem    = mam.get_memory();
-this.offset = allocate.get_start_offset();
-this.size   = n;
-this.incr   = incr;
+  // Need memory at least of size num_vregs*sizeof(vreg) in bytes.
+  allocate = mam.request_region(n*incr*mem.get_n_bytes(), alloc);
+  if (allocate == null) begin
+    `uvm_error("RegModel", $sformatf("Could not allocate a memory region for virtual register \"%s\"", this.get_full_name()));
+    return null;
+  end
 
-this.mem.Xadd_vregX(this);
+  if (this.mem != null) begin
+    `uvm_info("RegModel", $sformatf("Virtual register \"%s\" is being moved from %s@'h%0h to %s@'h%0h",
+    this.get_full_name(),
+    this.mem.get_full_name(),
+    this.offset,
+    mem.get_full_name(),
+    allocate.get_start_offset()),UVM_MEDIUM);
+
+    this.release_region();
+  end
+
+  this.region = allocate;
+
+  this.mem    = mam.get_memory();
+  this.offset = allocate.get_start_offset();
+  this.size   = n;
+  this.incr   = incr;
+
+  this.mem.Xadd_vregX(this);
 endfunction: allocate
 
 
@@ -1079,13 +1079,13 @@ endfunction
 
 
 function uvm_reg_addr_t  uvm_vreg::get_address(longint unsigned idx,
-uvm_reg_map map = null);
-if (this.mem == null) begin
-  `uvm_error("RegModel", $sformatf("Cannot get address of of unimplemented virtual register \"%s\".", this.get_full_name()));
-  return 0;
-end
+                                               uvm_reg_map map = null);
+  if (this.mem == null) begin
+    `uvm_error("RegModel", $sformatf("Cannot get address of of unimplemented virtual register \"%s\".", this.get_full_name()));
+    return 0;
+  end
 
-return this.mem.get_address(this.get_offset_in_memory(idx), map);
+  return this.mem.get_address(this.get_offset_in_memory(idx), map);
 endfunction: get_address
 
 
@@ -1201,296 +1201,296 @@ endfunction: get_field_by_name
 
 
 task uvm_vreg::write(input  longint unsigned   idx,
-    output uvm_status_e  status,
-    input  uvm_reg_data_t     value,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map     map = null,
-    input  uvm_sequence_base  parent = null,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_vreg_cb_iter cbs = new(this);
+                     output uvm_status_e  status,
+                     input  uvm_reg_data_t     value,
+                     input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                     input  uvm_reg_map     map = null,
+                     input  uvm_sequence_base  parent = null,
+                     input  uvm_object         extension = null,
+                     input  string             fname = "",
+                     input  int                lineno = 0);
+  uvm_vreg_cb_iter cbs = new(this);
 
-uvm_reg_addr_t  addr;
-uvm_reg_data_t  tmp;
-uvm_reg_data_t  msk;
-int lsb;
+  uvm_reg_addr_t  addr;
+  uvm_reg_data_t  tmp;
+  uvm_reg_data_t  msk;
+  int lsb;
 
-this.write_in_progress = 1'b1;
-this.fname = fname;
-this.lineno = lineno;
-if (this.mem == null) begin
-  `uvm_error("RegModel", $sformatf("Cannot write to unimplemented virtual register \"%s\".", this.get_full_name()));
-  status = UVM_NOT_OK;
-  return;
-end
+  this.write_in_progress = 1'b1;
+  this.fname = fname;
+  this.lineno = lineno;
+  if (this.mem == null) begin
+    `uvm_error("RegModel", $sformatf("Cannot write to unimplemented virtual register \"%s\".", this.get_full_name()));
+    status = UVM_NOT_OK;
+    return;
+  end
 
-if (path == UVM_DEFAULT_PATH)
-  path = this.parent.get_default_path();
+  if (path == UVM_DEFAULT_PATH)
+    path = this.parent.get_default_path();
 
-foreach (fields[i]) begin
-  uvm_vreg_field_cb_iter cbs = new(fields[i]);
-  uvm_vreg_field f = fields[i];
+  foreach (fields[i]) begin
+    uvm_vreg_field_cb_iter cbs = new(fields[i]);
+    uvm_vreg_field f = fields[i];
 
-  lsb = f.get_lsb_pos_in_register();
-  msk = ((1<<f.get_n_bits())-1) << lsb;
-  tmp = (value & msk) >> lsb;
+    lsb = f.get_lsb_pos_in_register();
+    msk = ((1<<f.get_n_bits())-1) << lsb;
+    tmp = (value & msk) >> lsb;
 
-  f.pre_write(idx, tmp, path, map);
-  for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    f.pre_write(idx, tmp, path, map);
+    for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    cb = cbs.next()) begin
+      cb.fname = this.fname;
+      cb.lineno = this.lineno;
+      cb.pre_write(f, idx, tmp, path, map);
+    end
+
+    value = (value & ~msk) | (tmp << lsb);
+  end
+  this.pre_write(idx, value, path, map);
+  for (uvm_vreg_cbs cb = cbs.first(); cb != null;
   cb = cbs.next()) begin
     cb.fname = this.fname;
     cb.lineno = this.lineno;
-    cb.pre_write(f, idx, tmp, path, map);
+    cb.pre_write(this, idx, value, path, map);
   end
 
-  value = (value & ~msk) | (tmp << lsb);
-end
-this.pre_write(idx, value, path, map);
-for (uvm_vreg_cbs cb = cbs.first(); cb != null;
-cb = cbs.next()) begin
-  cb.fname = this.fname;
-  cb.lineno = this.lineno;
-  cb.pre_write(this, idx, value, path, map);
-end
+  addr = this.offset + (idx * this.incr);
 
-addr = this.offset + (idx * this.incr);
+  lsb = 0;
+  status = UVM_IS_OK;
+  for (int i = 0; i < this.get_n_memlocs(); i++) begin
+    uvm_status_e s;
 
-lsb = 0;
-status = UVM_IS_OK;
-for (int i = 0; i < this.get_n_memlocs(); i++) begin
-  uvm_status_e s;
+    msk = ((1<<(this.mem.get_n_bytes()*8))-1) << lsb;
+    tmp = (value & msk) >> lsb;
+    this.mem.write(s, addr + i, tmp, path, map , parent, , extension, fname, lineno);
+    if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
+    lsb += this.mem.get_n_bytes() * 8;
+  end
 
-  msk = ((1<<(this.mem.get_n_bytes()*8))-1) << lsb;
-  tmp = (value & msk) >> lsb;
-  this.mem.write(s, addr + i, tmp, path, map , parent, , extension, fname, lineno);
-  if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
-  lsb += this.mem.get_n_bytes() * 8;
-end
-
-for (uvm_vreg_cbs cb = cbs.first(); cb != null;
-cb = cbs.next()) begin
-  cb.fname = this.fname;
-  cb.lineno = this.lineno;
-  cb.post_write(this, idx, value, path, map, status);
-end
-this.post_write(idx, value, path, map, status);
-foreach (fields[i]) begin
-  uvm_vreg_field_cb_iter cbs = new(fields[i]);
-  uvm_vreg_field f = fields[i];
-
-  lsb = f.get_lsb_pos_in_register();
-  msk = ((1<<f.get_n_bits())-1) << lsb;
-  tmp = (value & msk) >> lsb;
-
-  for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+  for (uvm_vreg_cbs cb = cbs.first(); cb != null;
   cb = cbs.next()) begin
     cb.fname = this.fname;
     cb.lineno = this.lineno;
-    cb.post_write(f, idx, tmp, path, map, status);
+    cb.post_write(this, idx, value, path, map, status);
   end
-  f.post_write(idx, tmp, path, map, status);
+  this.post_write(idx, value, path, map, status);
+  foreach (fields[i]) begin
+    uvm_vreg_field_cb_iter cbs = new(fields[i]);
+    uvm_vreg_field f = fields[i];
 
-  value = (value & ~msk) | (tmp << lsb);
-end
+    lsb = f.get_lsb_pos_in_register();
+    msk = ((1<<f.get_n_bits())-1) << lsb;
+    tmp = (value & msk) >> lsb;
 
-`uvm_info("RegModel", $sformatf("Wrote virtual register \"%s\"[%0d] via %s with: 'h%h",
-this.get_full_name(), idx,
-(path == UVM_FRONTDOOR) ? "frontdoor" : "backdoor",
-value),UVM_MEDIUM);
+    for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    cb = cbs.next()) begin
+      cb.fname = this.fname;
+      cb.lineno = this.lineno;
+      cb.post_write(f, idx, tmp, path, map, status);
+    end
+    f.post_write(idx, tmp, path, map, status);
 
-this.write_in_progress = 1'b0;
-this.fname = "";
-this.lineno = 0;
+    value = (value & ~msk) | (tmp << lsb);
+  end
+
+  `uvm_info("RegModel", $sformatf("Wrote virtual register \"%s\"[%0d] via %s with: 'h%h",
+  this.get_full_name(), idx,
+  (path == UVM_FRONTDOOR) ? "frontdoor" : "backdoor",
+  value),UVM_MEDIUM);
+
+  this.write_in_progress = 1'b0;
+  this.fname = "";
+  this.lineno = 0;
 
 endtask: write
 
 
 task uvm_vreg::read(input  longint unsigned   idx,
-    output uvm_status_e  status,
-    output uvm_reg_data_t     value,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map     map = null,
-    input  uvm_sequence_base  parent = null,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_vreg_cb_iter cbs = new(this);
+                    output uvm_status_e  status,
+                    output uvm_reg_data_t     value,
+                    input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                    input  uvm_reg_map     map = null,
+                    input  uvm_sequence_base  parent = null,
+                    input  uvm_object         extension = null,
+                    input  string             fname = "",
+                    input  int                lineno = 0);
+  uvm_vreg_cb_iter cbs = new(this);
 
-uvm_reg_addr_t  addr;
-uvm_reg_data_t  tmp;
-uvm_reg_data_t  msk;
-int lsb;
-this.read_in_progress = 1'b1;
-this.fname = fname;
-this.lineno = lineno;
+  uvm_reg_addr_t  addr;
+  uvm_reg_data_t  tmp;
+  uvm_reg_data_t  msk;
+  int lsb;
+  this.read_in_progress = 1'b1;
+  this.fname = fname;
+  this.lineno = lineno;
 
-if (this.mem == null) begin
-  `uvm_error("RegModel", $sformatf("Cannot read from unimplemented virtual register \"%s\".", this.get_full_name()));
-  status = UVM_NOT_OK;
-  return;
-end
+  if (this.mem == null) begin
+    `uvm_error("RegModel", $sformatf("Cannot read from unimplemented virtual register \"%s\".", this.get_full_name()));
+    status = UVM_NOT_OK;
+    return;
+  end
 
-if (path == UVM_DEFAULT_PATH)
-  path = this.parent.get_default_path();
+  if (path == UVM_DEFAULT_PATH)
+    path = this.parent.get_default_path();
 
-foreach (fields[i]) begin
-  uvm_vreg_field_cb_iter cbs = new(fields[i]);
-  uvm_vreg_field f = fields[i];
+  foreach (fields[i]) begin
+    uvm_vreg_field_cb_iter cbs = new(fields[i]);
+    uvm_vreg_field f = fields[i];
 
-  f.pre_read(idx, path, map);
-  for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    f.pre_read(idx, path, map);
+    for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    cb = cbs.next()) begin
+      cb.fname = this.fname;
+      cb.lineno = this.lineno;
+      cb.pre_read(f, idx, path, map);
+    end
+  end
+  this.pre_read(idx, path, map);
+  for (uvm_vreg_cbs cb = cbs.first(); cb != null;
   cb = cbs.next()) begin
     cb.fname = this.fname;
     cb.lineno = this.lineno;
-    cb.pre_read(f, idx, path, map);
+    cb.pre_read(this, idx, path, map);
   end
-end
-this.pre_read(idx, path, map);
-for (uvm_vreg_cbs cb = cbs.first(); cb != null;
-cb = cbs.next()) begin
-  cb.fname = this.fname;
-  cb.lineno = this.lineno;
-  cb.pre_read(this, idx, path, map);
-end
 
-addr = this.offset + (idx * this.incr);
+  addr = this.offset + (idx * this.incr);
 
-lsb = 0;
-value = 0;
-status = UVM_IS_OK;
-for (int i = 0; i < this.get_n_memlocs(); i++) begin
-  uvm_status_e s;
+  lsb = 0;
+  value = 0;
+  status = UVM_IS_OK;
+  for (int i = 0; i < this.get_n_memlocs(); i++) begin
+    uvm_status_e s;
 
-  this.mem.read(s, addr + i, tmp, path, map, parent, , extension, fname, lineno);
-  if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
+    this.mem.read(s, addr + i, tmp, path, map, parent, , extension, fname, lineno);
+    if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
 
-  value |= tmp << lsb;
-  lsb += this.mem.get_n_bytes() * 8;
-end
+    value |= tmp << lsb;
+    lsb += this.mem.get_n_bytes() * 8;
+  end
 
-for (uvm_vreg_cbs cb = cbs.first(); cb != null;
-cb = cbs.next()) begin
-  cb.fname = this.fname;
-  cb.lineno = this.lineno;
-  cb.post_read(this, idx, value, path, map, status);
-end
-this.post_read(idx, value, path, map, status);
-foreach (fields[i]) begin
-  uvm_vreg_field_cb_iter cbs = new(fields[i]);
-  uvm_vreg_field f = fields[i];
-
-  lsb = f.get_lsb_pos_in_register();
-
-  msk = ((1<<f.get_n_bits())-1) << lsb;
-  tmp = (value & msk) >> lsb;
-
-  for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+  for (uvm_vreg_cbs cb = cbs.first(); cb != null;
   cb = cbs.next()) begin
     cb.fname = this.fname;
     cb.lineno = this.lineno;
-    cb.post_read(f, idx, tmp, path, map, status);
+    cb.post_read(this, idx, value, path, map, status);
   end
-  f.post_read(idx, tmp, path, map, status);
+  this.post_read(idx, value, path, map, status);
+  foreach (fields[i]) begin
+    uvm_vreg_field_cb_iter cbs = new(fields[i]);
+    uvm_vreg_field f = fields[i];
 
-  value = (value & ~msk) | (tmp << lsb);
-end
+    lsb = f.get_lsb_pos_in_register();
 
-`uvm_info("RegModel", $sformatf("Read virtual register \"%s\"[%0d] via %s: 'h%h",
-this.get_full_name(), idx,
-(path == UVM_FRONTDOOR) ? "frontdoor" : "backdoor",
-value),UVM_MEDIUM);
+    msk = ((1<<f.get_n_bits())-1) << lsb;
+    tmp = (value & msk) >> lsb;
 
-this.read_in_progress = 1'b0;
-this.fname = "";
-this.lineno = 0;
+    for (uvm_vreg_field_cbs cb = cbs.first(); cb != null;
+    cb = cbs.next()) begin
+      cb.fname = this.fname;
+      cb.lineno = this.lineno;
+      cb.post_read(f, idx, tmp, path, map, status);
+    end
+    f.post_read(idx, tmp, path, map, status);
+
+    value = (value & ~msk) | (tmp << lsb);
+  end
+
+  `uvm_info("RegModel", $sformatf("Read virtual register \"%s\"[%0d] via %s: 'h%h",
+  this.get_full_name(), idx,
+  (path == UVM_FRONTDOOR) ? "frontdoor" : "backdoor",
+  value),UVM_MEDIUM);
+
+  this.read_in_progress = 1'b0;
+  this.fname = "";
+  this.lineno = 0;
 endtask: read
 
 
 task uvm_vreg::poke(input longint unsigned   idx,
-    output uvm_status_e status,
-    input  uvm_reg_data_t    value,
-    input  uvm_sequence_base parent = null,
-    input  uvm_object        extension = null,
-    input  string            fname = "",
-input  int               lineno = 0);
-uvm_reg_addr_t  addr;
-uvm_reg_data_t  tmp;
-uvm_reg_data_t  msk;
-int lsb;
-this.fname = fname;
-this.lineno = lineno;
+                    output uvm_status_e status,
+                    input  uvm_reg_data_t    value,
+                    input  uvm_sequence_base parent = null,
+                    input  uvm_object        extension = null,
+                    input  string            fname = "",
+                    input  int               lineno = 0);
+  uvm_reg_addr_t  addr;
+  uvm_reg_data_t  tmp;
+  uvm_reg_data_t  msk;
+  int lsb;
+  this.fname = fname;
+  this.lineno = lineno;
 
-if (this.mem == null) begin
-  `uvm_error("RegModel", $sformatf("Cannot poke in unimplemented virtual register \"%s\".", this.get_full_name()));
-  status = UVM_NOT_OK;
-  return;
-end
+  if (this.mem == null) begin
+    `uvm_error("RegModel", $sformatf("Cannot poke in unimplemented virtual register \"%s\".", this.get_full_name()));
+    status = UVM_NOT_OK;
+    return;
+  end
 
-addr = this.offset + (idx * this.incr);
+  addr = this.offset + (idx * this.incr);
 
-lsb = 0;
-status = UVM_IS_OK;
-for (int i = 0; i < this.get_n_memlocs(); i++) begin
-  uvm_status_e s;
+  lsb = 0;
+  status = UVM_IS_OK;
+  for (int i = 0; i < this.get_n_memlocs(); i++) begin
+    uvm_status_e s;
 
-  msk = ((1<<(this.mem.get_n_bytes() * 8))-1) << lsb;
-  tmp = (value & msk) >> lsb;
+    msk = ((1<<(this.mem.get_n_bytes() * 8))-1) << lsb;
+    tmp = (value & msk) >> lsb;
 
-  this.mem.poke(status, addr + i, tmp, "", parent, extension, fname, lineno);
-  if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
+    this.mem.poke(status, addr + i, tmp, "", parent, extension, fname, lineno);
+    if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
 
-  lsb += this.mem.get_n_bytes() * 8;
-end
+    lsb += this.mem.get_n_bytes() * 8;
+  end
 
-`uvm_info("RegModel", $sformatf("Poked virtual register \"%s\"[%0d] with: 'h%h",
-this.get_full_name(), idx, value),UVM_MEDIUM);
-this.fname = "";
-this.lineno = 0;
+  `uvm_info("RegModel", $sformatf("Poked virtual register \"%s\"[%0d] with: 'h%h",
+  this.get_full_name(), idx, value),UVM_MEDIUM);
+  this.fname = "";
+  this.lineno = 0;
 
 endtask: poke
 
 
 task uvm_vreg::peek(input longint unsigned   idx,
-    output uvm_status_e status,
-    output uvm_reg_data_t    value,
-    input  uvm_sequence_base parent = null,
-    input  uvm_object        extension = null,
-    input  string            fname = "",
-input  int               lineno = 0);
-uvm_reg_addr_t  addr;
-uvm_reg_data_t  tmp;
-uvm_reg_data_t  msk;
-int lsb;
-this.fname = fname;
-this.lineno = lineno;
+                    output uvm_status_e status,
+                    output uvm_reg_data_t    value,
+                    input  uvm_sequence_base parent = null,
+                    input  uvm_object        extension = null,
+                    input  string            fname = "",
+                    input  int               lineno = 0);
+  uvm_reg_addr_t  addr;
+  uvm_reg_data_t  tmp;
+  uvm_reg_data_t  msk;
+  int lsb;
+  this.fname = fname;
+  this.lineno = lineno;
 
-if (this.mem == null) begin
-  `uvm_error("RegModel", $sformatf("Cannot peek in from unimplemented virtual register \"%s\".", this.get_full_name()));
-  status = UVM_NOT_OK;
-  return;
-end
+  if (this.mem == null) begin
+    `uvm_error("RegModel", $sformatf("Cannot peek in from unimplemented virtual register \"%s\".", this.get_full_name()));
+    status = UVM_NOT_OK;
+    return;
+  end
 
-addr = this.offset + (idx * this.incr);
+  addr = this.offset + (idx * this.incr);
 
-lsb = 0;
-value = 0;
-status = UVM_IS_OK;
-for (int i = 0; i < this.get_n_memlocs(); i++) begin
-  uvm_status_e s;
+  lsb = 0;
+  value = 0;
+  status = UVM_IS_OK;
+  for (int i = 0; i < this.get_n_memlocs(); i++) begin
+    uvm_status_e s;
 
-  this.mem.peek(status, addr + i, tmp, "", parent, extension, fname, lineno);
-  if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
+    this.mem.peek(status, addr + i, tmp, "", parent, extension, fname, lineno);
+    if (s != UVM_IS_OK && s != UVM_HAS_X) status = s;
 
-  value |= tmp << lsb;
-  lsb += this.mem.get_n_bytes() * 8;
-end
+    value |= tmp << lsb;
+    lsb += this.mem.get_n_bytes() * 8;
+  end
 
-`uvm_info("RegModel", $sformatf("Peeked virtual register \"%s\"[%0d]: 'h%h",
-this.get_full_name(), idx, value),UVM_MEDIUM);
+  `uvm_info("RegModel", $sformatf("Peeked virtual register \"%s\"[%0d]: 'h%h",
+  this.get_full_name(), idx, value),UVM_MEDIUM);
 
-this.fname = "";
-this.lineno = 0;
+  this.fname = "";
+  this.lineno = 0;
 
 endtask: peek
 
@@ -1540,8 +1540,8 @@ function void uvm_vreg::do_copy   (uvm_object rhs);
 endfunction
 
 function bit uvm_vreg::do_compare (uvm_object  rhs,
-uvm_comparer comparer);
-return 0;
+                                   uvm_comparer comparer);
+  return 0;
 endfunction
 
 function void uvm_vreg::do_pack (uvm_packer packer);

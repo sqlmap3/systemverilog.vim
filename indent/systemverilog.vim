@@ -405,6 +405,10 @@ endfunction
 " (e.g. 'extern function ...' on one line, and '(' or continuation on the
 " next), return the line number of the prototype's opening line; otherwise 0.
 " Stops if a statement boundary (';', '{', '}', group openers/closers) is hit.
+" If a:line_num belongs to a split function/task PROTOTYPE declaration
+" (e.g. 'extern function ...' on one line, and '(' or continuation on the
+" next), return the line number of the prototype's opening line; otherwise 0.
+" Stops if a statement boundary (';', '{', '}', group openers/closers) is hit.
 function! s:PrototypeSigHead( line_num )
 	let l:ln = prevnonblank(a:line_num - 1)
 	let l:limit = 6
@@ -412,14 +416,14 @@ function! s:PrototypeSigHead( line_num )
 		let l:l = getline(l:ln)
 		let l:clean = substitute(l:l, '\".\{-}\"', '', 'g')
 		let l:clean = substitute(l:clean, '\/\/.*', '', '')
-		if l:clean =~ '\<\%(function\|task\)\>'
-			return (l:clean =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(l:clean) !~# 'f') ? l:ln : 0
-		endif
 		if l:clean =~ '[;{}]' || l:clean =~ '^\s*`'
 			return 0
 		endif
 		if l:clean =~ '\<\%(end\|endclass\|endfunction\|endtask\|endgroup\|endmodule\|endinterface\|endpackage\)\>'
 			return 0
+		endif
+		if l:clean =~ '\<\%(function\|task\)\>'
+			return l:ln
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
 		let l:limit -= 1
@@ -454,13 +458,15 @@ function! s:SigArgColumn( line_num )
 		if l:net > 0
 			" the line that opened the enclosing '('
 			if l:l =~ '\<\%(function\|task\)\>'
-				return (l:l =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(l:l) !~# 'f') ? stridx(l:l, '(') + 1 : 0
+				return stridx(l:l, '(') + 1
 			endif
 			" the '(' may be split onto its own line below the signature
 			" ('extern ... function ... name' / '(')
-			let l:head = s:PrototypeSigHead(l:ln)
-			if l:head > 0
-				return stridx(l:l, '(') + 1
+			if l:l =~ '^\s*('
+				let l:head = s:PrototypeSigHead(l:ln)
+				if l:head > 0
+					return stridx(l:l, '(') + 1
+				endif
 			endif
 			return 0
 		endif
@@ -672,17 +678,40 @@ function! GetSystemVerilogIndent( line_num )
 		endif
 	endif
 
-	" the line after a signature's closing ');' returns to the declaration's
-	" own level (prototypes only; a definition keeps its body on the normal
-	" indent rules)
+	" if prev1 contains a same-line '...); endfunction' tail, return to the
+	" function declaration's level
+	if getline(prev1_line_num) =~ '\<endfunction\>' && getline(prev1_line_num) =~ ');'
+		let l:ln = prevnonblank(prev1_line_num - 1)
+		while l:ln > 0
+			let l:l = getline(l:ln)
+			if l:l =~ '\<\%(function\|task\)\>'
+				return indent(l:ln)
+			endif
+			if l:l =~ '[;{}]' || l:l =~ '\<endclass\>'
+				break
+			endif
+			let l:ln = prevnonblank(l:ln - 1)
+		endwhile
+	endif
+
+	" the line after a signature's closing ');': a PROTOTYPE's next
+	" declaration returns to the signature's level (a group stop one further
+	" out); a DEFINITION's body sits one level in, its endfunction back at
+	" the function's own level
 	let l:mhead = s:StatementTailHead(prev1_line_num)
 	if l:mhead > 0
 		" the '(' may sit on its own line below the 'function/task ... name'
-		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>' && (getline(l:mhead) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:mhead)) !~# 'f')) ? l:mhead : s:PrototypeSigHead(l:mhead)
-		if l:sig > 0 && getline(l:sig) =~ '\<\%(function\|task\)\>' && (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig)) !~# 'f')
-			" the line after the tail sits at the declaration's level; a
-			" group stop (endclass and friends) dedents one further
-			return indent(l:sig) - (this_codes =~# 'h' ? &shiftwidth : 0)
+		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead
+			\ : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
+		if l:sig > 0 && getline(l:sig) =~ '\<\%(function\|task\)\>'
+			let l:is_proto = (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig)) !~# 'f')
+			if l:is_proto
+				" prototypes: next line returns to declaration level; group stop dedents further
+				return indent(l:sig) - (this_codes =~# 'h' ? &shiftwidth : 0)
+			else
+				" definitions: next line is function body (+ &shiftwidth), or endfunction (same level)
+				return indent(l:sig) + (this_codes =~# 'h' ? 0 : &shiftwidth)
+			endif
 		endif
 	endif
 

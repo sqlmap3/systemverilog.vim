@@ -192,3 +192,16 @@ set_type_override_by_type	uvmMethodFactory
 this\.rf	svThisSuper
 super\.rf	svThisSuper
 \<export\>	svStorageClass
+#
+# --- DVT-grade features (doc comments, format specifiers, escapes, user types, scope) ---
+/\*\*	svDocBlockComment
+@brief	svDocTag
+@param	svDocTag
+@return	svDocTag
+///	svDocLineComment
+@note	svDocTag
+%0d	svFormatSpecifier
+%08h	svFormatSpecifier
+\\n	svStringEscape
+\<my_custom_t\>	svUserType
+\<my_scope_pkg\>\ze::	svScopePrefix

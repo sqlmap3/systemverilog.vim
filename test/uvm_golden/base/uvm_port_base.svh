@@ -230,563 +230,563 @@ virtual class uvm_port_base #(type IF=uvm_void) extends IF;
   // <connect> for more information.
 
   function new (string name,
-      uvm_component parent,
-      uvm_port_type_e port_type,
-      int min_size=0,
-  int max_size=1);
-  uvm_component comp;
-  int tmp;
-  m_port_type = port_type;
-  m_min_size  = min_size;
-  m_max_size  = max_size;
-  m_comp = new(name, parent, this);
+                uvm_component parent,
+                uvm_port_type_e port_type,
+                int min_size=0,
+                int max_size=1);
+    uvm_component comp;
+    int tmp;
+    m_port_type = port_type;
+    m_min_size  = min_size;
+    m_max_size  = max_size;
+    m_comp = new(name, parent, this);
 
-  if (!uvm_config_int::get(m_comp, "", "check_connection_relationships",tmp))
-    m_comp.set_report_id_action(s_connection_warning_id, UVM_NO_ACTION);
+    if (!uvm_config_int::get(m_comp, "", "check_connection_relationships",tmp))
+      m_comp.set_report_id_action(s_connection_warning_id, UVM_NO_ACTION);
 
-endfunction
-
-
-// Function: get_name
-//
-// Returns the leaf name of this port. 
-
-function string get_name();
-  return m_comp.get_name();
-endfunction
+  endfunction
 
 
-// Function: get_full_name
-//
-// Returns the full hierarchical name of this port. 
+  // Function: get_name
+  //
+  // Returns the leaf name of this port. 
 
-virtual function string get_full_name();
-  return m_comp.get_full_name();
-endfunction
-
-
-// Function: get_parent
-//
-// Returns the handle to this port's parent, or ~null~ if it has no parent.
-
-virtual function uvm_component get_parent();
-  return m_comp.get_parent();
-endfunction
+  function string get_name();
+    return m_comp.get_name();
+  endfunction
 
 
-// Function: get_comp
-//
-// Returns a handle to the internal proxy component representing this port.
-//
-// Ports are considered components. However, they do not inherit
-// <uvm_component>. Instead, they contain an instance of
-// <uvm_port_component #(PORT)> that serves as a proxy to this port.
+  // Function: get_full_name
+  //
+  // Returns the full hierarchical name of this port. 
 
-virtual function uvm_port_component_base get_comp();
-  return m_comp;
-endfunction
+  virtual function string get_full_name();
+    return m_comp.get_full_name();
+  endfunction
 
 
-// Function: get_type_name
-//
-// Returns the type name to this port. Derived port classes must implement
-// this method to return the concrete type. Otherwise, only a generic
-// "uvm_port", "uvm_export" or "uvm_implementation" is returned.
+  // Function: get_parent
+  //
+  // Returns the handle to this port's parent, or ~null~ if it has no parent.
 
-virtual function string get_type_name();
-  case( m_port_type )
-    UVM_PORT : return "port";
-    UVM_EXPORT : return "export";
-    UVM_IMPLEMENTATION : return "implementation";
-  endcase
-endfunction
+  virtual function uvm_component get_parent();
+    return m_comp.get_parent();
+  endfunction
 
 
-// Function: min_size
-//
-// Returns the minimum number of implementation ports that must
-// be connected to this port by the end_of_elaboration phase.
+  // Function: get_comp
+  //
+  // Returns a handle to the internal proxy component representing this port.
+  //
+  // Ports are considered components. However, they do not inherit
+  // <uvm_component>. Instead, they contain an instance of
+  // <uvm_port_component #(PORT)> that serves as a proxy to this port.
 
-function int max_size ();
-  return m_max_size;
-endfunction
-
-
-// Function: max_size
-//
-// Returns the maximum number of implementation ports that must
-// be connected to this port by the end_of_elaboration phase.
-
-function int min_size ();
-  return m_min_size;
-endfunction
+  virtual function uvm_port_component_base get_comp();
+    return m_comp;
+  endfunction
 
 
-// Function: is_unbounded
-//
-// Returns 1 if this port has no maximum on the number of implementation
-// ports this port can connect to. A port is unbounded when the ~max_size~
-// argument in the constructor is specified as ~UVM_UNBOUNDED_CONNECTIONS~.
+  // Function: get_type_name
+  //
+  // Returns the type name to this port. Derived port classes must implement
+  // this method to return the concrete type. Otherwise, only a generic
+  // "uvm_port", "uvm_export" or "uvm_implementation" is returned.
 
-function bit is_unbounded ();
-  return (m_max_size ==  UVM_UNBOUNDED_CONNECTIONS);
-endfunction
-
-
-// Function: is_port
-
-function bit is_port ();
-  return m_port_type == UVM_PORT;
-endfunction
-
-// Function: is_export
-
-function bit is_export ();
-  return m_port_type == UVM_EXPORT;
-endfunction
-
-// Function: is_imp
-//
-// Returns 1 if this port is of the type given by the method name,
-// 0 otherwise.
-
-function bit is_imp ();
-  return m_port_type == UVM_IMPLEMENTATION;
-endfunction
+  virtual function string get_type_name();
+    case( m_port_type )
+      UVM_PORT : return "port";
+      UVM_EXPORT : return "export";
+      UVM_IMPLEMENTATION : return "implementation";
+    endcase
+  endfunction
 
 
-// Function: size
-//
-// Gets the number of implementation ports connected to this port. The value
-// is not valid before the end_of_elaboration phase, as port connections have
-// not yet been resolved.
+  // Function: min_size
+  //
+  // Returns the minimum number of implementation ports that must
+  // be connected to this port by the end_of_elaboration phase.
 
-function int size ();
-  return m_imp_list.num();
-endfunction
+  function int max_size ();
+    return m_max_size;
+  endfunction
 
 
-function void set_if (int index=0);
-  m_if = get_if(index);
-  if (m_if != null)
+  // Function: max_size
+  //
+  // Returns the maximum number of implementation ports that must
+  // be connected to this port by the end_of_elaboration phase.
+
+  function int min_size ();
+    return m_min_size;
+  endfunction
+
+
+  // Function: is_unbounded
+  //
+  // Returns 1 if this port has no maximum on the number of implementation
+  // ports this port can connect to. A port is unbounded when the ~max_size~
+  // argument in the constructor is specified as ~UVM_UNBOUNDED_CONNECTIONS~.
+
+  function bit is_unbounded ();
+    return (m_max_size ==  UVM_UNBOUNDED_CONNECTIONS);
+  endfunction
+
+
+  // Function: is_port
+
+  function bit is_port ();
+    return m_port_type == UVM_PORT;
+  endfunction
+
+  // Function: is_export
+
+  function bit is_export ();
+    return m_port_type == UVM_EXPORT;
+  endfunction
+
+  // Function: is_imp
+  //
+  // Returns 1 if this port is of the type given by the method name,
+  // 0 otherwise.
+
+  function bit is_imp ();
+    return m_port_type == UVM_IMPLEMENTATION;
+  endfunction
+
+
+  // Function: size
+  //
+  // Gets the number of implementation ports connected to this port. The value
+  // is not valid before the end_of_elaboration phase, as port connections have
+  // not yet been resolved.
+
+  function int size ();
+    return m_imp_list.num();
+  endfunction
+
+
+  function void set_if (int index=0);
+    m_if = get_if(index);
+    if (m_if != null)
+      m_def_index = index;
+  endfunction
+
+  function int m_get_if_mask();
+    return m_if_mask;
+  endfunction
+
+
+  // Function: set_default_index
+  // 
+  // Sets the default implementation port to use when calling an interface
+  // method. This method should only be called on UVM_EXPORT types. The value
+  // must not be set before the end_of_elaboration phase, when port connections
+  // have not yet been resolved.
+
+  function void set_default_index (int index);
     m_def_index = index;
-endfunction
-
-function int m_get_if_mask();
-  return m_if_mask;
-endfunction
+  endfunction
 
 
-// Function: set_default_index
-// 
-// Sets the default implementation port to use when calling an interface
-// method. This method should only be called on UVM_EXPORT types. The value
-// must not be set before the end_of_elaboration phase, when port connections
-// have not yet been resolved.
+  // Function: connect
+  //
+  // Connects this port to the given ~provider~ port. The ports must be 
+  // compatible in the following ways
+  //
+  // - Their type parameters must match
+  //
+  // - The ~provider~'s interface type (blocking, non-blocking, analysis, etc.)
+  //   must be compatible. Each port has an interface mask that encodes the
+  //   interface(s) it supports. If the bitwise AND of these masks is equal to
+  //   the this port's mask, the requirement is met and the ports are
+  //   compatible. For example, a uvm_blocking_put_port #(T) is compatible with
+  //   a uvm_put_export #(T) and uvm_blocking_put_imp #(T) because the export
+  //   and imp provide the interface required by the uvm_blocking_put_port.
+  // 
+  // - Ports of type <UVM_EXPORT> can only connect to other exports or imps.
+  //
+  // - Ports of type <UVM_IMPLEMENTATION> cannot be connected, as they are
+  //   bound to the component that implements the interface at time of
+  //   construction.
+  //
+  // In addition to type-compatibility checks, the relationship between this
+  // port and the ~provider~ port will also be checked if the port's
+  // ~check_connection_relationships~ configuration has been set. (See <new>
+  // for more information.)
+  //
+  // Relationships, when enabled, are checked are as follows:
+  //
+  // - If this port is a UVM_PORT type, the ~provider~ can be a parent port,
+  //   or a sibling export or implementation port.
+  //
+  // - If this port is a <UVM_EXPORT> type, the provider can be a child
+  //   export or implementation port.
+  //
+  // If any relationship check is violated, a warning is issued.
+  //
+  // Note- the <uvm_component::connect_phase> method is related to but not the same
+  // as this method. The component's ~connect~ method is a phase callback where
+  // port's ~connect~ method calls are made.
 
-function void set_default_index (int index);
-  m_def_index = index;
-endfunction
-
-
-// Function: connect
-//
-// Connects this port to the given ~provider~ port. The ports must be 
-// compatible in the following ways
-//
-// - Their type parameters must match
-//
-// - The ~provider~'s interface type (blocking, non-blocking, analysis, etc.)
-//   must be compatible. Each port has an interface mask that encodes the
-//   interface(s) it supports. If the bitwise AND of these masks is equal to
-//   the this port's mask, the requirement is met and the ports are
-//   compatible. For example, a uvm_blocking_put_port #(T) is compatible with
-//   a uvm_put_export #(T) and uvm_blocking_put_imp #(T) because the export
-//   and imp provide the interface required by the uvm_blocking_put_port.
-// 
-// - Ports of type <UVM_EXPORT> can only connect to other exports or imps.
-//
-// - Ports of type <UVM_IMPLEMENTATION> cannot be connected, as they are
-//   bound to the component that implements the interface at time of
-//   construction.
-//
-// In addition to type-compatibility checks, the relationship between this
-// port and the ~provider~ port will also be checked if the port's
-// ~check_connection_relationships~ configuration has been set. (See <new>
-// for more information.)
-//
-// Relationships, when enabled, are checked are as follows:
-//
-// - If this port is a UVM_PORT type, the ~provider~ can be a parent port,
-//   or a sibling export or implementation port.
-//
-// - If this port is a <UVM_EXPORT> type, the provider can be a child
-//   export or implementation port.
-//
-// If any relationship check is violated, a warning is issued.
-//
-// Note- the <uvm_component::connect_phase> method is related to but not the same
-// as this method. The component's ~connect~ method is a phase callback where
-// port's ~connect~ method calls are made.
-
-virtual function void connect (this_type provider);
-  uvm_root top;
-  uvm_coreservice_t cs;
-  cs = uvm_coreservice_t::get();
-  top = cs.get_root();
-  if (end_of_elaboration_ph.get_state() == UVM_PHASE_EXECUTING || // TBD tidy
-  end_of_elaboration_ph.get_state() == UVM_PHASE_DONE ) begin
-    m_comp.uvm_report_warning("Late Connection", 
-      {"Attempt to connect ",this.get_full_name()," (of type ",this.get_type_name(),
-    ") at or after end_of_elaboration phase.  Ignoring."});
-    return;
-  end
-
-  if (provider == null) begin
-    m_comp.uvm_report_error(s_connection_error_id,
-    "Cannot connect to null port handle", UVM_NONE);
-    return;
-  end
-
-  if (provider == this) begin
-    m_comp.uvm_report_error(s_connection_error_id,
-    "Cannot connect a port instance to itself", UVM_NONE);
-    return;
-  end
-
-  if ((provider.m_if_mask & m_if_mask) != m_if_mask) begin
-    m_comp.uvm_report_error(s_connection_error_id, 
-      {provider.get_full_name(),
-      " (of type ",provider.get_type_name(),
-      ") does not provide the complete interface required of this port (type ",
-    get_type_name(),")"}, UVM_NONE);
-    return;
-  end
-
-  // IMP.connect(anything) is illegal
-  if (is_imp()) begin
-    m_comp.uvm_report_error(s_connection_error_id,
-      $sformatf(
-    "Cannot call an imp port's connect method. An imp is connected only to the component passed in its constructor. (You attempted to bind this imp to %s)", provider.get_full_name()), UVM_NONE);
-    return;
-  end
-
-  // EXPORT.connect(PORT) are illegal
-  if (is_export() && provider.is_port()) begin
-    m_comp.uvm_report_error(s_connection_error_id,
-      $sformatf(
-    "Cannot connect exports to ports Try calling port.connect(export) instead. (You attempted to bind this export to %s).", provider.get_full_name()), UVM_NONE);
-    return;
-  end
-
-  void'(m_check_relationship(provider));
-
-  m_provided_by[provider.get_full_name()] = provider;
-  provider.m_provided_to[get_full_name()] = this;
-
-endfunction
-
-
-// Function: debug_connected_to
-//
-// The ~debug_connected_to~ method outputs a visual text display of the
-// port/export/imp network to which this port connects (i.e., the port's
-// fanout).
-//
-// This method must not be called before the end_of_elaboration phase, as port
-// connections are not resolved until then.
-
-function void debug_connected_to (int level=0, int max_level=-1);
-  int sz, num, curr_num;
-  string s_sz;
-  static string indent, save;
-  this_type port;
-
-  if (level <  0) level = 0;
-  if (level == 0) begin save = ""; indent="  "; end
-
-  if (max_level != -1 && level >= max_level)
-    return;
-
-  num = m_provided_by.num();
-
-  if (m_provided_by.num() != 0) begin
-    foreach (m_provided_by[nm]) begin
-      curr_num++;
-      port = m_provided_by[nm];
-      save = {save, indent, "  | \n"};
-      save = {save, indent, "  |_",nm," (",port.get_type_name(),")\n"};
-      indent = (num > 1 && curr_num != num) ?  {indent,"  | "}:{indent, "    "};
-      port.debug_connected_to(level+1, max_level);
-      indent = indent.substr(0,indent.len()-4-1);
+  virtual function void connect (this_type provider);
+    uvm_root top;
+    uvm_coreservice_t cs;
+    cs = uvm_coreservice_t::get();
+    top = cs.get_root();
+    if (end_of_elaboration_ph.get_state() == UVM_PHASE_EXECUTING || // TBD tidy
+    end_of_elaboration_ph.get_state() == UVM_PHASE_DONE ) begin
+      m_comp.uvm_report_warning("Late Connection", 
+        {"Attempt to connect ",this.get_full_name()," (of type ",this.get_type_name(),
+      ") at or after end_of_elaboration phase.  Ignoring."});
+      return;
     end
-  end
 
-  if (level == 0) begin
-    if (save != "")
-      save = {"This port's fanout network:\n\n  ",
-      get_full_name()," (",get_type_name(),")\n",save,"\n"};
-      if (m_imp_list.num() == 0) begin
-        uvm_root top;
-        uvm_coreservice_t cs;
-        cs = uvm_coreservice_t::get();
-        top = cs.get_root();
-        if (end_of_elaboration_ph.get_state() == UVM_PHASE_EXECUTING ||
-        end_of_elaboration_ph.get_state() == UVM_PHASE_DONE )  // TBD tidy
-        save = {save,"  Connected implementations: none\n"};
-        else
-          save = {save,
-          "  Connected implementations: not resolved until end-of-elab\n"};
-        end
-        else begin
-          save = {save,"  Resolved implementation list:\n"};
-          foreach (m_imp_list[nm]) begin
-            port = m_imp_list[nm];
-            s_sz.itoa(sz);
-            save = {save, indent, s_sz, ": ",nm," (",port.get_type_name(),")\n"};
-            sz++;
+    if (provider == null) begin
+      m_comp.uvm_report_error(s_connection_error_id,
+      "Cannot connect to null port handle", UVM_NONE);
+      return;
+    end
+
+    if (provider == this) begin
+      m_comp.uvm_report_error(s_connection_error_id,
+      "Cannot connect a port instance to itself", UVM_NONE);
+      return;
+    end
+
+    if ((provider.m_if_mask & m_if_mask) != m_if_mask) begin
+      m_comp.uvm_report_error(s_connection_error_id, 
+        {provider.get_full_name(),
+        " (of type ",provider.get_type_name(),
+        ") does not provide the complete interface required of this port (type ",
+      get_type_name(),")"}, UVM_NONE);
+      return;
+    end
+
+    // IMP.connect(anything) is illegal
+    if (is_imp()) begin
+      m_comp.uvm_report_error(s_connection_error_id,
+        $sformatf(
+      "Cannot call an imp port's connect method. An imp is connected only to the component passed in its constructor. (You attempted to bind this imp to %s)", provider.get_full_name()), UVM_NONE);
+      return;
+    end
+
+    // EXPORT.connect(PORT) are illegal
+    if (is_export() && provider.is_port()) begin
+      m_comp.uvm_report_error(s_connection_error_id,
+        $sformatf(
+      "Cannot connect exports to ports Try calling port.connect(export) instead. (You attempted to bind this export to %s).", provider.get_full_name()), UVM_NONE);
+      return;
+    end
+
+    void'(m_check_relationship(provider));
+
+    m_provided_by[provider.get_full_name()] = provider;
+    provider.m_provided_to[get_full_name()] = this;
+
+  endfunction
+
+
+  // Function: debug_connected_to
+  //
+  // The ~debug_connected_to~ method outputs a visual text display of the
+  // port/export/imp network to which this port connects (i.e., the port's
+  // fanout).
+  //
+  // This method must not be called before the end_of_elaboration phase, as port
+  // connections are not resolved until then.
+
+  function void debug_connected_to (int level=0, int max_level=-1);
+    int sz, num, curr_num;
+    string s_sz;
+    static string indent, save;
+    this_type port;
+
+    if (level <  0) level = 0;
+    if (level == 0) begin save = ""; indent="  "; end
+
+    if (max_level != -1 && level >= max_level)
+      return;
+
+    num = m_provided_by.num();
+
+    if (m_provided_by.num() != 0) begin
+      foreach (m_provided_by[nm]) begin
+        curr_num++;
+        port = m_provided_by[nm];
+        save = {save, indent, "  | \n"};
+        save = {save, indent, "  |_",nm," (",port.get_type_name(),")\n"};
+        indent = (num > 1 && curr_num != num) ?  {indent,"  | "}:{indent, "    "};
+        port.debug_connected_to(level+1, max_level);
+        indent = indent.substr(0,indent.len()-4-1);
+      end
+    end
+
+    if (level == 0) begin
+      if (save != "")
+        save = {"This port's fanout network:\n\n  ",
+        get_full_name()," (",get_type_name(),")\n",save,"\n"};
+        if (m_imp_list.num() == 0) begin
+          uvm_root top;
+          uvm_coreservice_t cs;
+          cs = uvm_coreservice_t::get();
+          top = cs.get_root();
+          if (end_of_elaboration_ph.get_state() == UVM_PHASE_EXECUTING ||
+          end_of_elaboration_ph.get_state() == UVM_PHASE_DONE )  // TBD tidy
+          save = {save,"  Connected implementations: none\n"};
+          else
+            save = {save,
+            "  Connected implementations: not resolved until end-of-elab\n"};
           end
+          else begin
+            save = {save,"  Resolved implementation list:\n"};
+            foreach (m_imp_list[nm]) begin
+              port = m_imp_list[nm];
+              s_sz.itoa(sz);
+              save = {save, indent, s_sz, ": ",nm," (",port.get_type_name(),")\n"};
+              sz++;
+            end
+          end
+          m_comp.uvm_report_info("debug_connected_to", save);
         end
-        m_comp.uvm_report_info("debug_connected_to", save);
-      end
-    endfunction
-
-
-    // Function: debug_provided_to
-    //
-    // The ~debug_provided_to~ method outputs a visual display of the port/export
-    // network that ultimately connect to this port (i.e., the port's fanin).
-    //
-    // This method must not be called before the end_of_elaboration phase, as port
-    // connections are not resolved until then.
-
-    function void debug_provided_to  (int level=0, int max_level=-1);
-      string nm;
-      int num,curr_num;
-      this_type port;
-      static string indent, save;
-
-      if (level <  0) level = 0; 
-      if (level == 0) begin save = ""; indent = "  "; end
-
-      if (max_level != -1 && level > max_level)
-        return;
-
-      num = m_provided_to.num();
-
-      if (num != 0) begin
-        foreach (m_provided_to[nm]) begin
-          curr_num++;
-          port = m_provided_to[nm];
-          save = {save, indent, "  | \n"};
-          save = {save, indent, "  |_",nm," (",port.get_type_name(),")\n"};
-          indent = (num > 1 && curr_num != num) ?  {indent,"  | "}:{indent, "    "};
-          port.debug_provided_to(level+1, max_level);
-          indent = indent.substr(0,indent.len()-4-1);
-        end
-      end
-
-      if (level == 0) begin
-        if (save != "")
-          save = {"This port's fanin network:\n\n  ",
-          get_full_name()," (",get_type_name(),")\n",save,"\n"};
-          if (m_provided_to.num() == 0)
-            save = {save,indent,"This port has not been bound\n"};
-          m_comp.uvm_report_info("debug_provided_to", save);
-        end
-
       endfunction
 
 
-      // get_connected_to
-      // ----------------
+      // Function: debug_provided_to
+      //
+      // The ~debug_provided_to~ method outputs a visual display of the port/export
+      // network that ultimately connect to this port (i.e., the port's fanin).
+      //
+      // This method must not be called before the end_of_elaboration phase, as port
+      // connections are not resolved until then.
 
-      function void get_connected_to (ref uvm_port_list list);
+      function void debug_provided_to  (int level=0, int max_level=-1);
+        string nm;
+        int num,curr_num;
         this_type port;
-        list.delete();
-        foreach (m_provided_by[name]) begin
-          port = m_provided_by[name];
-          list[name] = port.get_comp();
-        end
-      endfunction
+        static string indent, save;
 
+        if (level <  0) level = 0; 
+        if (level == 0) begin save = ""; indent = "  "; end
 
-      // get_provided_to
-      // ---------------
-
-      function void get_provided_to (ref uvm_port_list list);
-        this_type port;
-        list.delete();
-        foreach (m_provided_to[name]) begin
-          port = m_provided_to[name];
-          list[name] = port.get_comp();
-        end
-      endfunction
-
-
-      // m_check_relationship
-      // --------------------
-
-      local function bit  m_check_relationship (this_type provider);  
-        string s;
-        this_type from;
-        uvm_component from_parent;
-        uvm_component to_parent;
-        uvm_component from_gparent;
-        uvm_component to_gparent;
-
-        // Checks that the connection is between ports that are hierarchically
-        // adjacent (up or down one level max, or are siblings),
-        // and check for legal direction, requirer.connect(provider).
-
-        // if we're an analysis port, allow connection to anywhere
-        if (get_type_name() == "uvm_analysis_port")
-          return 1;
-
-        from         = this;
-        from_parent  = get_parent();
-        to_parent    = provider.get_parent();
-
-        // skip check if we have a parentless port
-        if (from_parent == null || to_parent == null)
-          return 1;
-
-        from_gparent = from_parent.get_parent();
-        to_gparent   = to_parent.get_parent();
-
-        // Connecting port-to-port: CHILD.port.connect(PARENT.port)
-        //
-        if (from.is_port() && provider.is_port() && from_gparent != to_parent) begin
-          s = {provider.get_full_name(),
-          " (of type ",provider.get_type_name(),
-          ") is not up one level of hierarchy from this port. ",
-          "A port-to-port connection takes the form ",
-          "child_component.child_port.connect(parent_port)"};
-          m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
-          return 0;
-        end    
-
-        // Connecting port-to-export: SIBLING.port.connect(SIBLING.export)
-        // Connecting port-to-imp:    SIBLING.port.connect(SIBLING.imp)
-        //
-        else if (from.is_port() && (provider.is_export() || provider.is_imp()) &&
-        from_gparent != to_gparent) begin
-          s = {provider.get_full_name(),
-          " (of type ",provider.get_type_name(),
-          ") is not at the same level of hierarchy as this port. ",
-          "A port-to-export connection takes the form ",
-          "component1.port.connect(component2.export)"};
-          m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
-          return 0;
-        end
-
-        // Connecting export-to-export: PARENT.export.connect(CHILD.export)
-        // Connecting export-to-imp:    PARENT.export.connect(CHILD.imp)
-        //
-        else if (from.is_export() && (provider.is_export() || provider.is_imp()) &&
-        from_parent != to_gparent) begin
-          s = {provider.get_full_name(),
-          " (of type ",provider.get_type_name(),
-          ") is not down one level of hierarchy from this export. ",
-          "An export-to-export or export-to-imp connection takes the form ",
-          "parent_export.connect(child_component.child_export)"};
-          m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
-          return 0;
-        end
-
-        return 1;
-      endfunction
-
-
-      // m_add_list
-      //
-      // Internal method.
-
-      local function void m_add_list           (this_type provider);
-        string sz;
-        this_type imp;
-
-        for (int i = 0; i < provider.size(); i++) begin
-          imp = provider.get_if(i);
-          if (!m_imp_list.exists(imp.get_full_name()))
-            m_imp_list[imp.get_full_name()] = imp;
-        end
-
-      endfunction
-
-
-      // Function: resolve_bindings
-      //
-      // This callback is called just before entering the end_of_elaboration phase.
-      // It recurses through each port's fanout to determine all the imp 
-      // destinations. It then checks against the required min and max connections.
-      // After resolution, <size> returns a valid value and <get_if>
-      // can be used to access a particular imp.
-      //
-      // This method is automatically called just before the start of the
-      // end_of_elaboration phase. Users should not need to call it directly.
-
-      virtual function void resolve_bindings();
-        if (m_resolved) // don't repeat ourselves
+        if (max_level != -1 && level > max_level)
           return;
 
-        if (is_imp()) begin
-          m_imp_list[get_full_name()] = this;
-        end
-        else begin
-          foreach (m_provided_by[nm]) begin
-            this_type port;
-            port = m_provided_by[nm];
-            port.resolve_bindings();
-            m_add_list(port);
+        num = m_provided_to.num();
+
+        if (num != 0) begin
+          foreach (m_provided_to[nm]) begin
+            curr_num++;
+            port = m_provided_to[nm];
+            save = {save, indent, "  | \n"};
+            save = {save, indent, "  |_",nm," (",port.get_type_name(),")\n"};
+            indent = (num > 1 && curr_num != num) ?  {indent,"  | "}:{indent, "    "};
+            port.debug_provided_to(level+1, max_level);
+            indent = indent.substr(0,indent.len()-4-1);
           end
         end
 
-        m_resolved = 1;
+        if (level == 0) begin
+          if (save != "")
+            save = {"This port's fanin network:\n\n  ",
+            get_full_name()," (",get_type_name(),")\n",save,"\n"};
+            if (m_provided_to.num() == 0)
+              save = {save,indent,"This port has not been bound\n"};
+            m_comp.uvm_report_info("debug_provided_to", save);
+          end
 
-        if (size() < min_size() ) begin
-          m_comp.uvm_report_error(s_connection_error_id, 
-            $sformatf("connection count of %0d does not meet required minimum of %0d",
-          size(), min_size()), UVM_NONE);
-        end
-
-        if (max_size() != UVM_UNBOUNDED_CONNECTIONS && size() > max_size() ) begin
-          m_comp.uvm_report_error(s_connection_error_id, 
-            $sformatf("connection count of %0d exceeds maximum of %0d",
-          size(), max_size()), UVM_NONE);
-        end
-
-        if (size())
-          set_if(0);
-
-      endfunction
+        endfunction
 
 
-      // Function: get_if
-      //
-      // Returns the implementation (imp) port at the given index from the array of
-      // imps this port is connected to. Use <size> to get the valid range for index.
-      // This method can only be called at the end_of_elaboration phase or after, as
-      // port connections are not resolved before then.
+        // get_connected_to
+        // ----------------
 
-      function uvm_port_base #(IF) get_if(int index=0);
-        string s;
-        if (size()==0) begin
-          m_comp.uvm_report_warning("get_if",
-          "Port size is zero; cannot get interface at any index", UVM_NONE);
-          return null;
-        end
-        if (index < 0 || index >= size()) begin
-          $sformat(s, "Index %0d out of range [0,%0d]", index, size()-1);
-          m_comp.uvm_report_warning(s_connection_error_id, s, UVM_NONE);
-          return null;
-        end
-        foreach (m_imp_list[nm]) begin
-          if (index == 0)
-            return m_imp_list[nm];
-          index--;
-        end
-      endfunction
+        function void get_connected_to (ref uvm_port_list list);
+          this_type port;
+          list.delete();
+          foreach (m_provided_by[name]) begin
+            port = m_provided_by[name];
+            list[name] = port.get_comp();
+          end
+        endfunction
 
-    endclass
+
+        // get_provided_to
+        // ---------------
+
+        function void get_provided_to (ref uvm_port_list list);
+          this_type port;
+          list.delete();
+          foreach (m_provided_to[name]) begin
+            port = m_provided_to[name];
+            list[name] = port.get_comp();
+          end
+        endfunction
+
+
+        // m_check_relationship
+        // --------------------
+
+        local function bit  m_check_relationship (this_type provider);  
+          string s;
+          this_type from;
+          uvm_component from_parent;
+          uvm_component to_parent;
+          uvm_component from_gparent;
+          uvm_component to_gparent;
+
+          // Checks that the connection is between ports that are hierarchically
+          // adjacent (up or down one level max, or are siblings),
+          // and check for legal direction, requirer.connect(provider).
+
+          // if we're an analysis port, allow connection to anywhere
+          if (get_type_name() == "uvm_analysis_port")
+            return 1;
+
+          from         = this;
+          from_parent  = get_parent();
+          to_parent    = provider.get_parent();
+
+          // skip check if we have a parentless port
+          if (from_parent == null || to_parent == null)
+            return 1;
+
+          from_gparent = from_parent.get_parent();
+          to_gparent   = to_parent.get_parent();
+
+          // Connecting port-to-port: CHILD.port.connect(PARENT.port)
+          //
+          if (from.is_port() && provider.is_port() && from_gparent != to_parent) begin
+            s = {provider.get_full_name(),
+            " (of type ",provider.get_type_name(),
+            ") is not up one level of hierarchy from this port. ",
+            "A port-to-port connection takes the form ",
+            "child_component.child_port.connect(parent_port)"};
+            m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
+            return 0;
+          end    
+
+          // Connecting port-to-export: SIBLING.port.connect(SIBLING.export)
+          // Connecting port-to-imp:    SIBLING.port.connect(SIBLING.imp)
+          //
+          else if (from.is_port() && (provider.is_export() || provider.is_imp()) &&
+          from_gparent != to_gparent) begin
+            s = {provider.get_full_name(),
+            " (of type ",provider.get_type_name(),
+            ") is not at the same level of hierarchy as this port. ",
+            "A port-to-export connection takes the form ",
+            "component1.port.connect(component2.export)"};
+            m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
+            return 0;
+          end
+
+          // Connecting export-to-export: PARENT.export.connect(CHILD.export)
+          // Connecting export-to-imp:    PARENT.export.connect(CHILD.imp)
+          //
+          else if (from.is_export() && (provider.is_export() || provider.is_imp()) &&
+          from_parent != to_gparent) begin
+            s = {provider.get_full_name(),
+            " (of type ",provider.get_type_name(),
+            ") is not down one level of hierarchy from this export. ",
+            "An export-to-export or export-to-imp connection takes the form ",
+            "parent_export.connect(child_component.child_export)"};
+            m_comp.uvm_report_warning(s_connection_warning_id, s, UVM_NONE);
+            return 0;
+          end
+
+          return 1;
+        endfunction
+
+
+        // m_add_list
+        //
+        // Internal method.
+
+        local function void m_add_list           (this_type provider);
+          string sz;
+          this_type imp;
+
+          for (int i = 0; i < provider.size(); i++) begin
+            imp = provider.get_if(i);
+            if (!m_imp_list.exists(imp.get_full_name()))
+              m_imp_list[imp.get_full_name()] = imp;
+          end
+
+        endfunction
+
+
+        // Function: resolve_bindings
+        //
+        // This callback is called just before entering the end_of_elaboration phase.
+        // It recurses through each port's fanout to determine all the imp 
+        // destinations. It then checks against the required min and max connections.
+        // After resolution, <size> returns a valid value and <get_if>
+        // can be used to access a particular imp.
+        //
+        // This method is automatically called just before the start of the
+        // end_of_elaboration phase. Users should not need to call it directly.
+
+        virtual function void resolve_bindings();
+          if (m_resolved) // don't repeat ourselves
+            return;
+
+          if (is_imp()) begin
+            m_imp_list[get_full_name()] = this;
+          end
+          else begin
+            foreach (m_provided_by[nm]) begin
+              this_type port;
+              port = m_provided_by[nm];
+              port.resolve_bindings();
+              m_add_list(port);
+            end
+          end
+
+          m_resolved = 1;
+
+          if (size() < min_size() ) begin
+            m_comp.uvm_report_error(s_connection_error_id, 
+              $sformatf("connection count of %0d does not meet required minimum of %0d",
+            size(), min_size()), UVM_NONE);
+          end
+
+          if (max_size() != UVM_UNBOUNDED_CONNECTIONS && size() > max_size() ) begin
+            m_comp.uvm_report_error(s_connection_error_id, 
+              $sformatf("connection count of %0d exceeds maximum of %0d",
+            size(), max_size()), UVM_NONE);
+          end
+
+          if (size())
+            set_if(0);
+
+        endfunction
+
+
+        // Function: get_if
+        //
+        // Returns the implementation (imp) port at the given index from the array of
+        // imps this port is connected to. Use <size> to get the valid range for index.
+        // This method can only be called at the end_of_elaboration phase or after, as
+        // port connections are not resolved before then.
+
+        function uvm_port_base #(IF) get_if(int index=0);
+          string s;
+          if (size()==0) begin
+            m_comp.uvm_report_warning("get_if",
+            "Port size is zero; cannot get interface at any index", UVM_NONE);
+            return null;
+          end
+          if (index < 0 || index >= size()) begin
+            $sformat(s, "Index %0d out of range [0,%0d]", index, size()-1);
+            m_comp.uvm_report_warning(s_connection_error_id, s, UVM_NONE);
+            return null;
+          end
+          foreach (m_imp_list[nm]) begin
+            if (index == 0)
+              return m_imp_list[nm];
+            index--;
+          end
+        endfunction
+
+      endclass
 

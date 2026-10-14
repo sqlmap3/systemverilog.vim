@@ -339,45 +339,45 @@ endfunction
 // get_full_hdl_path
 
 function void uvm_reg_file::get_full_hdl_path(ref string paths[$],
-    input string kind = "",
-input string separator = ".");
-if (kind == "")
-  kind = get_default_hdl_path();
+                                              input string kind = "",
+                                              input string separator = ".");
+  if (kind == "")
+    kind = get_default_hdl_path();
 
-if (!has_hdl_path(kind)) begin
-  `uvm_error("RegModel",{"Register file does not have hdl path defined for abstraction '",kind,"'"})
-  return;
-end
+  if (!has_hdl_path(kind)) begin
+    `uvm_error("RegModel",{"Register file does not have hdl path defined for abstraction '",kind,"'"})
+    return;
+  end
 
-paths.delete();
+  paths.delete();
 
-begin
-  uvm_queue #(string) hdl_paths = hdl_paths_pool.get(kind);
-  string parent_paths[$];
+  begin
+    uvm_queue #(string) hdl_paths = hdl_paths_pool.get(kind);
+    string parent_paths[$];
 
-  if (m_rf != null)
-    m_rf.get_full_hdl_path(parent_paths, kind, separator);
-  else if (parent != null)
-    parent.get_full_hdl_path(parent_paths, kind, separator);
+    if (m_rf != null)
+      m_rf.get_full_hdl_path(parent_paths, kind, separator);
+    else if (parent != null)
+      parent.get_full_hdl_path(parent_paths, kind, separator);
 
-  for (int i=0; i<hdl_paths.size();i++) begin
-    string hdl_path = hdl_paths.get(i);
+    for (int i=0; i<hdl_paths.size();i++) begin
+      string hdl_path = hdl_paths.get(i);
 
-    if (parent_paths.size() == 0) begin
-      if (hdl_path != "")
-        paths.push_back(hdl_path);
+      if (parent_paths.size() == 0) begin
+        if (hdl_path != "")
+          paths.push_back(hdl_path);
 
-      continue;
-    end
+        continue;
+      end
 
-    foreach (parent_paths[j])  begin
-      if (hdl_path == "")
-        paths.push_back(parent_paths[j]);
-      else
-        paths.push_back({ parent_paths[j], separator, hdl_path });
+      foreach (parent_paths[j])  begin
+        if (hdl_path == "")
+          paths.push_back(parent_paths[j]);
+        else
+          paths.push_back({ parent_paths[j], separator, hdl_path });
+      end
     end
   end
-end
 
 endfunction
 
@@ -478,9 +478,9 @@ endfunction
 // do_compare
 
 function bit uvm_reg_file::do_compare (uvm_object  rhs,
-uvm_comparer comparer);
-`uvm_warning("RegModel","RegModel register files cannot be compared")
-return 0;
+                                       uvm_comparer comparer);
+  `uvm_warning("RegModel","RegModel register files cannot be compared")
+  return 0;
 endfunction
 
 

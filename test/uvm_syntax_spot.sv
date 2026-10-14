@@ -256,4 +256,17 @@ endclass
 
 export "DPI-C" task spot_dpi_task;
 
+/**
+ * @brief DVT doc comment block
+ * @param req_data Transaction request data
+ * @return Success flag
+ */
+function int spot_doc_fn(int req_data);
+  /// @note single line DVT doc comment
+  string msg = $sformatf("Value: %0d, hex=0x%08h\n", req_data, req_data);
+  my_custom_t my_typed_var;
+  my_scope_pkg::my_scoped_call();
+  return 1;
+endfunction
+
 `endif
