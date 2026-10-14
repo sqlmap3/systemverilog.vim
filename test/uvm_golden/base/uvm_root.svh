@@ -188,8 +188,8 @@ class uvm_root extends uvm_component;
   // (default=all components).
 
   extern function void find_all (string comp_match,
-    ref uvm_component comps[$],
-    input uvm_component comp=null);
+                                 ref uvm_component comps[$],
+                                 input uvm_component comp=null);
 
 
   // Function: print_topology
@@ -220,8 +220,8 @@ class uvm_root extends uvm_component;
 
   // PRIVATE members
   extern function void m_find_all_recurse(string comp_match,
-    ref uvm_component comps[$],
-    input uvm_component comp=null); 
+                                          ref uvm_component comps[$],
+                                          input uvm_component comp=null); 
 
   extern protected function new ();
   extern protected virtual function bit m_add_child (uvm_component child);
@@ -443,16 +443,16 @@ function void uvm_root::report_header(UVM_FILE file = 0);
         test_list = {test_list, sep, test_names[i]};
       end
       uvm_report_warning("MULTTST", 
-      $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
-    end
+                                          $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
+                                        end
 
     `else
 
-    // plusarg overrides argument
-    if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
-      `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
-      testname_plusarg = 1;
-    end
+                                        // plusarg overrides argument
+                                        if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
+                                          `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
+                                          testname_plusarg = 1;
+                                        end
 
     `endif
 
@@ -463,610 +463,610 @@ function void uvm_root::report_header(UVM_FILE file = 0);
 
       if(m_children.exists("uvm_test_top")) begin
         uvm_report_fatal("TTINST",
-        "An uvm_test_top already exists via a previous call to run_test", UVM_NONE);
-        #0; // forces shutdown because $finish is forked
-      end
-      $cast(uvm_test_top, factory.create_component_by_name(test_name,
-      "", "uvm_test_top", null));
+                                          "An uvm_test_top already exists via a previous call to run_test", UVM_NONE);
+                                          #0; // forces shutdown because $finish is forked
+                                        end
+                                        $cast(uvm_test_top, factory.create_component_by_name(test_name,
+                                          "", "uvm_test_top", null));
 
-      if (uvm_test_top == null) begin
-        msg = testname_plusarg ? {"command line +UVM_TESTNAME=",test_name} : 
-        {"call to run_test(",test_name,")"};
-        uvm_report_fatal("INVTST",
-        {"Requested test from ",msg, " not found." }, UVM_NONE);
-      end
-    end
-
-    if (m_children.num() == 0) begin
-      uvm_report_fatal("NOCOMP",
-        {"No components instantiated. You must either instantiate",
-        " at least one component before calling run_test or use",
-        " run_test to do so. To run a test using run_test,",
-        " use +UVM_TESTNAME or supply the test name in",
-      " the argument to run_test(). Exiting simulation."}, UVM_NONE);
-      return;
-    end
+                                          if (uvm_test_top == null) begin
+                                            msg = testname_plusarg ? {"command line +UVM_TESTNAME=",test_name} : 
+                                            {"call to run_test(",test_name,")"};
+                                            uvm_report_fatal("INVTST",
+                                            {"Requested test from ",msg, " not found." }, UVM_NONE);
+                                          end
+                                        end
+
+                                        if (m_children.num() == 0) begin
+                                          uvm_report_fatal("NOCOMP",
+                                            {"No components instantiated. You must either instantiate",
+                                            " at least one component before calling run_test or use",
+                                            " run_test to do so. To run a test using run_test,",
+                                            " use +UVM_TESTNAME or supply the test name in",
+                                          " the argument to run_test(). Exiting simulation."}, UVM_NONE);
+                                          return;
+                                        end
 
-    begin
-      if(test_name=="") 
-        uvm_report_info("RNTST", "Running test ...", UVM_LOW); 
-      else if (test_name == uvm_test_top.get_type_name())
-        uvm_report_info("RNTST", {"Running test ",test_name,"..."}, UVM_LOW); 
-      else
-        uvm_report_info("RNTST", {"Running test ",uvm_test_top.get_type_name()," (via factory override for test \"",test_name,"\")..."}, UVM_LOW);
-    end
-
-    // phase runner, isolated from calling process
-    fork begin
-      // spawn the phase runner task
-      phase_runner_proc = process::self();
-      uvm_phase::m_run_phases();
-    end
-  join_none
-  #0; // let the phase runner start
+                                        begin
+                                          if(test_name=="") 
+                                            uvm_report_info("RNTST", "Running test ...", UVM_LOW); 
+                                          else if (test_name == uvm_test_top.get_type_name())
+                                            uvm_report_info("RNTST", {"Running test ",test_name,"..."}, UVM_LOW); 
+                                          else
+                                            uvm_report_info("RNTST", {"Running test ",uvm_test_top.get_type_name()," (via factory override for test \"",test_name,"\")..."}, UVM_LOW);
+                                        end
+
+                                        // phase runner, isolated from calling process
+                                        fork begin
+                                          // spawn the phase runner task
+                                          phase_runner_proc = process::self();
+                                          uvm_phase::m_run_phases();
+                                        end
+                                      join_none
+                                      #0; // let the phase runner start
 
-  wait (m_phase_all_done == 1);
+                                      wait (m_phase_all_done == 1);
 
-  // clean up after ourselves
-  phase_runner_proc.kill();
+                                      // clean up after ourselves
+                                      phase_runner_proc.kill();
 
-  l_rs = uvm_report_server::get_server();
-  l_rs.report_summarize();
-
-  if (finish_on_completion)
-    $finish;
+                                      l_rs = uvm_report_server::get_server();
+                                      l_rs.report_summarize();
+
+                                      if (finish_on_completion)
+                                        $finish;
 
-endtask
+                                    endtask
 
 
-// find_all
-// --------
+                                    // find_all
+                                    // --------
 
-function void uvm_root::find_all(string comp_match, ref uvm_component comps[$],
-input uvm_component comp=null); 
+                                    function void uvm_root::find_all(string comp_match, ref uvm_component comps[$],
+                                    input uvm_component comp=null); 
 
-if (comp==null)
-  comp = this;
-m_find_all_recurse(comp_match, comps, comp);
-
-endfunction
-
-
-// find
-// ----
+                                    if (comp==null)
+                                      comp = this;
+                                    m_find_all_recurse(comp_match, comps, comp);
+
+                                  endfunction
+
+
+                                  // find
+                                  // ----
 
-function uvm_component uvm_root::find (string comp_match);
-  uvm_component comp_list[$];
+                                  function uvm_component uvm_root::find (string comp_match);
+                                    uvm_component comp_list[$];
 
-  find_all(comp_match,comp_list);
+                                    find_all(comp_match,comp_list);
 
-  if (comp_list.size() > 1)
-  uvm_report_warning("MMATCH",
-    $sformatf("Found %0d components matching '%s'. Returning first match, %0s.",
-  comp_list.size(),comp_match,comp_list[0].get_full_name()), UVM_NONE);
+                                    if (comp_list.size() > 1)
+                                    uvm_report_warning("MMATCH",
+                                      $sformatf("Found %0d components matching '%s'. Returning first match, %0s.",
+                                    comp_list.size(),comp_match,comp_list[0].get_full_name()), UVM_NONE);
 
-  if (comp_list.size() == 0) begin
-    uvm_report_warning("CMPNFD",
-      {"Component matching '",comp_match,
-    "' was not found in the list of uvm_components"}, UVM_NONE);
-    return null;
-  end
+                                    if (comp_list.size() == 0) begin
+                                      uvm_report_warning("CMPNFD",
+                                        {"Component matching '",comp_match,
+                                      "' was not found in the list of uvm_components"}, UVM_NONE);
+                                      return null;
+                                    end
 
-  return comp_list[0];
-endfunction
+                                    return comp_list[0];
+                                  endfunction
 
 
-// print_topology
-// --------------
+                                  // print_topology
+                                  // --------------
 
-function void uvm_root::print_topology(uvm_printer printer=null);
+                                  function void uvm_root::print_topology(uvm_printer printer=null);
 
-  string s;
+                                    string s;
 
-  if (m_children.num()==0) begin
-    uvm_report_warning("EMTCOMP", "print_topology - No UVM components to print.", UVM_NONE);
-    return;
-  end
+                                    if (m_children.num()==0) begin
+                                      uvm_report_warning("EMTCOMP", "print_topology - No UVM components to print.", UVM_NONE);
+                                      return;
+                                    end
 
-  if (printer==null)
-    printer = uvm_default_printer;
+                                    if (printer==null)
+                                      printer = uvm_default_printer;
 
-  foreach (m_children[c]) begin
-    if(m_children[c].print_enabled) begin
-      printer.print_object("", m_children[c]);  
-    end
-  end
-  `uvm_info("UVMTOP",{"UVM testbench topology:\n",printer.emit()},UVM_NONE)
-
-endfunction
-
-
-// set_timeout
-// -----------
-
-function void uvm_root::set_timeout(time timeout, bit overridable=1);
-  static bit m_uvm_timeout_overridable = 1;
-  if (m_uvm_timeout_overridable == 0) begin
-    uvm_report_info("NOTIMOUTOVR",
-      $sformatf("The global timeout setting of %0d is not overridable to %0d due to a previous setting.",
-    phase_timeout, timeout), UVM_NONE);
-    return;
-  end
-  m_uvm_timeout_overridable = overridable;
-  phase_timeout = timeout;
-endfunction
-
-
-
-// m_find_all_recurse
-// ------------------
-
-function void uvm_root::m_find_all_recurse(string comp_match, ref uvm_component comps[$],
-input uvm_component comp=null); 
-string name;
-
-if (comp.get_first_child(name))
-do begin
-  this.m_find_all_recurse(comp_match, comps, comp.get_child(name));
-end
-while (comp.get_next_child(name));
-if (uvm_is_match(comp_match, comp.get_full_name()) &&
-comp.get_name() != "") /* uvm_top */
-comps.push_back(comp);
-
-endfunction
-
-
-// m_add_child
-// -----------
-
-// Add to the top levels array
-function bit uvm_root::m_add_child (uvm_component child);
-  if(super.m_add_child(child)) begin
-    if(child.get_name() == "uvm_test_top")
-      top_levels.push_front(child);
-    else
-      top_levels.push_back(child);
-    return 1;
-  end
-  else
-    return 0;
-endfunction
-
-
-// build_phase
-// -----
-
-function void uvm_root::build_phase(uvm_phase phase);
-
-  super.build_phase(phase);
-
-  m_set_cl_msg_args();
-
-  m_do_verbosity_settings();
-  m_do_timeout_settings();
-  m_do_factory_settings();
-  m_do_config_settings();
-  m_do_max_quit_settings();
-  m_do_dump_args();
-
-endfunction
-
-
-// m_do_verbosity_settings
-// -----------------------
-
-function void uvm_root::m_do_verbosity_settings();
-  string set_verbosity_settings[$];
-  string split_vals[$];
-  uvm_verbosity tmp_verb;
-
-  // Retrieve them all into set_verbosity_settings
-  void'(clp.get_arg_values("+uvm_set_verbosity=", set_verbosity_settings));
-
-  for(int i = 0; i < set_verbosity_settings.size(); i++) begin
-    uvm_split_string(set_verbosity_settings[i], ",", split_vals);
-    if(split_vals.size() < 4 || split_vals.size() > 5) begin
-      uvm_report_warning("INVLCMDARGS", 
-        $sformatf("Invalid number of arguments found on the command line for setting '+uvm_set_verbosity=%s'.  Setting ignored.",
-      set_verbosity_settings[i]), UVM_NONE, "", "");
-    end
-    // Invalid verbosity
-    if(!clp.m_convert_verb(split_vals[2], tmp_verb)) begin
-      uvm_report_warning("INVLCMDVERB", 
-        $sformatf("Invalid verbosity found on the command line for setting '%s'.", 
-      set_verbosity_settings[i]), UVM_NONE, "", "");
-    end
-  end
-endfunction
-
-
-// m_do_timeout_settings
-// ---------------------
-
-function void uvm_root::m_do_timeout_settings();
-  string timeout_settings[$];
-  string timeout;
-  string split_timeout[$];
-  int timeout_count;
-  time timeout_int;
-  string override_spec;
-  timeout_count = clp.get_arg_values("+UVM_TIMEOUT=", timeout_settings);
-  if (timeout_count ==  0)
-    return;
-  else begin
-    timeout = timeout_settings[0];
-    if (timeout_count > 1) begin
-      string timeout_list;
-      string sep;
-      for (int i = 0; i < timeout_settings.size(); i++) begin
-        if (i != 0)
-          sep = "; ";
-      timeout_list = {timeout_list, sep, timeout_settings[i]};
-    end
-    uvm_report_warning("MULTTIMOUT", 
-      $sformatf("Multiple (%0d) +UVM_TIMEOUT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
-    timeout_count, timeout, timeout_list), UVM_NONE);
-  end
-  uvm_report_info("TIMOUTSET",
-  $sformatf("'+UVM_TIMEOUT=%s' provided on the command line is being applied.", timeout), UVM_NONE);
-  void'($sscanf(timeout,"%d,%s",timeout_int,override_spec));
-  case(override_spec)
-    "YES"   : set_timeout(timeout_int, 1);
-    "NO"    : set_timeout(timeout_int, 0);
-    default : set_timeout(timeout_int, 1);
-  endcase
-end
-endfunction
-
-
-// m_do_factory_settings
-// ---------------------
-
-function void uvm_root::m_do_factory_settings();
-  string args[$];
-
-  void'(clp.get_arg_matches("/^\\+(UVM_SET_INST_OVERRIDE|uvm_set_inst_override)=/",args));
-  foreach(args[i]) begin
-    m_process_inst_override(args[i].substr(23, args[i].len()-1));
-  end
-  void'(clp.get_arg_matches("/^\\+(UVM_SET_TYPE_OVERRIDE|uvm_set_type_override)=/",args));
-  foreach(args[i]) begin
-    m_process_type_override(args[i].substr(23, args[i].len()-1));
-  end
-endfunction
-
-
-// m_process_inst_override
-// -----------------------
-
-function void uvm_root::m_process_inst_override(string ovr);
-  string split_val[$];
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
-
-  uvm_split_string(ovr, ",", split_val);
-
-  if(split_val.size() != 3 ) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid setting for +uvm_set_inst_override=", ovr,
-    ", setting must specify <requested_type>,<override_type>,<instance_path>"}, UVM_NONE);
-    return;
-  end
-
-  uvm_report_info("INSTOVR", {"Applying instance override from the command line: +uvm_set_inst_override=", ovr}, UVM_NONE);
-  factory.set_inst_override_by_name(split_val[0], split_val[1], split_val[2]);
-endfunction
-
-
-// m_process_type_override
-// -----------------------
-
-function void uvm_root::m_process_type_override(string ovr);
-  string split_val[$];
-  int replace=1;
-  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-  uvm_factory factory=cs.get_factory();
-
-  uvm_split_string(ovr, ",", split_val);
-
-  if(split_val.size() > 3 || split_val.size() < 2) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid setting for +uvm_set_type_override=", ovr,
-    ", setting must specify <requested_type>,<override_type>[,<replace>]"}, UVM_NONE);
-    return;
-  end
-
-  // Replace arg is optional. If set, must be 0 or 1
-  if(split_val.size() == 3) begin
-    if(split_val[2]=="0") replace =  0;
-    else if (split_val[2] == "1") replace = 1;
-    else begin
-      uvm_report_error("UVM_CMDLINE_PROC", {"Invalid replace arg for +uvm_set_type_override=", ovr ," value must be 0 or 1"}, UVM_NONE);
-      return;
-    end
-  end
-
-  uvm_report_info("UVM_CMDLINE_PROC", {"Applying type override from the command line: +uvm_set_type_override=", ovr}, UVM_NONE);
-  factory.set_type_override_by_name(split_val[0], split_val[1], replace);
-endfunction
-
-
-// m_process_config
-// ----------------
-
-function void uvm_root::m_process_config(string cfg, bit is_int);
-  uvm_bitstream_t v;
-  string split_val[$];  
-  uvm_root m_uvm_top;
-  uvm_coreservice_t cs;
-  cs = uvm_coreservice_t::get();
-  m_uvm_top = cs.get_root();
-
-
-  uvm_split_string(cfg, ",", split_val);
-  if(split_val.size() == 1) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_config command\"", cfg,
-    "\" missing field and value: component is \"", split_val[0], "\""}, UVM_NONE);
-    return;
-  end
-
-  if(split_val.size() == 2) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_config command\"", cfg,
-    "\" missing value: component is \"", split_val[0], "\"  field is \"", split_val[1], "\""}, UVM_NONE);
-    return;
-  end
-
-  if(split_val.size() > 3) begin
-    uvm_report_error("UVM_CMDLINE_PROC", 
-    $sformatf("Invalid +uvm_set_config command\"%s\" : expected only 3 fields (component, field and value).", cfg), UVM_NONE);
-    return;
-  end
-
-  if(is_int) begin
-    if(split_val[2].len() > 2) begin
-      string base, extval;
-      base = split_val[2].substr(0,1);
-      extval = split_val[2].substr(2,split_val[2].len()-1); 
-      case(base)
-        "'b" : v = extval.atobin();
-        "0b" : v = extval.atobin();
-        "'o" : v = extval.atooct();
-        "'d" : v = extval.atoi();
-        "'h" : v = extval.atohex();
-        "'x" : v = extval.atohex();
-        "0x" : v = extval.atohex();
-        default : v = split_val[2].atoi();
-      endcase
-    end
-    else begin
-      v = split_val[2].atoi();
-    end
-    uvm_report_info("UVM_CMDLINE_PROC", {"Applying config setting from the command line: +uvm_set_config_int=", cfg}, UVM_NONE);
-    uvm_config_int::set(m_uvm_top, split_val[0], split_val[1], v);
-  end
-  else begin
-    uvm_report_info("UVM_CMDLINE_PROC", {"Applying config setting from the command line: +uvm_set_config_string=", cfg}, UVM_NONE);
-    uvm_config_string::set(m_uvm_top, split_val[0], split_val[1], split_val[2]);
-  end 
-
-endfunction
-
-// m_process_default_sequence
-// ----------------
-
-function void uvm_root::m_process_default_sequence(string cfg);
-  string split_val[$];
-  uvm_coreservice_t cs = uvm_coreservice_t::get();
-  uvm_root m_uvm_top = cs.get_root();   
-  uvm_factory f = cs.get_factory();
-  uvm_object_wrapper w;
-
-  uvm_split_string(cfg, ",", split_val);
-  if(split_val.size() == 1) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_default_sequence command\"", cfg,
-    "\" missing phase and type: sequencer is \"", split_val[0], "\""}, UVM_NONE);
-    return;
-  end
-
-  if(split_val.size() == 2) begin
-    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_default_sequence command\"", cfg,
-    "\" missing type: sequencer is \"", split_val[0], "\"  phase is \"", split_val[1], "\""}, UVM_NONE);
-    return;
-  end
-
-  if(split_val.size() > 3) begin
-    uvm_report_error("UVM_CMDLINE_PROC", 
-    $sformatf("Invalid +uvm_set_default_sequence command\"%s\" : expected only 3 fields (sequencer, phase and type).", cfg), UVM_NONE);
-    return;
-  end
-
-  w = f.find_wrapper_by_name(split_val[2]);
-  if (w == null) begin
-    uvm_report_error("UVM_CMDLINE_PROC",
-      $sformatf("Invalid type '%s' provided to +uvm_set_default_sequence", split_val[2]),
-    UVM_NONE);
-    return;
-  end
-  else begin
-    uvm_report_info("UVM_CMDLINE_PROC", {"Setting default sequence from the command line: +uvm_set_default_sequence=", cfg}, UVM_NONE);
-  uvm_config_db#(uvm_object_wrapper)::set(this, {split_val[0], ".", split_val[1]}, "default_sequence", w);
-end 
-
-endfunction : m_process_default_sequence
-
-
-// m_do_config_settings
-// --------------------
-
-function void uvm_root::m_do_config_settings();
-  string args[$];
-
-  void'(clp.get_arg_matches("/^\\+(UVM_SET_CONFIG_INT|uvm_set_config_int)=/",args));
-  foreach(args[i]) begin
-    m_process_config(args[i].substr(20, args[i].len()-1), 1);
-  end
-  void'(clp.get_arg_matches("/^\\+(UVM_SET_CONFIG_STRING|uvm_set_config_string)=/",args));
-  foreach(args[i]) begin
-    m_process_config(args[i].substr(23, args[i].len()-1), 0);
-  end
-  void'(clp.get_arg_matches("/^\\+(UVM_SET_DEFAULT_SEQUENCE|uvm_set_default_sequence)=/", args));
-  foreach(args[i]) begin
-    m_process_default_sequence(args[i].substr(26, args[i].len()-1));
-  end
-endfunction
-
-
-// m_do_max_quit_settings
-// ----------------------
-
-function void uvm_root::m_do_max_quit_settings();
-  uvm_report_server srvr;
-  string max_quit_settings[$];
-  int max_quit_count;
-  string max_quit;
-  string split_max_quit[$];
-  int max_quit_int;
-  srvr = uvm_report_server::get_server();
-  max_quit_count = clp.get_arg_values("+UVM_MAX_QUIT_COUNT=", max_quit_settings);
-  if (max_quit_count ==  0)
-    return;
-  else begin
-    max_quit = max_quit_settings[0];
-    if (max_quit_count > 1) begin
-      string max_quit_list;
-      string sep;
-      for (int i = 0; i < max_quit_settings.size(); i++) begin
-        if (i != 0)
-          sep = "; ";
-      max_quit_list = {max_quit_list, sep, max_quit_settings[i]};
-    end
-    uvm_report_warning("MULTMAXQUIT", 
-      $sformatf("Multiple (%0d) +UVM_MAX_QUIT_COUNT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
-    max_quit_count, max_quit, max_quit_list), UVM_NONE);
-  end
-  uvm_report_info("MAXQUITSET",
-  $sformatf("'+UVM_MAX_QUIT_COUNT=%s' provided on the command line is being applied.", max_quit), UVM_NONE);
-  uvm_split_string(max_quit, ",", split_max_quit);
-  max_quit_int = split_max_quit[0].atoi();
-  case(split_max_quit[1])
-    "YES"   : srvr.set_max_quit_count(max_quit_int, 1);
-    "NO"    : srvr.set_max_quit_count(max_quit_int, 0);
-    default : srvr.set_max_quit_count(max_quit_int, 1);
-  endcase
-end
-endfunction
-
-
-// m_do_dump_args
-// --------------
-
-function void uvm_root::m_do_dump_args();
-  string dump_args[$];
-  string all_args[$];
-  string out_string;
-  if(clp.get_arg_matches("+UVM_DUMP_CMDLINE_ARGS", dump_args)) begin
-    clp.get_args(all_args);
-    for (int i = 0; i < all_args.size(); i++) begin
-      if (all_args[i] == "__-f__")
-        continue;
-      out_string = {out_string, all_args[i], " "};
-    end
-    uvm_report_info("DUMPARGS", out_string, UVM_NONE);
-  end
-endfunction
-
-
-// m_check_verbosity
-// ----------------
-
-function void uvm_root::m_check_verbosity();
-
-  string verb_string;
-  string verb_settings[$];
-  int verb_count;
-  int plusarg;
-  int verbosity = UVM_MEDIUM;
-
-  `ifndef UVM_CMDLINE_NO_DPI
-    // Retrieve the verbosities provided on the command line.
-    verb_count = clp.get_arg_values("+UVM_VERBOSITY=", verb_settings);
-  `else
-    verb_count = $value$plusargs("UVM_VERBOSITY=%s",verb_string);
-    if (verb_count)
-      verb_settings.push_back(verb_string);
-  `endif
-
-  // If none provided, provide message about the default being used.
-  //if (verb_count == 0)
-  //  uvm_report_info("DEFVERB", ("No verbosity specified on the command line.  Using the default: UVM_MEDIUM"), UVM_NONE);
-
-  // If at least one, use the first.
-  if (verb_count > 0) begin
-    verb_string = verb_settings[0];
-    plusarg = 1;
-  end
-
-  // If more than one, provide the warning stating how many, which one will
-  // be used and the complete list.
-  if (verb_count > 1) begin
-    string verb_list;
-    string sep;
-    for (int i = 0; i < verb_settings.size(); i++) begin
-      if (i != 0)
-        sep = ", ";
-    verb_list = {verb_list, sep, verb_settings[i]};
-  end
-  uvm_report_warning("MULTVERB", 
-  $sformatf("Multiple (%0d) +UVM_VERBOSITY arguments provided on the command line.  '%s' will be used.  Provided list: %s.", verb_count, verb_string, verb_list), UVM_NONE);
-end
-
-if(plusarg == 1) begin
-  case(verb_string)
-    "UVM_NONE"    : verbosity = UVM_NONE;
-    "NONE"        : verbosity = UVM_NONE;
-    "UVM_LOW"     : verbosity = UVM_LOW;
-    "LOW"         : verbosity = UVM_LOW;
-    "UVM_MEDIUM"  : verbosity = UVM_MEDIUM;
-    "MEDIUM"      : verbosity = UVM_MEDIUM;
-    "UVM_HIGH"    : verbosity = UVM_HIGH;
-    "HIGH"        : verbosity = UVM_HIGH;
-    "UVM_FULL"    : verbosity = UVM_FULL;
-    "FULL"        : verbosity = UVM_FULL;
-    "UVM_DEBUG"   : verbosity = UVM_DEBUG;
-    "DEBUG"       : verbosity = UVM_DEBUG;
-    default       : begin
-      verbosity = verb_string.atoi();
-      if(verbosity > 0)
-        uvm_report_info("NSTVERB", $sformatf("Non-standard verbosity value, using provided '%0d'.", verbosity), UVM_NONE);
-      if(verbosity == 0) begin
-        verbosity = UVM_MEDIUM;
-        uvm_report_warning("ILLVERB", "Illegal verbosity value, using default of UVM_MEDIUM.", UVM_NONE);
-      end
-    end
-  endcase
-end
-
-set_report_verbosity_level_hier(verbosity);
-
-endfunction
-
-// It is required that the run phase start at simulation time 0
-// TBD this looks wrong - taking advantage of uvm_root not doing anything else?
-// TBD move to phase_started callback?
-task uvm_root::run_phase (uvm_phase phase);
-  // check that the commandline are took effect
-  foreach(m_uvm_applied_cl_action[idx])
-  if(m_uvm_applied_cl_action[idx].used==0) begin
-    `uvm_warning("INVLCMDARGS",$sformatf("\"+uvm_set_action=%s\" never took effect due to a mismatching component pattern",m_uvm_applied_cl_action[idx].arg))
-  end
-  foreach(m_uvm_applied_cl_sev[idx])
-  if(m_uvm_applied_cl_sev[idx].used==0) begin
-    `uvm_warning("INVLCMDARGS",$sformatf("\"+uvm_set_severity=%s\" never took effect due to a mismatching component pattern",m_uvm_applied_cl_sev[idx].arg))
-  end	  
-
-  if($time > 0)
-    `uvm_fatal("RUNPHSTIME", {"The run phase must start at time 0, current time is ",
-  $sformatf("%0t", $realtime), ". No non-zero delays are allowed before ",
-  "run_test(), and pre-run user defined phases may not consume ",
-    "simulation time before the start of the run phase."})
-endtask
+                                    foreach (m_children[c]) begin
+                                      if(m_children[c].print_enabled) begin
+                                        printer.print_object("", m_children[c]);  
+                                      end
+                                    end
+                                    `uvm_info("UVMTOP",{"UVM testbench topology:\n",printer.emit()},UVM_NONE)
+
+                                  endfunction
+
+
+                                  // set_timeout
+                                  // -----------
+
+                                  function void uvm_root::set_timeout(time timeout, bit overridable=1);
+                                    static bit m_uvm_timeout_overridable = 1;
+                                    if (m_uvm_timeout_overridable == 0) begin
+                                      uvm_report_info("NOTIMOUTOVR",
+                                        $sformatf("The global timeout setting of %0d is not overridable to %0d due to a previous setting.",
+                                      phase_timeout, timeout), UVM_NONE);
+                                      return;
+                                    end
+                                    m_uvm_timeout_overridable = overridable;
+                                    phase_timeout = timeout;
+                                  endfunction
+
+
+
+                                  // m_find_all_recurse
+                                  // ------------------
+
+                                  function void uvm_root::m_find_all_recurse(string comp_match, ref uvm_component comps[$],
+                                  input uvm_component comp=null); 
+                                  string name;
+
+                                  if (comp.get_first_child(name))
+                                  do begin
+                                    this.m_find_all_recurse(comp_match, comps, comp.get_child(name));
+                                  end
+                                  while (comp.get_next_child(name));
+                                  if (uvm_is_match(comp_match, comp.get_full_name()) &&
+                                  comp.get_name() != "") /* uvm_top */
+                                  comps.push_back(comp);
+
+                                endfunction
+
+
+                                // m_add_child
+                                // -----------
+
+                                // Add to the top levels array
+                                function bit uvm_root::m_add_child (uvm_component child);
+                                  if(super.m_add_child(child)) begin
+                                    if(child.get_name() == "uvm_test_top")
+                                      top_levels.push_front(child);
+                                    else
+                                      top_levels.push_back(child);
+                                    return 1;
+                                  end
+                                  else
+                                    return 0;
+                                endfunction
+
+
+                                // build_phase
+                                // -----
+
+                                function void uvm_root::build_phase(uvm_phase phase);
+
+                                  super.build_phase(phase);
+
+                                  m_set_cl_msg_args();
+
+                                  m_do_verbosity_settings();
+                                  m_do_timeout_settings();
+                                  m_do_factory_settings();
+                                  m_do_config_settings();
+                                  m_do_max_quit_settings();
+                                  m_do_dump_args();
+
+                                endfunction
+
+
+                                // m_do_verbosity_settings
+                                // -----------------------
+
+                                function void uvm_root::m_do_verbosity_settings();
+                                  string set_verbosity_settings[$];
+                                  string split_vals[$];
+                                  uvm_verbosity tmp_verb;
+
+                                  // Retrieve them all into set_verbosity_settings
+                                  void'(clp.get_arg_values("+uvm_set_verbosity=", set_verbosity_settings));
+
+                                  for(int i = 0; i < set_verbosity_settings.size(); i++) begin
+                                    uvm_split_string(set_verbosity_settings[i], ",", split_vals);
+                                    if(split_vals.size() < 4 || split_vals.size() > 5) begin
+                                      uvm_report_warning("INVLCMDARGS", 
+                                        $sformatf("Invalid number of arguments found on the command line for setting '+uvm_set_verbosity=%s'.  Setting ignored.",
+                                      set_verbosity_settings[i]), UVM_NONE, "", "");
+                                    end
+                                    // Invalid verbosity
+                                    if(!clp.m_convert_verb(split_vals[2], tmp_verb)) begin
+                                      uvm_report_warning("INVLCMDVERB", 
+                                        $sformatf("Invalid verbosity found on the command line for setting '%s'.", 
+                                      set_verbosity_settings[i]), UVM_NONE, "", "");
+                                    end
+                                  end
+                                endfunction
+
+
+                                // m_do_timeout_settings
+                                // ---------------------
+
+                                function void uvm_root::m_do_timeout_settings();
+                                  string timeout_settings[$];
+                                  string timeout;
+                                  string split_timeout[$];
+                                  int timeout_count;
+                                  time timeout_int;
+                                  string override_spec;
+                                  timeout_count = clp.get_arg_values("+UVM_TIMEOUT=", timeout_settings);
+                                  if (timeout_count ==  0)
+                                    return;
+                                  else begin
+                                    timeout = timeout_settings[0];
+                                    if (timeout_count > 1) begin
+                                      string timeout_list;
+                                      string sep;
+                                      for (int i = 0; i < timeout_settings.size(); i++) begin
+                                        if (i != 0)
+                                          sep = "; ";
+                                      timeout_list = {timeout_list, sep, timeout_settings[i]};
+                                    end
+                                    uvm_report_warning("MULTTIMOUT", 
+                                      $sformatf("Multiple (%0d) +UVM_TIMEOUT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
+                                    timeout_count, timeout, timeout_list), UVM_NONE);
+                                  end
+                                  uvm_report_info("TIMOUTSET",
+                                  $sformatf("'+UVM_TIMEOUT=%s' provided on the command line is being applied.", timeout), UVM_NONE);
+                                  void'($sscanf(timeout,"%d,%s",timeout_int,override_spec));
+                                  case(override_spec)
+                                    "YES"   : set_timeout(timeout_int, 1);
+                                    "NO"    : set_timeout(timeout_int, 0);
+                                    default : set_timeout(timeout_int, 1);
+                                  endcase
+                                end
+                              endfunction
+
+
+                              // m_do_factory_settings
+                              // ---------------------
+
+                              function void uvm_root::m_do_factory_settings();
+                                string args[$];
+
+                                void'(clp.get_arg_matches("/^\\+(UVM_SET_INST_OVERRIDE|uvm_set_inst_override)=/",args));
+                                foreach(args[i]) begin
+                                  m_process_inst_override(args[i].substr(23, args[i].len()-1));
+                                end
+                                void'(clp.get_arg_matches("/^\\+(UVM_SET_TYPE_OVERRIDE|uvm_set_type_override)=/",args));
+                                foreach(args[i]) begin
+                                  m_process_type_override(args[i].substr(23, args[i].len()-1));
+                                end
+                              endfunction
+
+
+                              // m_process_inst_override
+                              // -----------------------
+
+                              function void uvm_root::m_process_inst_override(string ovr);
+                                string split_val[$];
+                                uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+                                uvm_factory factory=cs.get_factory();
+
+                                uvm_split_string(ovr, ",", split_val);
+
+                                if(split_val.size() != 3 ) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid setting for +uvm_set_inst_override=", ovr,
+                                  ", setting must specify <requested_type>,<override_type>,<instance_path>"}, UVM_NONE);
+                                  return;
+                                end
+
+                                uvm_report_info("INSTOVR", {"Applying instance override from the command line: +uvm_set_inst_override=", ovr}, UVM_NONE);
+                                factory.set_inst_override_by_name(split_val[0], split_val[1], split_val[2]);
+                              endfunction
+
+
+                              // m_process_type_override
+                              // -----------------------
+
+                              function void uvm_root::m_process_type_override(string ovr);
+                                string split_val[$];
+                                int replace=1;
+                                uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+                                uvm_factory factory=cs.get_factory();
+
+                                uvm_split_string(ovr, ",", split_val);
+
+                                if(split_val.size() > 3 || split_val.size() < 2) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid setting for +uvm_set_type_override=", ovr,
+                                  ", setting must specify <requested_type>,<override_type>[,<replace>]"}, UVM_NONE);
+                                  return;
+                                end
+
+                                // Replace arg is optional. If set, must be 0 or 1
+                                if(split_val.size() == 3) begin
+                                  if(split_val[2]=="0") replace =  0;
+                                  else if (split_val[2] == "1") replace = 1;
+                                  else begin
+                                    uvm_report_error("UVM_CMDLINE_PROC", {"Invalid replace arg for +uvm_set_type_override=", ovr ," value must be 0 or 1"}, UVM_NONE);
+                                    return;
+                                  end
+                                end
+
+                                uvm_report_info("UVM_CMDLINE_PROC", {"Applying type override from the command line: +uvm_set_type_override=", ovr}, UVM_NONE);
+                                factory.set_type_override_by_name(split_val[0], split_val[1], replace);
+                              endfunction
+
+
+                              // m_process_config
+                              // ----------------
+
+                              function void uvm_root::m_process_config(string cfg, bit is_int);
+                                uvm_bitstream_t v;
+                                string split_val[$];  
+                                uvm_root m_uvm_top;
+                                uvm_coreservice_t cs;
+                                cs = uvm_coreservice_t::get();
+                                m_uvm_top = cs.get_root();
+
+
+                                uvm_split_string(cfg, ",", split_val);
+                                if(split_val.size() == 1) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_config command\"", cfg,
+                                  "\" missing field and value: component is \"", split_val[0], "\""}, UVM_NONE);
+                                  return;
+                                end
+
+                                if(split_val.size() == 2) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_config command\"", cfg,
+                                  "\" missing value: component is \"", split_val[0], "\"  field is \"", split_val[1], "\""}, UVM_NONE);
+                                  return;
+                                end
+
+                                if(split_val.size() > 3) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", 
+                                  $sformatf("Invalid +uvm_set_config command\"%s\" : expected only 3 fields (component, field and value).", cfg), UVM_NONE);
+                                  return;
+                                end
+
+                                if(is_int) begin
+                                  if(split_val[2].len() > 2) begin
+                                    string base, extval;
+                                    base = split_val[2].substr(0,1);
+                                    extval = split_val[2].substr(2,split_val[2].len()-1); 
+                                    case(base)
+                                      "'b" : v = extval.atobin();
+                                      "0b" : v = extval.atobin();
+                                      "'o" : v = extval.atooct();
+                                      "'d" : v = extval.atoi();
+                                      "'h" : v = extval.atohex();
+                                      "'x" : v = extval.atohex();
+                                      "0x" : v = extval.atohex();
+                                      default : v = split_val[2].atoi();
+                                    endcase
+                                  end
+                                  else begin
+                                    v = split_val[2].atoi();
+                                  end
+                                  uvm_report_info("UVM_CMDLINE_PROC", {"Applying config setting from the command line: +uvm_set_config_int=", cfg}, UVM_NONE);
+                                  uvm_config_int::set(m_uvm_top, split_val[0], split_val[1], v);
+                                end
+                                else begin
+                                  uvm_report_info("UVM_CMDLINE_PROC", {"Applying config setting from the command line: +uvm_set_config_string=", cfg}, UVM_NONE);
+                                  uvm_config_string::set(m_uvm_top, split_val[0], split_val[1], split_val[2]);
+                                end 
+
+                              endfunction
+
+                              // m_process_default_sequence
+                              // ----------------
+
+                              function void uvm_root::m_process_default_sequence(string cfg);
+                                string split_val[$];
+                                uvm_coreservice_t cs = uvm_coreservice_t::get();
+                                uvm_root m_uvm_top = cs.get_root();   
+                                uvm_factory f = cs.get_factory();
+                                uvm_object_wrapper w;
+
+                                uvm_split_string(cfg, ",", split_val);
+                                if(split_val.size() == 1) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_default_sequence command\"", cfg,
+                                  "\" missing phase and type: sequencer is \"", split_val[0], "\""}, UVM_NONE);
+                                  return;
+                                end
+
+                                if(split_val.size() == 2) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", {"Invalid +uvm_set_default_sequence command\"", cfg,
+                                  "\" missing type: sequencer is \"", split_val[0], "\"  phase is \"", split_val[1], "\""}, UVM_NONE);
+                                  return;
+                                end
+
+                                if(split_val.size() > 3) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC", 
+                                  $sformatf("Invalid +uvm_set_default_sequence command\"%s\" : expected only 3 fields (sequencer, phase and type).", cfg), UVM_NONE);
+                                  return;
+                                end
+
+                                w = f.find_wrapper_by_name(split_val[2]);
+                                if (w == null) begin
+                                  uvm_report_error("UVM_CMDLINE_PROC",
+                                    $sformatf("Invalid type '%s' provided to +uvm_set_default_sequence", split_val[2]),
+                                  UVM_NONE);
+                                  return;
+                                end
+                                else begin
+                                  uvm_report_info("UVM_CMDLINE_PROC", {"Setting default sequence from the command line: +uvm_set_default_sequence=", cfg}, UVM_NONE);
+                                uvm_config_db#(uvm_object_wrapper)::set(this, {split_val[0], ".", split_val[1]}, "default_sequence", w);
+                              end 
+
+                            endfunction : m_process_default_sequence
+
+
+                            // m_do_config_settings
+                            // --------------------
+
+                            function void uvm_root::m_do_config_settings();
+                              string args[$];
+
+                              void'(clp.get_arg_matches("/^\\+(UVM_SET_CONFIG_INT|uvm_set_config_int)=/",args));
+                              foreach(args[i]) begin
+                                m_process_config(args[i].substr(20, args[i].len()-1), 1);
+                              end
+                              void'(clp.get_arg_matches("/^\\+(UVM_SET_CONFIG_STRING|uvm_set_config_string)=/",args));
+                              foreach(args[i]) begin
+                                m_process_config(args[i].substr(23, args[i].len()-1), 0);
+                              end
+                              void'(clp.get_arg_matches("/^\\+(UVM_SET_DEFAULT_SEQUENCE|uvm_set_default_sequence)=/", args));
+                              foreach(args[i]) begin
+                                m_process_default_sequence(args[i].substr(26, args[i].len()-1));
+                              end
+                            endfunction
+
+
+                            // m_do_max_quit_settings
+                            // ----------------------
+
+                            function void uvm_root::m_do_max_quit_settings();
+                              uvm_report_server srvr;
+                              string max_quit_settings[$];
+                              int max_quit_count;
+                              string max_quit;
+                              string split_max_quit[$];
+                              int max_quit_int;
+                              srvr = uvm_report_server::get_server();
+                              max_quit_count = clp.get_arg_values("+UVM_MAX_QUIT_COUNT=", max_quit_settings);
+                              if (max_quit_count ==  0)
+                                return;
+                              else begin
+                                max_quit = max_quit_settings[0];
+                                if (max_quit_count > 1) begin
+                                  string max_quit_list;
+                                  string sep;
+                                  for (int i = 0; i < max_quit_settings.size(); i++) begin
+                                    if (i != 0)
+                                      sep = "; ";
+                                  max_quit_list = {max_quit_list, sep, max_quit_settings[i]};
+                                end
+                                uvm_report_warning("MULTMAXQUIT", 
+                                  $sformatf("Multiple (%0d) +UVM_MAX_QUIT_COUNT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
+                                max_quit_count, max_quit, max_quit_list), UVM_NONE);
+                              end
+                              uvm_report_info("MAXQUITSET",
+                              $sformatf("'+UVM_MAX_QUIT_COUNT=%s' provided on the command line is being applied.", max_quit), UVM_NONE);
+                              uvm_split_string(max_quit, ",", split_max_quit);
+                              max_quit_int = split_max_quit[0].atoi();
+                              case(split_max_quit[1])
+                                "YES"   : srvr.set_max_quit_count(max_quit_int, 1);
+                                "NO"    : srvr.set_max_quit_count(max_quit_int, 0);
+                                default : srvr.set_max_quit_count(max_quit_int, 1);
+                              endcase
+                            end
+                          endfunction
+
+
+                          // m_do_dump_args
+                          // --------------
+
+                          function void uvm_root::m_do_dump_args();
+                            string dump_args[$];
+                            string all_args[$];
+                            string out_string;
+                            if(clp.get_arg_matches("+UVM_DUMP_CMDLINE_ARGS", dump_args)) begin
+                              clp.get_args(all_args);
+                              for (int i = 0; i < all_args.size(); i++) begin
+                                if (all_args[i] == "__-f__")
+                                  continue;
+                                out_string = {out_string, all_args[i], " "};
+                              end
+                              uvm_report_info("DUMPARGS", out_string, UVM_NONE);
+                            end
+                          endfunction
+
+
+                          // m_check_verbosity
+                          // ----------------
+
+                          function void uvm_root::m_check_verbosity();
+
+                            string verb_string;
+                            string verb_settings[$];
+                            int verb_count;
+                            int plusarg;
+                            int verbosity = UVM_MEDIUM;
+
+                            `ifndef UVM_CMDLINE_NO_DPI
+                              // Retrieve the verbosities provided on the command line.
+                              verb_count = clp.get_arg_values("+UVM_VERBOSITY=", verb_settings);
+                            `else
+                              verb_count = $value$plusargs("UVM_VERBOSITY=%s",verb_string);
+                              if (verb_count)
+                                verb_settings.push_back(verb_string);
+                            `endif
+
+                            // If none provided, provide message about the default being used.
+                            //if (verb_count == 0)
+                            //  uvm_report_info("DEFVERB", ("No verbosity specified on the command line.  Using the default: UVM_MEDIUM"), UVM_NONE);
+
+                            // If at least one, use the first.
+                            if (verb_count > 0) begin
+                              verb_string = verb_settings[0];
+                              plusarg = 1;
+                            end
+
+                            // If more than one, provide the warning stating how many, which one will
+                            // be used and the complete list.
+                            if (verb_count > 1) begin
+                              string verb_list;
+                              string sep;
+                              for (int i = 0; i < verb_settings.size(); i++) begin
+                                if (i != 0)
+                                  sep = ", ";
+                              verb_list = {verb_list, sep, verb_settings[i]};
+                            end
+                            uvm_report_warning("MULTVERB", 
+                            $sformatf("Multiple (%0d) +UVM_VERBOSITY arguments provided on the command line.  '%s' will be used.  Provided list: %s.", verb_count, verb_string, verb_list), UVM_NONE);
+                          end
+
+                          if(plusarg == 1) begin
+                            case(verb_string)
+                              "UVM_NONE"    : verbosity = UVM_NONE;
+                              "NONE"        : verbosity = UVM_NONE;
+                              "UVM_LOW"     : verbosity = UVM_LOW;
+                              "LOW"         : verbosity = UVM_LOW;
+                              "UVM_MEDIUM"  : verbosity = UVM_MEDIUM;
+                              "MEDIUM"      : verbosity = UVM_MEDIUM;
+                              "UVM_HIGH"    : verbosity = UVM_HIGH;
+                              "HIGH"        : verbosity = UVM_HIGH;
+                              "UVM_FULL"    : verbosity = UVM_FULL;
+                              "FULL"        : verbosity = UVM_FULL;
+                              "UVM_DEBUG"   : verbosity = UVM_DEBUG;
+                              "DEBUG"       : verbosity = UVM_DEBUG;
+                              default       : begin
+                                verbosity = verb_string.atoi();
+                                if(verbosity > 0)
+                                  uvm_report_info("NSTVERB", $sformatf("Non-standard verbosity value, using provided '%0d'.", verbosity), UVM_NONE);
+                                if(verbosity == 0) begin
+                                  verbosity = UVM_MEDIUM;
+                                  uvm_report_warning("ILLVERB", "Illegal verbosity value, using default of UVM_MEDIUM.", UVM_NONE);
+                                end
+                              end
+                            endcase
+                          end
+
+                          set_report_verbosity_level_hier(verbosity);
+
+                        endfunction
+
+                        // It is required that the run phase start at simulation time 0
+                        // TBD this looks wrong - taking advantage of uvm_root not doing anything else?
+                        // TBD move to phase_started callback?
+                        task uvm_root::run_phase (uvm_phase phase);
+                          // check that the commandline are took effect
+                          foreach(m_uvm_applied_cl_action[idx])
+                          if(m_uvm_applied_cl_action[idx].used==0) begin
+                            `uvm_warning("INVLCMDARGS",$sformatf("\"+uvm_set_action=%s\" never took effect due to a mismatching component pattern",m_uvm_applied_cl_action[idx].arg))
+                          end
+                          foreach(m_uvm_applied_cl_sev[idx])
+                          if(m_uvm_applied_cl_sev[idx].used==0) begin
+                            `uvm_warning("INVLCMDARGS",$sformatf("\"+uvm_set_severity=%s\" never took effect due to a mismatching component pattern",m_uvm_applied_cl_sev[idx].arg))
+                          end	  
+
+                          if($time > 0)
+                            `uvm_fatal("RUNPHSTIME", {"The run phase must start at time 0, current time is ",
+                          $sformatf("%0t", $realtime), ". No non-zero delays are allowed before ",
+                          "run_test(), and pre-run user defined phases may not consume ",
+                            "simulation time before the start of the run phase."})
+                        endtask
 

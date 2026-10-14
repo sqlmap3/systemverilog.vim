@@ -1,7 +1,6 @@
 // indent regression demo 13: multi-line function/task prototype signatures.
-// The argument continuation lines and the closing ');' sit one level deeper
-// than the declaration, aligned with each other (a definition keeps the
-// plain flat tail). Keep in sync with indent_demo13.expected.sv.
+// The argument continuation lines and the closing ');' column-align their
+// type keywords under the first argument (a definition keeps the plain flat tail). Keep in sync with indent_demo13.expected.sv.
 
 `ifndef INDENT_DEMO13_SV
 `define INDENT_DEMO13_SV
@@ -9,13 +8,13 @@
 class demo_protos;
 
   extern virtual function void set_config_int (string inst_name,
-    string field_name,
-    uvm_bitstream_t value);
+                                               string field_name,
+                                               uvm_bitstream_t value);
   extern function void configure (uvm_reg_block parent,
-    uvm_mem mem = null,
-    uvm_reg_addr_t offset = 0);
+                                  uvm_mem mem = null,
+                                  uvm_reg_addr_t offset = 0);
   extern virtual function bit do_compare (uvm_object rhs,
-    uvm_comparer comparer);
+                                          uvm_comparer comparer);
   pure virtual function void print();
 
 endclass

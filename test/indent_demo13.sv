@@ -1,7 +1,6 @@
 // indent regression demo 13: multi-line function/task prototype signatures.
-// The argument continuation lines and the closing ');' sit one level deeper
-// than the declaration, aligned with each other (a definition keeps the
-// plain flat tail). Keep in sync with indent_demo13.expected.sv.
+// The argument continuation lines and the closing ');' column-align their
+// type keywords under the first argument (a definition keeps the plain flat tail). Keep in sync with indent_demo13.expected.sv.
 
 `ifndef INDENT_DEMO13_SV
 `define INDENT_DEMO13_SV

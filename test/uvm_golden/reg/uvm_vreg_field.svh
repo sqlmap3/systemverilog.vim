@@ -83,8 +83,8 @@ class uvm_vreg_field extends uvm_object;
   // of the virtual register.
   //
   extern function void configure(uvm_vreg parent,
-    int unsigned size,
-    int unsigned lsb_pos);
+                                 int unsigned size,
+                                 int unsigned lsb_pos);
 
 
   //
@@ -175,14 +175,14 @@ class uvm_vreg_field extends uvm_object;
   // virtual field, it will be used for the memory-read operation.
   //
   extern virtual task write(input  longint unsigned   idx,
-    output uvm_status_e  status,
-    input  uvm_reg_data_t     value,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map        map = null,
-    input  uvm_sequence_base  parent = null,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-    input  int                lineno = 0);
+                            output uvm_status_e  status,
+                            input  uvm_reg_data_t     value,
+                            input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                            input  uvm_reg_map        map = null,
+                            input  uvm_sequence_base  parent = null,
+                            input  uvm_object         extension = null,
+                            input  string             fname = "",
+                            input  int                lineno = 0);
 
   //
   // TASK: read
@@ -205,14 +205,14 @@ class uvm_vreg_field extends uvm_object;
   // specified by ~idx~ in the virtual register array is implemented.
   //
   extern virtual task read(input  longint unsigned    idx,
-    output uvm_status_e   status,
-    output uvm_reg_data_t      value,
-    input  uvm_path_e     path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map         map = null,
-    input  uvm_sequence_base   parent = null,
-    input  uvm_object          extension = null,
-    input  string              fname = "",
-    input  int                 lineno = 0);
+                           output uvm_status_e   status,
+                           output uvm_reg_data_t      value,
+                           input  uvm_path_e     path = UVM_DEFAULT_PATH,
+                           input  uvm_reg_map         map = null,
+                           input  uvm_sequence_base   parent = null,
+                           input  uvm_object          extension = null,
+                           input  string              fname = "",
+                           input  int                 lineno = 0);
 
 
   //
@@ -230,12 +230,12 @@ class uvm_vreg_field extends uvm_object;
   // specified by ~idx~ in the virtual register array is implemented.
   //
   extern virtual task poke(input  longint unsigned    idx,
-    output uvm_status_e   status,
-    input  uvm_reg_data_t      value,
-    input  uvm_sequence_base   parent = null,
-    input  uvm_object          extension = null,
-    input  string              fname = "",
-    input  int                 lineno = 0);
+                           output uvm_status_e   status,
+                           input  uvm_reg_data_t      value,
+                           input  uvm_sequence_base   parent = null,
+                           input  uvm_object          extension = null,
+                           input  string              fname = "",
+                           input  int                 lineno = 0);
 
   //
   // TASK: peek
@@ -258,12 +258,12 @@ class uvm_vreg_field extends uvm_object;
   // specified by ~idx~ in the virtual register array is implemented.
   //
   extern virtual task peek(input  longint unsigned    idx,
-    output uvm_status_e   status,
-    output uvm_reg_data_t      value,
-    input  uvm_sequence_base   parent = null,
-    input  uvm_object          extension = null,
-    input  string              fname = "",
-    input  int                 lineno = 0);
+                           output uvm_status_e   status,
+                           output uvm_reg_data_t      value,
+                           input  uvm_sequence_base   parent = null,
+                           input  uvm_object          extension = null,
+                           input  string              fname = "",
+                           input  int                 lineno = 0);
 
   //
   // Group: Callbacks
@@ -361,7 +361,7 @@ ref uvm_status_e  status);
    extern virtual function uvm_object clone();
    extern virtual function void do_copy   (uvm_object rhs);
    extern virtual function bit do_compare (uvm_object  rhs,
-     uvm_comparer comparer);
+                                           uvm_comparer comparer);
    extern virtual function void do_pack (uvm_packer packer);
    extern virtual function void do_unpack (uvm_packer packer);
 

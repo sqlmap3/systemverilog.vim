@@ -274,8 +274,8 @@ pure virtual protected function bit do_close_db();
 // Function: do_open_stream
 // Backend implementation of <open_stream>
 pure virtual protected function uvm_tr_stream do_open_stream(string name,
-  string scope,
-  string type_name);
+                                                             string scope,
+                                                             string type_name);
 
 // Function: do_establish_link
 // Backend implementation of <establish_link>

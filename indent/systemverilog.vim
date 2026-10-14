@@ -401,6 +401,38 @@ function! s:StatementTailHead( line_num )
 	return 0
 endfunction
 
+" If a:line_num is a continuation of a multi-line function/task PROTOTYPE's
+" argument list, return the column (0-based) to align it to - the character
+" right after the signature's opening '(' - so every argument line, and the
+" closing ');', aligns its type keyword under the first argument. Returns 0
+" otherwise. A definition (whose 'function'/'task' still carries an 'f')
+" stops the walk, as does a line that opens a '(' itself or sits past the
+" list's closing ')'.
+function! s:SigArgColumn( line_num )
+	let l:l0 = substitute(getline(a:line_num), '\".\{-}\"', '', 'g')
+	let l:l0 = substitute(l:l0, '\/\/.*', '', '')
+	let l:net0 = len(substitute(l:l0, '[^(]', '', 'g')) - len(substitute(l:l0, '[^)]', '', 'g'))
+	if l:net0 > 0
+		return 0
+	endif
+	let l:bal = 0
+	let l:ln = prevnonblank(a:line_num - 1)
+	while l:ln > 0
+		let l:l = substitute(getline(l:ln), '\".\{-}\"', '', 'g')
+		let l:l = substitute(l:l, '\/\/.*', '', '')
+		let l:net = len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
+		let l:bal = l:bal + l:net
+		if l:bal < 0
+			return 0
+		endif
+		if l:net > 0 && l:l =~ '\<\%(function\|task\)\>'
+			return s:ConvertToCodes(l:l) !~# 'f' ? stridx(l:l, '(') + 1 : 0
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
 function! GetSystemVerilogIndent( line_num )
 	let this_codeline = getline( a:line_num )
 	let prev1_line_num = prevnonblank( a:line_num - 1)
@@ -582,17 +614,25 @@ function! GetSystemVerilogIndent( line_num )
 		let prev2_line_num = s:GetPrevWholeLineNum(l:mhead)
 		let prev2_codeline = s:GetWholeLine(prev2_line_num)
 		let prev2_codes = s:ConvertToCodes(prev2_codeline)
-	elseif l:mhead > 0 && getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
-		" prev1 is the tail of a function/task PROTOTYPE: the signature is
-		" one statement, so the line after the tail dedents back to the
-		" declaration level (synthetic 'x' makes the "prev2 x + prev1 exec"
-		" rule fire)
-		let prev1_codes = ';'
-		let prev2_codes = 'x'
 	endif
 
 	let this_codes = s:ConvertToCodes( this_codeline )
 	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
+
+	" a continuation of a multi-line function/task PROTOTYPE signature aligns
+	" its argument list to the '(' column (column alignment, not shiftwidth)
+	let l:argcol = s:SigArgColumn(a:line_num)
+	if l:argcol > 0
+		return l:argcol
+	endif
+
+	" the line after a signature's closing ');' returns to the declaration's
+	" own level (prototypes only; a definition keeps its body on the normal
+	" indent rules)
+	let l:mhead = s:StatementTailHead(prev1_line_num)
+	if l:mhead > 0 && getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
+		return indent(l:mhead)
+	endif
 
 	" Tail of a multi-line statement (macro or method call), e.g. the closing
 	" "UVM_LOW)" of a `uvm_info, or "cfg.n_bytes, ...), UVM_LOW);" of a
@@ -601,12 +641,6 @@ function! GetSystemVerilogIndent( line_num )
 	" Keep the tail flat with the statement head.
 	let l:mhead = s:StatementTailHead(a:line_num)
 	if l:mhead > 0
-		" a function/task PROTOTYPE's tail closes the signature one level
-		" deeper than the declaration, so the last argument aligns with the
-		" continuation lines above it (a definition keeps the plain flat tail)
-		if getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
-			return indent(l:mhead) + &shiftwidth
-		endif
 		return indent(l:mhead)
 	endif
 

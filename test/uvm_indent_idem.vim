@@ -15,7 +15,12 @@ if !exists('g:sv_files_list') || !exists('g:sv_result')
   qall!
 endif
 
-let s:MAX_COLS = 40   " 20 levels at shiftwidth=2
+" 200 = 100 levels at shiftwidth=2: column alignment of a multi-line
+" function/task prototype signature legitimately indents to the '(' column
+" (up to ~100 columns for a long 'extern virtual function ...' declaration),
+" so the runaway threshold must sit above that, while a true runaway
+" compounds far past it. The idempotency re-run below is the real guard.
+let s:MAX_COLS = 200
 
 let s:files = filter(readfile(g:sv_files_list), 'v:val =~# ''\.\(svh\|sv\)$''')
 if empty(s:files)

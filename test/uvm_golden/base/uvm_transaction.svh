@@ -237,7 +237,7 @@ virtual class uvm_transaction extends uvm_object;
   // recording is enabled. The meaning of the handle is implementation specific.
 
   extern function integer begin_child_tr (time begin_time = 0, 
-    integer parent_handle = 0);
+                                          integer parent_handle = 0);
 
 
   // Function: do_begin_tr
@@ -455,7 +455,7 @@ virtual class uvm_transaction extends uvm_object;
 
 
   extern protected function integer m_begin_tr (time    begin_time=0, 
-    integer parent_handle=0);
+                                                integer parent_handle=0);
 
   local integer m_transaction_id = -1;
 

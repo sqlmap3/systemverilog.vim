@@ -97,7 +97,7 @@ virtual class uvm_reg_block extends uvm_object;
   // to the hierarchical HDL path of any contained registers or memories.
   //
   extern function void configure(uvm_reg_block parent=null,
-    string hdl_path="");
+                                 string hdl_path="");
 
 
   // Function: create_map
@@ -122,10 +122,10 @@ virtual class uvm_reg_block extends uvm_object;
   //| APB = create_map("APB", 0, 1, UVM_LITTLE_ENDIAN, 1);
   //
   extern virtual function uvm_reg_map create_map(string name,
-    uvm_reg_addr_t base_addr,
-    int unsigned n_bytes,
-    uvm_endianness_e endian,
-    bit byte_addressing = 1);
+                                                 uvm_reg_addr_t base_addr,
+                                                 int unsigned n_bytes,
+                                                 uvm_endianness_e endian,
+                                                 bit byte_addressing = 1);
 
 
   // Function: check_data_width
@@ -254,9 +254,9 @@ virtual class uvm_reg_block extends uvm_object;
   // Returns the number of blocks found.
   //
   extern static function int find_blocks(input string        name,
-    ref   uvm_reg_block blks[$],
-    input uvm_reg_block root = null,
-    input uvm_object    accessor = null);
+                                         ref   uvm_reg_block blks[$],
+                                         input uvm_reg_block root = null,
+                                         input uvm_object    accessor = null);
 
 
   // Function: find_block
@@ -270,8 +270,8 @@ virtual class uvm_reg_block extends uvm_object;
   // A warning is issued if more than one block is found.
   //
   extern static function uvm_reg_block find_block(input string        name,
-    input uvm_reg_block root = null,
-    input uvm_object    accessor = null);
+                                                  input uvm_reg_block root = null,
+                                                  input uvm_object    accessor = null);
 
 
   // Function: get_blocks
@@ -282,7 +282,7 @@ virtual class uvm_reg_block extends uvm_object;
   // If ~hier~ is TRUE, recursively includes any sub-blocks.
   //
   extern virtual function void get_blocks (ref uvm_reg_block  blks[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                           input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_maps
@@ -307,7 +307,7 @@ virtual class uvm_reg_block extends uvm_object;
   // use the <uvm_reg_map::get_registers()> method.
   //
   extern virtual function void get_registers (ref uvm_reg regs[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                              input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_fields
@@ -319,7 +319,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the sub-blocks.
   //
   extern virtual function void get_fields (ref uvm_reg_field  fields[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                           input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_memories
@@ -335,7 +335,7 @@ virtual class uvm_reg_block extends uvm_object;
   // use the <uvm_reg_map::get_memories()> method.
   //
   extern virtual function void get_memories (ref uvm_mem mems[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                             input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_registers
@@ -347,7 +347,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the sub-blocks.
   //
   extern virtual function void get_virtual_registers(ref uvm_vreg regs[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                                     input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_virtual_fields
@@ -360,7 +360,7 @@ virtual class uvm_reg_block extends uvm_object;
   // in the virtual registers in the sub-blocks.
   //
   extern virtual function void get_virtual_fields (ref uvm_vreg_field fields[$],
-    input uvm_hier_e hier=UVM_HIER);
+                                                   input uvm_hier_e hier=UVM_HIER);
 
 
   // Function: get_block_by_name
@@ -597,8 +597,8 @@ endfunction
 extern virtual function void sample_values();
 
 /*local*/ extern function void XsampleX(uvm_reg_addr_t addr,
-  bit            is_read,
-  uvm_reg_map    map);
+                                        bit            is_read,
+                                        uvm_reg_map    map);
 
 
 //--------------
@@ -657,12 +657,12 @@ extern virtual function bit needs_update();
 // This method performs the reverse operation of <uvm_reg_block::mirror()>. 
 //
 extern virtual task update(output uvm_status_e       status,
-  input  uvm_path_e         path = UVM_DEFAULT_PATH,
-  input  uvm_sequence_base  parent = null,
-  input  int                prior = -1,
-  input  uvm_object         extension = null,
-  input  string             fname = "",
-  input  int                lineno = 0);
+                           input  uvm_path_e         path = UVM_DEFAULT_PATH,
+                           input  uvm_sequence_base  parent = null,
+                           input  int                prior = -1,
+                           input  uvm_object         extension = null,
+                           input  string             fname = "",
+                           input  int                lineno = 0);
 
 
 // Task: mirror
@@ -679,13 +679,13 @@ extern virtual task update(output uvm_status_e       status,
 // This method performs the reverse operation of <uvm_reg_block::update()>.
 // 
 extern virtual task mirror(output uvm_status_e       status,
-  input  uvm_check_e        check = UVM_NO_CHECK,
-  input  uvm_path_e         path  = UVM_DEFAULT_PATH,
-  input  uvm_sequence_base  parent = null,
-  input  int                prior = -1,
-  input  uvm_object         extension = null,
-  input  string             fname = "",
-  input  int                lineno = 0);
+                           input  uvm_check_e        check = UVM_NO_CHECK,
+                           input  uvm_path_e         path  = UVM_DEFAULT_PATH,
+                           input  uvm_sequence_base  parent = null,
+                           input  int                prior = -1,
+                           input  uvm_object         extension = null,
+                           input  string             fname = "",
+                           input  int                lineno = 0);
 
 
 // Task: write_reg_by_name
@@ -695,16 +695,16 @@ extern virtual task mirror(output uvm_status_e       status,
 // Equivalent to <get_reg_by_name()> followed by <uvm_reg::write()>
 //
 extern virtual task write_reg_by_name(
-  output uvm_status_e        status,
-  input  string              name,
-  input  uvm_reg_data_t      data,
-  input  uvm_path_e     path = UVM_DEFAULT_PATH,
-  input  uvm_reg_map         map = null,
-  input  uvm_sequence_base   parent = null,
-  input  int                 prior = -1,
-  input  uvm_object          extension = null,
-  input  string              fname = "",
-  input  int                 lineno = 0);
+                                      output uvm_status_e        status,
+                                      input  string              name,
+                                      input  uvm_reg_data_t      data,
+                                      input  uvm_path_e     path = UVM_DEFAULT_PATH,
+                                      input  uvm_reg_map         map = null,
+                                      input  uvm_sequence_base   parent = null,
+                                      input  int                 prior = -1,
+                                      input  uvm_object          extension = null,
+                                      input  string              fname = "",
+                                      input  int                 lineno = 0);
 
 
 // Task: read_reg_by_name
@@ -714,16 +714,16 @@ extern virtual task write_reg_by_name(
 // Equivalent to <get_reg_by_name()> followed by <uvm_reg::read()>
 //
 extern virtual task read_reg_by_name(
-  output uvm_status_e       status,
-  input  string             name,
-  output uvm_reg_data_t     data,
-  input  uvm_path_e    path = UVM_DEFAULT_PATH,
-  input  uvm_reg_map        map = null,
-  input  uvm_sequence_base  parent = null,
-  input  int                prior = -1,
-  input  uvm_object         extension = null,
-  input  string             fname = "",
-  input  int                lineno = 0);
+                                     output uvm_status_e       status,
+                                     input  string             name,
+                                     output uvm_reg_data_t     data,
+                                     input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                                     input  uvm_reg_map        map = null,
+                                     input  uvm_sequence_base  parent = null,
+                                     input  int                prior = -1,
+                                     input  uvm_object         extension = null,
+                                     input  string             fname = "",
+                                     input  int                lineno = 0);
 
 
 // Task: write_mem_by_name
@@ -733,17 +733,17 @@ extern virtual task read_reg_by_name(
 // Equivalent to <get_mem_by_name()> followed by <uvm_mem::write()>
 //
 extern virtual task write_mem_by_name(
-  output uvm_status_e       status,
-  input  string             name,
-  input  uvm_reg_addr_t     offset,
-  input  uvm_reg_data_t     data,
-  input  uvm_path_e    path = UVM_DEFAULT_PATH,
-  input  uvm_reg_map        map = null,
-  input  uvm_sequence_base  parent = null,
-  input  int                prior = -1,
-  input  uvm_object         extension = null,
-  input  string             fname = "",
-  input  int                lineno = 0);
+                                      output uvm_status_e       status,
+                                      input  string             name,
+                                      input  uvm_reg_addr_t     offset,
+                                      input  uvm_reg_data_t     data,
+                                      input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                                      input  uvm_reg_map        map = null,
+                                      input  uvm_sequence_base  parent = null,
+                                      input  int                prior = -1,
+                                      input  uvm_object         extension = null,
+                                      input  string             fname = "",
+                                      input  int                lineno = 0);
 
 
 // Task: read_mem_by_name
@@ -753,17 +753,17 @@ extern virtual task write_mem_by_name(
 // Equivalent to <get_mem_by_name()> followed by <uvm_mem::read()>
 //
 extern virtual task read_mem_by_name(
-  output uvm_status_e       status,
-  input  string             name,
-  input  uvm_reg_addr_t     offset,
-  output uvm_reg_data_t     data,
-  input  uvm_path_e    path = UVM_DEFAULT_PATH,
-  input  uvm_reg_map        map = null,
-  input  uvm_sequence_base  parent = null,
-  input  int                prior = -1,
-  input  uvm_object         extension = null,
-  input  string             fname = "",
-  input  int                lineno = 0);
+                                     output uvm_status_e       status,
+                                     input  string             name,
+                                     input  uvm_reg_addr_t     offset,
+                                     output uvm_reg_data_t     data,
+                                     input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                                     input  uvm_reg_map        map = null,
+                                     input  uvm_sequence_base  parent = null,
+                                     input  int                prior = -1,
+                                     input  uvm_object         extension = null,
+                                     input  string             fname = "",
+                                     input  int                lineno = 0);
 
 
 extern virtual task readmemh(string filename);
@@ -798,8 +798,8 @@ extern function uvm_reg_backdoor get_backdoor(bit inherited = 1);
 // in a lower-level block or register.
 //
 extern function void set_backdoor (uvm_reg_backdoor bkdr,
-  string fname = "",
-  int lineno = 0);
+                                   string fname = "",
+                                   int lineno = 0);
 
 
 // Function:  clear_hdl_path
@@ -866,8 +866,8 @@ extern function void get_hdl_path (ref string paths[$], input string kind = "");
 // for each ancestor block is used to get each incremental path.
 //
 extern function void get_full_hdl_path (ref string paths[$],
-  input string kind = "",
-  string separator = ".");
+                                        input string kind = "",
+                                        string separator = ".");
 
 
 // Function: set_default_hdl_path
@@ -921,7 +921,7 @@ extern function bit is_hdl_path_root (string kind = "");
 extern virtual function void   do_print      (uvm_printer printer);
 extern virtual function void   do_copy       (uvm_object rhs);
 extern virtual function bit    do_compare    (uvm_object  rhs,
-  uvm_comparer comparer);
+                                              uvm_comparer comparer);
 extern virtual function void   do_pack       (uvm_packer packer);
 extern virtual function void   do_unpack     (uvm_packer packer);
 extern virtual function string convert2string ();
@@ -981,1211 +981,1211 @@ function void uvm_reg_block::add_block (uvm_reg_block blk);
   end
   if (this.blks.exists(blk)) begin
     `uvm_error("RegModel", {"Subblock '",blk.get_name(),
-    "' has already been registered with block '",get_name(),"'"})
-    return;
-  end
-  blks[blk] = id++;
-  if (m_roots.exists(blk)) m_roots.delete(blk);
-endfunction
+                                              "' has already been registered with block '",get_name(),"'"})
+                                              return;
+                                            end
+                                            blks[blk] = id++;
+                                            if (m_roots.exists(blk)) m_roots.delete(blk);
+                                          endfunction
 
 
-// add_reg
+                                          // add_reg
 
-function void uvm_reg_block::add_reg(uvm_reg rg);
-  if (this.is_locked()) begin
-    `uvm_error("RegModel", "Cannot add register to locked block model");
-    return;
-  end
+                                          function void uvm_reg_block::add_reg(uvm_reg rg);
+                                            if (this.is_locked()) begin
+                                              `uvm_error("RegModel", "Cannot add register to locked block model");
+                                              return;
+                                            end
 
-  if (this.regs.exists(rg)) begin
-    `uvm_error("RegModel", {"Register '",rg.get_name(),
-    "' has already been registered with block '",get_name(),"'"})
-    return;
-  end
+                                            if (this.regs.exists(rg)) begin
+                                              `uvm_error("RegModel", {"Register '",rg.get_name(),
+                                              "' has already been registered with block '",get_name(),"'"})
+                                              return;
+                                            end
 
-  regs[rg] = id++;
-endfunction: add_reg
-
-
-// add_vreg
-
-function void uvm_reg_block::add_vreg(uvm_vreg vreg);
-  if (this.is_locked()) begin
-    `uvm_error("RegModel", "Cannot add virtual register to locked block model");
-    return;
-  end
-
-  if (this.vregs.exists(vreg)) begin
-    `uvm_error("RegModel", {"Virtual register '",vreg.get_name(),
-    "' has already been registered with block '",get_name(),"'"})
-    return;
-  end
-  vregs[vreg] = id++;
-endfunction: add_vreg
+                                            regs[rg] = id++;
+                                          endfunction: add_reg
 
 
-// add_mem
+                                          // add_vreg
 
-function void uvm_reg_block::add_mem(uvm_mem mem);
-  if (this.is_locked()) begin
-    `uvm_error("RegModel", "Cannot add memory to locked block model");
-    return;
-  end
+                                          function void uvm_reg_block::add_vreg(uvm_vreg vreg);
+                                            if (this.is_locked()) begin
+                                              `uvm_error("RegModel", "Cannot add virtual register to locked block model");
+                                              return;
+                                            end
 
-  if (this.mems.exists(mem)) begin
-    `uvm_error("RegModel", {"Memory '",mem.get_name(),
-    "' has already been registered with block '",get_name(),"'"})
-    return;
-  end
-  mems[mem] = id++;
-endfunction: add_mem
-
-
-// set_parent
-
-function void uvm_reg_block::set_parent(uvm_reg_block parent);
-  if (this != parent)
-    this.parent = parent;
-endfunction
+                                            if (this.vregs.exists(vreg)) begin
+                                              `uvm_error("RegModel", {"Virtual register '",vreg.get_name(),
+                                              "' has already been registered with block '",get_name(),"'"})
+                                              return;
+                                            end
+                                            vregs[vreg] = id++;
+                                          endfunction: add_vreg
 
 
-// is_locked
+                                          // add_mem
 
-function bit uvm_reg_block::is_locked();
-  return this.locked;
-endfunction: is_locked
+                                          function void uvm_reg_block::add_mem(uvm_mem mem);
+                                            if (this.is_locked()) begin
+                                              `uvm_error("RegModel", "Cannot add memory to locked block model");
+                                              return;
+                                            end
+
+                                            if (this.mems.exists(mem)) begin
+                                              `uvm_error("RegModel", {"Memory '",mem.get_name(),
+                                              "' has already been registered with block '",get_name(),"'"})
+                                              return;
+                                            end
+                                            mems[mem] = id++;
+                                          endfunction: add_mem
 
 
-// lock_model
+                                          // set_parent
 
-function void uvm_reg_block::lock_model();
+                                          function void uvm_reg_block::set_parent(uvm_reg_block parent);
+                                            if (this != parent)
+                                              this.parent = parent;
+                                          endfunction
 
-  if (is_locked())
-    return;
 
-  locked = 1;
+                                          // is_locked
 
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    rg.Xlock_modelX();
-  end
+                                          function bit uvm_reg_block::is_locked();
+                                            return this.locked;
+                                          endfunction: is_locked
 
-  foreach (mems[mem_]) begin
-    uvm_mem mem = mem_;
-    mem.Xlock_modelX();
-  end
 
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk=blk_;
-    blk.lock_model();
-  end
+                                          // lock_model
 
-  if (this.parent == null) begin
-    int max_size = uvm_reg::get_max_size();
+                                          function void uvm_reg_block::lock_model();
 
-    if (uvm_reg_field::get_max_size() > max_size)
-      max_size = uvm_reg_field::get_max_size();
+                                            if (is_locked())
+                                              return;
 
-    if (uvm_mem::get_max_size() > max_size)
-      max_size = uvm_mem::get_max_size();
+                                            locked = 1;
 
-    if (max_size > `UVM_REG_DATA_WIDTH) begin
-      `uvm_fatal("RegModel", $sformatf("Register model requires that UVM_REG_DATA_WIDTH be defined as %0d or greater. Currently defined as %0d", max_size, `UVM_REG_DATA_WIDTH))
-    end
+                                            foreach (regs[rg_]) begin
+                                              uvm_reg rg = rg_;
+                                              rg.Xlock_modelX();
+                                            end
 
-    Xinit_address_mapsX();
+                                            foreach (mems[mem_]) begin
+                                              uvm_mem mem = mem_;
+                                              mem.Xlock_modelX();
+                                            end
 
-    // Check that root register models have unique names
+                                            foreach (blks[blk_]) begin
+                                              uvm_reg_block blk=blk_;
+                                              blk.lock_model();
+                                            end
 
-    // Has this name has been checked before?
-    if (m_roots[this] != 1) begin
-      int n;
+                                            if (this.parent == null) begin
+                                              int max_size = uvm_reg::get_max_size();
 
-      foreach (m_roots[_blk]) begin
-        uvm_reg_block blk = _blk;
+                                              if (uvm_reg_field::get_max_size() > max_size)
+                                                max_size = uvm_reg_field::get_max_size();
 
-        if (blk.get_name() == get_name()) begin
-          m_roots[blk] = 1;
-          n++;
+                                              if (uvm_mem::get_max_size() > max_size)
+                                                max_size = uvm_mem::get_max_size();
+
+                                              if (max_size > `UVM_REG_DATA_WIDTH) begin
+                                                `uvm_fatal("RegModel", $sformatf("Register model requires that UVM_REG_DATA_WIDTH be defined as %0d or greater. Currently defined as %0d", max_size, `UVM_REG_DATA_WIDTH))
+                                              end
+
+                                              Xinit_address_mapsX();
+
+                                              // Check that root register models have unique names
+
+                                              // Has this name has been checked before?
+                                              if (m_roots[this] != 1) begin
+                                                int n;
+
+                                                foreach (m_roots[_blk]) begin
+                                                  uvm_reg_block blk = _blk;
+
+                                                  if (blk.get_name() == get_name()) begin
+                                                    m_roots[blk] = 1;
+                                                    n++;
+                                                  end
+                                                end
+
+                                                if (n > 1) begin
+                                                  `uvm_error("UVM/REG/DUPLROOT",
+                                                  $sformatf("There are %0d root register models named \"%s\". The names of the root register models have to be unique",
+                                              n, get_name()))
+                                            end
+                                          end
+                                        end
+
+                                      endfunction: lock_model
+
+
+
+                                      //--------------------------
+                                      // Get Hierarchical Elements
+                                      //--------------------------
+
+                                      function string uvm_reg_block::get_full_name();
+                                        if (parent == null)
+                                          return get_name();
+
+                                        return {parent.get_full_name(), ".", get_name()};
+
+                                      endfunction: get_full_name
+
+
+                                      // get_fields
+
+                                      function void uvm_reg_block::get_fields(ref uvm_reg_field fields[$],
+                                      input uvm_hier_e hier=UVM_HIER);
+
+                                      foreach (regs[rg_]) begin
+                                        uvm_reg rg = rg_;
+                                        rg.get_fields(fields);
+                                      end
+
+                                      if (hier == UVM_HIER)
+                                      foreach (blks[blk_])
+                                      begin
+                                        uvm_reg_block blk = blk_;
+                                        blk.get_fields(fields);
+                                      end
+
+                                    endfunction: get_fields
+
+
+                                    // get_virtual_fields
+
+                                    function void uvm_reg_block::get_virtual_fields(ref uvm_vreg_field fields[$],
+                                    input uvm_hier_e hier=UVM_HIER);
+
+                                    foreach (vregs[vreg_]) begin
+                                      uvm_vreg vreg = vreg_;
+                                      vreg.get_fields(fields);
+                                    end
+
+                                    if (hier == UVM_HIER)
+                                    foreach (blks[blk_]) begin
+                                      uvm_reg_block blk = blk_;
+                                      blk.get_virtual_fields(fields);
+                                    end
+                                  endfunction: get_virtual_fields
+
+
+                                  // get_registers
+
+                                  function void uvm_reg_block::get_registers(ref uvm_reg regs[$],
+                                  input uvm_hier_e hier=UVM_HIER);
+                                  foreach (this.regs[rg])
+                                    regs.push_back(rg);
+
+                                  if (hier == UVM_HIER)
+                                  foreach (blks[blk_]) begin
+                                    uvm_reg_block blk = blk_;
+                                    blk.get_registers(regs);
+                                  end
+                                endfunction: get_registers
+
+
+                                // get_virtual_registers
+
+                                function void uvm_reg_block::get_virtual_registers(ref uvm_vreg regs[$],
+                                input uvm_hier_e hier=UVM_HIER);
+
+                                foreach (vregs[rg])
+                                  regs.push_back(rg);
+
+                                if (hier == UVM_HIER)
+                                foreach (blks[blk_]) begin
+                                  uvm_reg_block blk = blk_;
+                                  blk.get_virtual_registers(regs);
+                                end
+                              endfunction: get_virtual_registers
+
+
+                              // get_memories
+
+                              function void uvm_reg_block::get_memories(ref uvm_mem mems[$],
+                              input uvm_hier_e hier=UVM_HIER);
+
+                              foreach (this.mems[mem_]) begin
+                                uvm_mem mem = mem_;
+                                mems.push_back(mem);
+                              end
+
+                              if (hier == UVM_HIER)
+                              foreach (blks[blk_]) begin
+                                uvm_reg_block blk = blk_;
+                                blk.get_memories(mems);
+                              end
+
+                            endfunction: get_memories
+
+
+                            // get_blocks
+
+                            function void uvm_reg_block::get_blocks(ref uvm_reg_block blks[$],
+                            input uvm_hier_e hier=UVM_HIER);
+
+                            foreach (this.blks[blk_]) begin
+                              uvm_reg_block blk = blk_;
+                              blks.push_back(blk);
+                              if (hier == UVM_HIER)
+                                blk.get_blocks(blks);
+                            end
+
+                          endfunction: get_blocks
+
+
+                          // get_root_blocks
+
+                          function void uvm_reg_block::get_root_blocks(ref uvm_reg_block blks[$]);
+
+                            foreach (m_roots[blk]) begin
+                              blks.push_back(blk);
+                            end
+
+                          endfunction: get_root_blocks
+
+
+                          // find_blocks
+
+                          function int uvm_reg_block::find_blocks(input string        name,
+                              ref   uvm_reg_block blks[$],
+                              input uvm_reg_block root = null,
+                          input uvm_object    accessor = null);
+
+                          uvm_resource_pool rpl = uvm_resource_pool::get();
+                          uvm_resource_types::rsrc_q_t rs;
+
+                          blks.delete();
+
+                          if (root != null) name = {root.get_full_name(), ".", name};
+
+                          rs = rpl.lookup_regex(name, "uvm_reg::");
+                          for (int i = 0; i < rs.size(); i++) begin
+                            uvm_resource#(uvm_reg_block) blk;
+                            if (!$cast(blk, rs.get(i))) continue;
+                            blks.push_back(blk.read(accessor));
+                          end
+
+                          return blks.size();
+                        endfunction
+
+
+                        // find_blocks
+
+                        function uvm_reg_block uvm_reg_block::find_block(input string        name,
+                            input uvm_reg_block root = null,
+                        input uvm_object    accessor = null);
+
+                        uvm_reg_block blks[$];
+                        if (!find_blocks(name, blks, root, accessor))
+                          return null;
+
+                        if (blks.size() > 1) begin
+                          `uvm_warning("MRTH1BLK",
+                          {"More than one block matched the name \"", name, "\"."})
+                        end
+
+
+                        return blks[0];
+                      endfunction
+
+
+                      // get_maps
+
+                      function void uvm_reg_block::get_maps(ref uvm_reg_map maps[$]);
+
+                        foreach (this.maps[map])
+                          maps.push_back(map);
+
+                      endfunction
+
+
+                      // get_parent
+
+                      function uvm_reg_block uvm_reg_block::get_parent();
+                        get_parent = this.parent;
+                      endfunction: get_parent
+
+
+                      //------------
+                      // Get-By-Name
+                      //------------
+
+                      // get_block_by_name
+
+                      function uvm_reg_block uvm_reg_block::get_block_by_name(string name);
+
+                        if (get_name() == name)
+                          return this;
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+
+                          if (blk.get_name() == name)
+                            return blk;
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_reg_block subblks[$];
+                          blk_.get_blocks(subblks, UVM_HIER);
+
+                          foreach (subblks[j])
+                          if (subblks[j].get_name() == name)
+                            return subblks[j];
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate block '",name,
+                        "' in block '",get_full_name(),"'"})
+                        return null;
+
+                      endfunction: get_block_by_name
+
+
+                      // get_reg_by_name
+
+                      function uvm_reg uvm_reg_block::get_reg_by_name(string name);
+
+                        foreach (regs[rg_]) begin
+                          uvm_reg rg = rg_;
+                          if (rg.get_name() == name)
+                            return rg;
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_reg subregs[$];
+                          blk_.get_registers(subregs, UVM_HIER);
+
+                          foreach (subregs[j])
+                          if (subregs[j].get_name() == name)
+                            return subregs[j];
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate register '",name,
+                        "' in block '",get_full_name(),"'"})
+                        return null;
+
+                      endfunction: get_reg_by_name
+
+
+                      // get_vreg_by_name
+
+                      function uvm_vreg uvm_reg_block::get_vreg_by_name(string name);
+
+                        foreach (vregs[rg_]) begin
+                          uvm_vreg rg = rg_;
+                          if (rg.get_name() == name)
+                            return rg;
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_vreg subvregs[$];
+                          blk_.get_virtual_registers(subvregs, UVM_HIER);
+
+                          foreach (subvregs[j])
+                          if (subvregs[j].get_name() == name)
+                            return subvregs[j];
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate virtual register '",name,
+                        "' in block '",get_full_name(),"'"})
+                        return null;
+
+                      endfunction: get_vreg_by_name
+
+
+                      // get_mem_by_name
+
+                      function uvm_mem uvm_reg_block::get_mem_by_name(string name);
+
+                        foreach (mems[mem_]) begin
+                          uvm_mem mem = mem_;
+                          if (mem.get_name() == name)
+                            return mem;
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_mem submems[$];
+                          blk_.get_memories(submems, UVM_HIER);
+
+                          foreach (submems[j])
+                          if (submems[j].get_name() == name)
+                            return submems[j];
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate memory '",name,
+                        "' in block '",get_full_name(),"'"})
+                        return null;
+
+                      endfunction: get_mem_by_name
+
+
+                      // get_field_by_name
+
+                      function uvm_reg_field uvm_reg_block::get_field_by_name(string name);
+
+                        foreach (regs[rg_]) begin
+                          uvm_reg rg = rg_;
+                          uvm_reg_field fields[$];
+
+                          rg.get_fields(fields);
+                          foreach (fields[i])
+                          if (fields[i].get_name() == name)
+                            return fields[i];
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_reg subregs[$];
+                          blk_.get_registers(subregs, UVM_HIER);
+
+                          foreach (subregs[j]) begin
+                            uvm_reg_field fields[$];
+                            subregs[j].get_fields(fields);
+                            foreach (fields[i])
+                            if (fields[i].get_name() == name)
+                              return fields[i];
+                          end
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate field '",name,
+                        "' in block '",get_full_name(),"'"})
+
+                        return null;
+
+                      endfunction: get_field_by_name
+
+
+                      // get_vfield_by_name
+
+                      function uvm_vreg_field uvm_reg_block::get_vfield_by_name(string name);
+
+                        foreach (vregs[rg_]) begin
+                          uvm_vreg rg =rg_;
+                          uvm_vreg_field fields[$];
+
+                          rg.get_fields(fields);
+                          foreach (fields[i])
+                          if (fields[i].get_name() == name)
+                            return fields[i];
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          uvm_vreg subvregs[$];
+                          blk_.get_virtual_registers(subvregs, UVM_HIER);
+
+                          foreach (subvregs[j]) begin
+                            uvm_vreg_field fields[$];
+                            subvregs[j].get_fields(fields);
+                            foreach (fields[i])
+                            if (fields[i].get_name() == name)
+                              return fields[i];
+                          end
+                        end
+
+                        `uvm_warning("RegModel", {"Unable to locate virtual field '",name,
+                        "' in block '",get_full_name(),"'"})
+
+                        return null;
+
+                      endfunction: get_vfield_by_name
+
+
+
+                      //-------------
+                      // Coverage API
+                      //-------------
+
+                      // set_coverage
+
+                      function uvm_reg_cvr_t uvm_reg_block::set_coverage(uvm_reg_cvr_t is_on);
+                        this.cover_on = this.has_cover & is_on;
+
+                        foreach (regs[rg_]) begin
+                          uvm_reg rg = rg_;
+                          void'(rg.set_coverage(is_on));
+                        end
+
+                        foreach (mems[mem_]) begin
+                          uvm_mem mem = mem_;
+                          void'(mem.set_coverage(is_on));
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          void'(blk.set_coverage(is_on));
+                        end
+
+                        return this.cover_on;
+                      endfunction: set_coverage
+
+
+                      // sample_values
+
+                      function void uvm_reg_block::sample_values();
+                        foreach (regs[rg_]) begin
+                          uvm_reg rg = rg_;
+                          rg.sample_values();
+                        end
+
+                        foreach (blks[blk_]) begin
+                          uvm_reg_block blk = blk_;
+                          blk.sample_values();
+                        end
+                      endfunction
+
+
+                      // XsampleX
+
+                      function void uvm_reg_block::XsampleX(uvm_reg_addr_t addr,
+                          bit            is_read,
+                      uvm_reg_map    map);
+                      sample(addr, is_read, map);
+                      if (parent != null) begin
+                        // ToDo: Call XsampleX in the parent block
+                        //       with the offset and map within that block's context
+                      end
+                    endfunction
+
+
+                    function uvm_reg_cvr_t uvm_reg_block::build_coverage(uvm_reg_cvr_t models);
+                      build_coverage = UVM_NO_COVERAGE;
+                      void'(uvm_reg_cvr_rsrc_db::read_by_name({"uvm_reg::", get_full_name()},
+                        "include_coverage",
+                      build_coverage, this));
+                      return build_coverage & models;
+                    endfunction: build_coverage
+
+
+                    // add_coverage
+
+                    function void uvm_reg_block::add_coverage(uvm_reg_cvr_t models);
+                      this.has_cover |= models;
+                    endfunction: add_coverage
+
+
+                    // has_coverage
+
+                    function bit uvm_reg_block::has_coverage(uvm_reg_cvr_t models);
+                      return ((this.has_cover & models) == models);
+                    endfunction: has_coverage
+
+
+                    // get_coverage
+
+                    function bit uvm_reg_block::get_coverage(uvm_reg_cvr_t is_on = UVM_CVR_ALL);
+                      if (this.has_coverage(is_on) == 0) return 0;
+                      return ((this.cover_on & is_on) == is_on);
+                    endfunction: get_coverage
+
+
+                    //----------------
+                    // Run-Time Access
+                    //----------------
+
+
+                    // reset
+
+                    function void uvm_reg_block::reset(string kind = "HARD");
+
+                      foreach (regs[rg_]) begin
+                        uvm_reg rg = rg_;
+                        rg.reset(kind);
+                      end
+
+                      foreach (blks[blk_]) begin
+                        uvm_reg_block blk = blk_;
+                        blk.reset(kind);
+                      end
+                    endfunction
+
+
+                    // needs_update
+
+                    function bit uvm_reg_block::needs_update();
+                      needs_update = 0;
+
+                      foreach (regs[rg_]) begin
+                        uvm_reg rg = rg_;
+                        if (rg.needs_update())
+                          return 1;
+                      end
+                      foreach (blks[blk_]) begin
+                        uvm_reg_block blk =blk_;
+                        if (blk.needs_update())
+                          return 1;
+                      end
+                    endfunction: needs_update
+
+
+                    // update
+
+                    task uvm_reg_block::update(output uvm_status_e  status,
+                        input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                        input  uvm_sequence_base  parent = null,
+                        input  int                prior = -1,
+                        input  uvm_object         extension = null,
+                        input  string             fname = "",
+                    input  int                lineno = 0);
+                    status = UVM_IS_OK;
+
+                    if (!needs_update()) begin
+                      `uvm_info("RegModel", $sformatf("%s:%0d - RegModel block %s does not need updating",
+                      fname, lineno, this.get_name()), UVM_HIGH);
+                      return;
+                    end
+
+                    `uvm_info("RegModel", $sformatf("%s:%0d - Updating model block %s with %s path",
+                    fname, lineno, this.get_name(), path.name ), UVM_HIGH);
+
+                    foreach (regs[rg_]) begin
+                      uvm_reg rg = rg_;
+                      if (rg.needs_update()) begin
+                        rg.update(status, path, null, parent, prior, extension);
+                        if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
+                          `uvm_error("RegModel", $sformatf("Register \"%s\" could not be updated",
+                          rg.get_full_name()));
+                          return;
+                        end
+                      end
+                    end
+
+                    foreach (blks[blk_]) begin
+                      uvm_reg_block blk = blk_;
+                      blk.update(status,path,parent,prior,extension,fname,lineno);
+                    end
+                  endtask: update
+
+
+                  // mirror
+
+                  task uvm_reg_block::mirror(output uvm_status_e       status,
+                      input  uvm_check_e        check = UVM_NO_CHECK,
+                      input  uvm_path_e         path = UVM_DEFAULT_PATH,
+                      input  uvm_sequence_base  parent = null,
+                      input  int                prior = -1,
+                      input  uvm_object         extension = null,
+                      input  string             fname = "",
+                  input  int                lineno = 0);
+                  uvm_status_e final_status = UVM_IS_OK;
+
+                  foreach (regs[rg_]) begin 
+                    uvm_reg rg = rg_;
+                    rg.mirror(status, check, path, null,
+                    parent, prior, extension, fname, lineno);
+                    if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
+                      final_status = status;
+                    end
+                  end
+
+                  foreach (blks[blk_]) begin
+                    uvm_reg_block blk = blk_;
+
+                    blk.mirror(status, check, path, parent, prior, extension, fname, lineno);
+                    if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
+                      final_status = status;
+                    end
+                  end
+
+                endtask: mirror
+
+
+                // write_reg_by_name
+
+                task uvm_reg_block::write_reg_by_name(output uvm_status_e   status,
+                    input  string              name,
+                    input  uvm_reg_data_t      data,
+                    input  uvm_path_e     path = UVM_DEFAULT_PATH,
+                    input  uvm_reg_map      map = null,
+                    input  uvm_sequence_base   parent = null,
+                    input  int                 prior = -1,
+                    input  uvm_object          extension = null,
+                    input  string              fname = "",
+                input  int                 lineno = 0);
+                uvm_reg rg;
+                this.fname = fname;
+                this.lineno = lineno;
+
+                status = UVM_NOT_OK;
+                rg = this.get_reg_by_name(name);
+                if (rg != null)
+                  rg.write(status, data, path, map, parent, prior, extension);
+
+              endtask: write_reg_by_name
+
+
+              // read_reg_by_name
+
+              task uvm_reg_block::read_reg_by_name(output uvm_status_e  status,
+                  input  string             name,
+                  output uvm_reg_data_t     data,
+                  input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                  input  uvm_reg_map     map = null,
+                  input  uvm_sequence_base  parent = null,
+                  input  int                prior = -1,
+                  input  uvm_object         extension = null,
+                  input  string             fname = "",
+              input  int                lineno = 0);
+              uvm_reg rg;
+              this.fname = fname;
+              this.lineno = lineno;
+
+              status = UVM_NOT_OK;
+              rg = this.get_reg_by_name(name);
+              if (rg != null)
+                rg.read(status, data, path, map, parent, prior, extension);
+            endtask: read_reg_by_name
+
+
+            // write_mem_by_name
+
+            task uvm_reg_block::write_mem_by_name(output uvm_status_e  status,
+                input  string             name,
+                input  uvm_reg_addr_t     offset,
+                input  uvm_reg_data_t     data,
+                input  uvm_path_e    path = UVM_DEFAULT_PATH,
+                input  uvm_reg_map     map = null,
+                input  uvm_sequence_base  parent = null,
+                input  int                prior = -1,
+                input  uvm_object         extension = null,
+                input  string             fname = "",
+            input  int                lineno = 0);
+            uvm_mem mem;
+            this.fname = fname;
+            this.lineno = lineno;
+
+            status = UVM_NOT_OK;
+            mem = get_mem_by_name(name);
+            if (mem != null)
+              mem.write(status, offset, data, path, map, parent, prior, extension);
+          endtask: write_mem_by_name
+
+
+          // read_mem_by_name
+
+          task uvm_reg_block::read_mem_by_name(output uvm_status_e  status,
+              input  string             name,
+              input  uvm_reg_addr_t     offset,
+              output uvm_reg_data_t     data,
+              input  uvm_path_e    path = UVM_DEFAULT_PATH,
+              input  uvm_reg_map     map = null,
+              input  uvm_sequence_base  parent = null,
+              input  int                prior = -1,
+              input  uvm_object         extension = null,
+              input  string             fname = "",
+          input  int                lineno = 0);
+          uvm_mem mem;
+          this.fname = fname;
+          this.lineno = lineno;
+
+          status = UVM_NOT_OK;
+          mem = get_mem_by_name(name);
+          if (mem != null)
+            mem.read(status, offset, data, path, map, parent, prior, extension);
+        endtask: read_mem_by_name
+
+
+        // readmemh
+
+        task uvm_reg_block::readmemh(string filename);
+          // TODO
+        endtask: readmemh
+
+
+        // writememh
+
+        task uvm_reg_block::writememh(string filename);
+          // TODO
+        endtask: writememh
+
+
+        //---------------
+        // Map Management
+        //---------------
+
+        // create_map
+
+        function uvm_reg_map uvm_reg_block::create_map(string name,
+            uvm_reg_addr_t base_addr,
+            int unsigned n_bytes,
+            uvm_endianness_e endian,
+        bit byte_addressing=1);
+
+        uvm_reg_map  map;
+
+        if (this.locked) begin
+          `uvm_error("RegModel", "Cannot add map to locked model");
+          return null;
+        end
+
+        map = uvm_reg_map::type_id::create(name,,this.get_full_name());
+        map.configure(this,base_addr,n_bytes,endian,byte_addressing);
+
+        this.maps[map] = 1;
+        if (maps.num() == 1)
+          default_map = map;
+
+        return map;
+      endfunction
+
+
+      // add_map
+
+      function void uvm_reg_block::add_map(uvm_reg_map map);
+
+        if (this.locked) begin
+          `uvm_error("RegModel", "Cannot add map to locked model");
+          return;
+        end
+
+        if (this.maps.exists(map)) begin
+          `uvm_error("RegModel", {"Map '",map.get_name(),
+          "' already exists in '",get_full_name(),"'"})
+          return;
+        end
+
+        this.maps[map] = 1;
+        if (maps.num() == 1)
+          default_map = map;
+
+      endfunction: add_map
+
+
+      // get_map_by_name
+
+      function uvm_reg_map uvm_reg_block::get_map_by_name(string name);
+        uvm_reg_map maps[$];
+
+        this.get_maps(maps);
+
+        foreach (maps[i])
+        if (maps[i].get_name() == name)
+          return maps[i];
+
+        foreach (maps[i]) begin
+          uvm_reg_map submaps[$];
+          maps[i].get_submaps(submaps, UVM_HIER);
+
+          foreach (submaps[j])
+          if (submaps[j].get_name() == name)
+            return submaps[j];
+        end
+
+
+        `uvm_warning("RegModel", {"Map with name '",name,"' does not exist in block"})
+        return null;
+      endfunction
+
+
+      // set_default_map
+
+      function void uvm_reg_block::set_default_map(uvm_reg_map map);
+        if (!maps.exists(map))
+          `uvm_warning("RegModel", {"Map '",map.get_full_name(),"' does not exist in block"})
+        default_map = map;
+      endfunction
+
+
+      // get_default_map
+
+      function uvm_reg_map uvm_reg_block::get_default_map();
+        return default_map;
+      endfunction
+
+
+      // get_default_path
+
+      function uvm_path_e uvm_reg_block::get_default_path();
+
+        if (this.default_path != UVM_DEFAULT_PATH)
+          return this.default_path;
+
+        if (this.parent != null)
+          return this.parent.get_default_path();
+
+        return UVM_FRONTDOOR;
+
+      endfunction
+
+
+      // Xinit_address_mapsX
+
+      function void uvm_reg_block::Xinit_address_mapsX();
+        foreach (maps[map_]) begin
+          uvm_reg_map map = map_;
+          map.Xinit_address_mapX();
+        end
+        //map.Xverify_map_configX();
+      endfunction
+
+
+      //----------------
+      // Group- Backdoor
+      //----------------
+
+      // set_backdoor
+
+      function void uvm_reg_block::set_backdoor(uvm_reg_backdoor bkdr,
+          string               fname = "",
+      int                  lineno = 0);
+      bkdr.fname = fname;
+      bkdr.lineno = lineno;
+      if (this.backdoor != null &&
+      this.backdoor.has_update_threads()) begin
+        `uvm_warning("RegModel", "Previous register backdoor still has update threads running. Backdoors with active mirroring should only be set before simulation starts.");
+      end
+      this.backdoor = bkdr;
+    endfunction: set_backdoor
+
+
+    // get_backdoor
+
+    function uvm_reg_backdoor uvm_reg_block::get_backdoor(bit inherited = 1);
+      if (backdoor == null && inherited) begin
+        uvm_reg_block blk = get_parent();
+        while (blk != null) begin
+          uvm_reg_backdoor bkdr = blk.get_backdoor();
+          if (bkdr != null)
+            return bkdr;
+          blk = blk.get_parent();
         end
       end
+      return this.backdoor;
+    endfunction: get_backdoor
 
-      if (n > 1) begin
-        `uvm_error("UVM/REG/DUPLROOT",
-        $sformatf("There are %0d root register models named \"%s\". The names of the root register models have to be unique",
-        n, get_name()))
+
+
+    // clear_hdl_path
+
+    function void uvm_reg_block::clear_hdl_path(string kind = "RTL");
+
+      if (kind == "ALL") begin
+        hdl_paths_pool = new("hdl_paths");
+        return;
       end
-    end
-  end
 
-endfunction: lock_model
+      if (kind == "")
+        kind = get_default_hdl_path();
 
+      if (!hdl_paths_pool.exists(kind)) begin
+        `uvm_warning("RegModel",{"Unknown HDL Abstraction '",kind,"'"})
+        return;
+      end
 
+      hdl_paths_pool.delete(kind);
+    endfunction
 
-//--------------------------
-// Get Hierarchical Elements
-//--------------------------
 
-function string uvm_reg_block::get_full_name();
-  if (parent == null)
-    return get_name();
+    // add_hdl_path
 
-  return {parent.get_full_name(), ".", get_name()};
+    function void uvm_reg_block::add_hdl_path(string path, string kind = "RTL");
 
-endfunction: get_full_name
+      uvm_queue #(string) paths;
 
+      paths = hdl_paths_pool.get(kind);
 
-// get_fields
+      paths.push_back(path);
 
-function void uvm_reg_block::get_fields(ref uvm_reg_field fields[$],
-input uvm_hier_e hier=UVM_HIER);
+    endfunction
 
-foreach (regs[rg_]) begin
-  uvm_reg rg = rg_;
-  rg.get_fields(fields);
-end
 
-if (hier == UVM_HIER)
-foreach (blks[blk_])
-begin
-  uvm_reg_block blk = blk_;
-  blk.get_fields(fields);
-end
+    // has_hdl_path
 
-endfunction: get_fields
+    function bit  uvm_reg_block::has_hdl_path(string kind = "");
+      if (kind == "") begin
+        kind = get_default_hdl_path();
+      end
+      return hdl_paths_pool.exists(kind);
+    endfunction
 
 
-// get_virtual_fields
+    // get_hdl_path
 
-function void uvm_reg_block::get_virtual_fields(ref uvm_vreg_field fields[$],
-input uvm_hier_e hier=UVM_HIER);
+    function void uvm_reg_block::get_hdl_path(ref string paths[$], input string kind = "");
 
-foreach (vregs[vreg_]) begin
-  uvm_vreg vreg = vreg_;
-  vreg.get_fields(fields);
-end
+      uvm_queue #(string) hdl_paths;
 
-if (hier == UVM_HIER)
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blk.get_virtual_fields(fields);
-end
-endfunction: get_virtual_fields
+      if (kind == "")
+        kind = get_default_hdl_path();
 
+      if (!has_hdl_path(kind)) begin
+        `uvm_error("RegModel",{"Block does not have hdl path defined for abstraction '",kind,"'"})
+        return;
+      end
 
-// get_registers
+      hdl_paths = hdl_paths_pool.get(kind);
 
-function void uvm_reg_block::get_registers(ref uvm_reg regs[$],
-input uvm_hier_e hier=UVM_HIER);
-foreach (this.regs[rg])
-  regs.push_back(rg);
+      for (int i=0; i<hdl_paths.size();i++)
+        paths.push_back(hdl_paths.get(i));
 
-if (hier == UVM_HIER)
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blk.get_registers(regs);
-end
-endfunction: get_registers
+    endfunction
 
 
-// get_virtual_registers
+    // get_full_hdl_path
 
-function void uvm_reg_block::get_virtual_registers(ref uvm_vreg regs[$],
-input uvm_hier_e hier=UVM_HIER);
+    function void uvm_reg_block::get_full_hdl_path(ref string paths[$],
+        input string kind = "",
+    string separator = ".");
 
-foreach (vregs[rg])
-  regs.push_back(rg);
+    if (kind == "")
+      kind = get_default_hdl_path();
 
-if (hier == UVM_HIER)
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blk.get_virtual_registers(regs);
-end
-endfunction: get_virtual_registers
-
-
-// get_memories
-
-function void uvm_reg_block::get_memories(ref uvm_mem mems[$],
-input uvm_hier_e hier=UVM_HIER);
-
-foreach (this.mems[mem_]) begin
-  uvm_mem mem = mem_;
-  mems.push_back(mem);
-end
-
-if (hier == UVM_HIER)
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blk.get_memories(mems);
-end
-
-endfunction: get_memories
-
-
-// get_blocks
-
-function void uvm_reg_block::get_blocks(ref uvm_reg_block blks[$],
-input uvm_hier_e hier=UVM_HIER);
-
-foreach (this.blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blks.push_back(blk);
-  if (hier == UVM_HIER)
-    blk.get_blocks(blks);
-end
-
-endfunction: get_blocks
-
-
-// get_root_blocks
-
-function void uvm_reg_block::get_root_blocks(ref uvm_reg_block blks[$]);
-
-  foreach (m_roots[blk]) begin
-    blks.push_back(blk);
-  end
-
-endfunction: get_root_blocks
-
-
-// find_blocks
-
-function int uvm_reg_block::find_blocks(input string        name,
-    ref   uvm_reg_block blks[$],
-    input uvm_reg_block root = null,
-input uvm_object    accessor = null);
-
-uvm_resource_pool rpl = uvm_resource_pool::get();
-uvm_resource_types::rsrc_q_t rs;
-
-blks.delete();
-
-if (root != null) name = {root.get_full_name(), ".", name};
-
-rs = rpl.lookup_regex(name, "uvm_reg::");
-for (int i = 0; i < rs.size(); i++) begin
-  uvm_resource#(uvm_reg_block) blk;
-  if (!$cast(blk, rs.get(i))) continue;
-  blks.push_back(blk.read(accessor));
-end
-
-return blks.size();
-endfunction
-
-
-// find_blocks
-
-function uvm_reg_block uvm_reg_block::find_block(input string        name,
-    input uvm_reg_block root = null,
-input uvm_object    accessor = null);
-
-uvm_reg_block blks[$];
-if (!find_blocks(name, blks, root, accessor))
-  return null;
-
-if (blks.size() > 1) begin
-  `uvm_warning("MRTH1BLK",
-  {"More than one block matched the name \"", name, "\"."})
-end
-
-
-return blks[0];
-endfunction
-
-
-// get_maps
-
-function void uvm_reg_block::get_maps(ref uvm_reg_map maps[$]);
-
-  foreach (this.maps[map])
-    maps.push_back(map);
-
-endfunction
-
-
-// get_parent
-
-function uvm_reg_block uvm_reg_block::get_parent();
-  get_parent = this.parent;
-endfunction: get_parent
-
-
-//------------
-// Get-By-Name
-//------------
-
-// get_block_by_name
-
-function uvm_reg_block uvm_reg_block::get_block_by_name(string name);
-
-  if (get_name() == name)
-    return this;
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-
-    if (blk.get_name() == name)
-      return blk;
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_reg_block subblks[$];
-    blk_.get_blocks(subblks, UVM_HIER);
-
-    foreach (subblks[j])
-    if (subblks[j].get_name() == name)
-      return subblks[j];
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate block '",name,
-  "' in block '",get_full_name(),"'"})
-  return null;
-
-endfunction: get_block_by_name
-
-
-// get_reg_by_name
-
-function uvm_reg uvm_reg_block::get_reg_by_name(string name);
-
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    if (rg.get_name() == name)
-      return rg;
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_reg subregs[$];
-    blk_.get_registers(subregs, UVM_HIER);
-
-    foreach (subregs[j])
-    if (subregs[j].get_name() == name)
-      return subregs[j];
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate register '",name,
-  "' in block '",get_full_name(),"'"})
-  return null;
-
-endfunction: get_reg_by_name
-
-
-// get_vreg_by_name
-
-function uvm_vreg uvm_reg_block::get_vreg_by_name(string name);
-
-  foreach (vregs[rg_]) begin
-    uvm_vreg rg = rg_;
-    if (rg.get_name() == name)
-      return rg;
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_vreg subvregs[$];
-    blk_.get_virtual_registers(subvregs, UVM_HIER);
-
-    foreach (subvregs[j])
-    if (subvregs[j].get_name() == name)
-      return subvregs[j];
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate virtual register '",name,
-  "' in block '",get_full_name(),"'"})
-  return null;
-
-endfunction: get_vreg_by_name
-
-
-// get_mem_by_name
-
-function uvm_mem uvm_reg_block::get_mem_by_name(string name);
-
-  foreach (mems[mem_]) begin
-    uvm_mem mem = mem_;
-    if (mem.get_name() == name)
-      return mem;
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_mem submems[$];
-    blk_.get_memories(submems, UVM_HIER);
-
-    foreach (submems[j])
-    if (submems[j].get_name() == name)
-      return submems[j];
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate memory '",name,
-  "' in block '",get_full_name(),"'"})
-  return null;
-
-endfunction: get_mem_by_name
-
-
-// get_field_by_name
-
-function uvm_reg_field uvm_reg_block::get_field_by_name(string name);
-
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    uvm_reg_field fields[$];
-
-    rg.get_fields(fields);
-    foreach (fields[i])
-    if (fields[i].get_name() == name)
-      return fields[i];
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_reg subregs[$];
-    blk_.get_registers(subregs, UVM_HIER);
-
-    foreach (subregs[j]) begin
-      uvm_reg_field fields[$];
-      subregs[j].get_fields(fields);
-      foreach (fields[i])
-      if (fields[i].get_name() == name)
-        return fields[i];
-    end
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate field '",name,
-  "' in block '",get_full_name(),"'"})
-
-  return null;
-
-endfunction: get_field_by_name
-
-
-// get_vfield_by_name
-
-function uvm_vreg_field uvm_reg_block::get_vfield_by_name(string name);
-
-  foreach (vregs[rg_]) begin
-    uvm_vreg rg =rg_;
-    uvm_vreg_field fields[$];
-
-    rg.get_fields(fields);
-    foreach (fields[i])
-    if (fields[i].get_name() == name)
-      return fields[i];
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    uvm_vreg subvregs[$];
-    blk_.get_virtual_registers(subvregs, UVM_HIER);
-
-    foreach (subvregs[j]) begin
-      uvm_vreg_field fields[$];
-      subvregs[j].get_fields(fields);
-      foreach (fields[i])
-      if (fields[i].get_name() == name)
-        return fields[i];
-    end
-  end
-
-  `uvm_warning("RegModel", {"Unable to locate virtual field '",name,
-  "' in block '",get_full_name(),"'"})
-
-  return null;
-
-endfunction: get_vfield_by_name
-
-
-
-//-------------
-// Coverage API
-//-------------
-
-// set_coverage
-
-function uvm_reg_cvr_t uvm_reg_block::set_coverage(uvm_reg_cvr_t is_on);
-  this.cover_on = this.has_cover & is_on;
-
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    void'(rg.set_coverage(is_on));
-  end
-
-  foreach (mems[mem_]) begin
-    uvm_mem mem = mem_;
-    void'(mem.set_coverage(is_on));
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    void'(blk.set_coverage(is_on));
-  end
-
-  return this.cover_on;
-endfunction: set_coverage
-
-
-// sample_values
-
-function void uvm_reg_block::sample_values();
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    rg.sample_values();
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    blk.sample_values();
-  end
-endfunction
-
-
-// XsampleX
-
-function void uvm_reg_block::XsampleX(uvm_reg_addr_t addr,
-    bit            is_read,
-uvm_reg_map    map);
-sample(addr, is_read, map);
-if (parent != null) begin
-  // ToDo: Call XsampleX in the parent block
-  //       with the offset and map within that block's context
-end
-endfunction
-
-
-function uvm_reg_cvr_t uvm_reg_block::build_coverage(uvm_reg_cvr_t models);
-  build_coverage = UVM_NO_COVERAGE;
-  void'(uvm_reg_cvr_rsrc_db::read_by_name({"uvm_reg::", get_full_name()},
-    "include_coverage",
-  build_coverage, this));
-  return build_coverage & models;
-endfunction: build_coverage
-
-
-// add_coverage
-
-function void uvm_reg_block::add_coverage(uvm_reg_cvr_t models);
-  this.has_cover |= models;
-endfunction: add_coverage
-
-
-// has_coverage
-
-function bit uvm_reg_block::has_coverage(uvm_reg_cvr_t models);
-  return ((this.has_cover & models) == models);
-endfunction: has_coverage
-
-
-// get_coverage
-
-function bit uvm_reg_block::get_coverage(uvm_reg_cvr_t is_on = UVM_CVR_ALL);
-  if (this.has_coverage(is_on) == 0) return 0;
-  return ((this.cover_on & is_on) == is_on);
-endfunction: get_coverage
-
-
-//----------------
-// Run-Time Access
-//----------------
-
-
-// reset
-
-function void uvm_reg_block::reset(string kind = "HARD");
-
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    rg.reset(kind);
-  end
-
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk = blk_;
-    blk.reset(kind);
-  end
-endfunction
-
-
-// needs_update
-
-function bit uvm_reg_block::needs_update();
-  needs_update = 0;
-
-  foreach (regs[rg_]) begin
-    uvm_reg rg = rg_;
-    if (rg.needs_update())
-      return 1;
-  end
-  foreach (blks[blk_]) begin
-    uvm_reg_block blk =blk_;
-    if (blk.needs_update())
-      return 1;
-  end
-endfunction: needs_update
-
-
-// update
-
-task uvm_reg_block::update(output uvm_status_e  status,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_sequence_base  parent = null,
-    input  int                prior = -1,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-status = UVM_IS_OK;
-
-if (!needs_update()) begin
-  `uvm_info("RegModel", $sformatf("%s:%0d - RegModel block %s does not need updating",
-  fname, lineno, this.get_name()), UVM_HIGH);
-  return;
-end
-
-`uvm_info("RegModel", $sformatf("%s:%0d - Updating model block %s with %s path",
-fname, lineno, this.get_name(), path.name ), UVM_HIGH);
-
-foreach (regs[rg_]) begin
-  uvm_reg rg = rg_;
-  if (rg.needs_update()) begin
-    rg.update(status, path, null, parent, prior, extension);
-    if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
-      `uvm_error("RegModel", $sformatf("Register \"%s\" could not be updated",
-      rg.get_full_name()));
+    paths.delete();
+    if (is_hdl_path_root(kind)) begin
+      if (root_hdl_paths[kind] != "")
+        paths.push_back(root_hdl_paths[kind]);
       return;
     end
-  end
-end
 
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-  blk.update(status,path,parent,prior,extension,fname,lineno);
-end
-endtask: update
-
-
-// mirror
-
-task uvm_reg_block::mirror(output uvm_status_e       status,
-    input  uvm_check_e        check = UVM_NO_CHECK,
-    input  uvm_path_e         path = UVM_DEFAULT_PATH,
-    input  uvm_sequence_base  parent = null,
-    input  int                prior = -1,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_status_e final_status = UVM_IS_OK;
-
-foreach (regs[rg_]) begin 
-  uvm_reg rg = rg_;
-  rg.mirror(status, check, path, null,
-  parent, prior, extension, fname, lineno);
-  if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
-    final_status = status;
-  end
-end
-
-foreach (blks[blk_]) begin
-  uvm_reg_block blk = blk_;
-
-  blk.mirror(status, check, path, parent, prior, extension, fname, lineno);
-  if (status != UVM_IS_OK && status != UVM_HAS_X) begin;
-    final_status = status;
-  end
-end
-
-endtask: mirror
-
-
-// write_reg_by_name
-
-task uvm_reg_block::write_reg_by_name(output uvm_status_e   status,
-    input  string              name,
-    input  uvm_reg_data_t      data,
-    input  uvm_path_e     path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map      map = null,
-    input  uvm_sequence_base   parent = null,
-    input  int                 prior = -1,
-    input  uvm_object          extension = null,
-    input  string              fname = "",
-input  int                 lineno = 0);
-uvm_reg rg;
-this.fname = fname;
-this.lineno = lineno;
-
-status = UVM_NOT_OK;
-rg = this.get_reg_by_name(name);
-if (rg != null)
-  rg.write(status, data, path, map, parent, prior, extension);
-
-endtask: write_reg_by_name
-
-
-// read_reg_by_name
-
-task uvm_reg_block::read_reg_by_name(output uvm_status_e  status,
-    input  string             name,
-    output uvm_reg_data_t     data,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map     map = null,
-    input  uvm_sequence_base  parent = null,
-    input  int                prior = -1,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_reg rg;
-this.fname = fname;
-this.lineno = lineno;
-
-status = UVM_NOT_OK;
-rg = this.get_reg_by_name(name);
-if (rg != null)
-  rg.read(status, data, path, map, parent, prior, extension);
-endtask: read_reg_by_name
-
-
-// write_mem_by_name
-
-task uvm_reg_block::write_mem_by_name(output uvm_status_e  status,
-    input  string             name,
-    input  uvm_reg_addr_t     offset,
-    input  uvm_reg_data_t     data,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map     map = null,
-    input  uvm_sequence_base  parent = null,
-    input  int                prior = -1,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_mem mem;
-this.fname = fname;
-this.lineno = lineno;
-
-status = UVM_NOT_OK;
-mem = get_mem_by_name(name);
-if (mem != null)
-  mem.write(status, offset, data, path, map, parent, prior, extension);
-endtask: write_mem_by_name
-
-
-// read_mem_by_name
-
-task uvm_reg_block::read_mem_by_name(output uvm_status_e  status,
-    input  string             name,
-    input  uvm_reg_addr_t     offset,
-    output uvm_reg_data_t     data,
-    input  uvm_path_e    path = UVM_DEFAULT_PATH,
-    input  uvm_reg_map     map = null,
-    input  uvm_sequence_base  parent = null,
-    input  int                prior = -1,
-    input  uvm_object         extension = null,
-    input  string             fname = "",
-input  int                lineno = 0);
-uvm_mem mem;
-this.fname = fname;
-this.lineno = lineno;
-
-status = UVM_NOT_OK;
-mem = get_mem_by_name(name);
-if (mem != null)
-  mem.read(status, offset, data, path, map, parent, prior, extension);
-endtask: read_mem_by_name
-
-
-// readmemh
-
-task uvm_reg_block::readmemh(string filename);
-  // TODO
-endtask: readmemh
-
-
-// writememh
-
-task uvm_reg_block::writememh(string filename);
-  // TODO
-endtask: writememh
-
-
-//---------------
-// Map Management
-//---------------
-
-// create_map
-
-function uvm_reg_map uvm_reg_block::create_map(string name,
-    uvm_reg_addr_t base_addr,
-    int unsigned n_bytes,
-    uvm_endianness_e endian,
-bit byte_addressing=1);
-
-uvm_reg_map  map;
-
-if (this.locked) begin
-  `uvm_error("RegModel", "Cannot add map to locked model");
-  return null;
-end
-
-map = uvm_reg_map::type_id::create(name,,this.get_full_name());
-map.configure(this,base_addr,n_bytes,endian,byte_addressing);
-
-this.maps[map] = 1;
-if (maps.num() == 1)
-  default_map = map;
-
-return map;
-endfunction
-
-
-// add_map
-
-function void uvm_reg_block::add_map(uvm_reg_map map);
-
-  if (this.locked) begin
-    `uvm_error("RegModel", "Cannot add map to locked model");
-    return;
-  end
-
-  if (this.maps.exists(map)) begin
-    `uvm_error("RegModel", {"Map '",map.get_name(),
-    "' already exists in '",get_full_name(),"'"})
-    return;
-  end
-
-  this.maps[map] = 1;
-  if (maps.num() == 1)
-    default_map = map;
-
-endfunction: add_map
-
-
-// get_map_by_name
-
-function uvm_reg_map uvm_reg_block::get_map_by_name(string name);
-  uvm_reg_map maps[$];
-
-  this.get_maps(maps);
-
-  foreach (maps[i])
-  if (maps[i].get_name() == name)
-    return maps[i];
-
-  foreach (maps[i]) begin
-    uvm_reg_map submaps[$];
-    maps[i].get_submaps(submaps, UVM_HIER);
-
-    foreach (submaps[j])
-    if (submaps[j].get_name() == name)
-      return submaps[j];
-  end
-
-
-  `uvm_warning("RegModel", {"Map with name '",name,"' does not exist in block"})
-  return null;
-endfunction
-
-
-// set_default_map
-
-function void uvm_reg_block::set_default_map(uvm_reg_map map);
-  if (!maps.exists(map))
-    `uvm_warning("RegModel", {"Map '",map.get_full_name(),"' does not exist in block"})
-  default_map = map;
-endfunction
-
-
-// get_default_map
-
-function uvm_reg_map uvm_reg_block::get_default_map();
-  return default_map;
-endfunction
-
-
-// get_default_path
-
-function uvm_path_e uvm_reg_block::get_default_path();
-
-  if (this.default_path != UVM_DEFAULT_PATH)
-    return this.default_path;
-
-  if (this.parent != null)
-    return this.parent.get_default_path();
-
-  return UVM_FRONTDOOR;
-
-endfunction
-
-
-// Xinit_address_mapsX
-
-function void uvm_reg_block::Xinit_address_mapsX();
-  foreach (maps[map_]) begin
-    uvm_reg_map map = map_;
-    map.Xinit_address_mapX();
-  end
-  //map.Xverify_map_configX();
-endfunction
-
-
-//----------------
-// Group- Backdoor
-//----------------
-
-// set_backdoor
-
-function void uvm_reg_block::set_backdoor(uvm_reg_backdoor bkdr,
-    string               fname = "",
-int                  lineno = 0);
-bkdr.fname = fname;
-bkdr.lineno = lineno;
-if (this.backdoor != null &&
-this.backdoor.has_update_threads()) begin
-  `uvm_warning("RegModel", "Previous register backdoor still has update threads running. Backdoors with active mirroring should only be set before simulation starts.");
-end
-this.backdoor = bkdr;
-endfunction: set_backdoor
-
-
-// get_backdoor
-
-function uvm_reg_backdoor uvm_reg_block::get_backdoor(bit inherited = 1);
-  if (backdoor == null && inherited) begin
-    uvm_reg_block blk = get_parent();
-    while (blk != null) begin
-      uvm_reg_backdoor bkdr = blk.get_backdoor();
-      if (bkdr != null)
-        return bkdr;
-      blk = blk.get_parent();
-    end
-  end
-  return this.backdoor;
-endfunction: get_backdoor
-
-
-
-// clear_hdl_path
-
-function void uvm_reg_block::clear_hdl_path(string kind = "RTL");
-
-  if (kind == "ALL") begin
-    hdl_paths_pool = new("hdl_paths");
-    return;
-  end
-
-  if (kind == "")
-    kind = get_default_hdl_path();
-
-  if (!hdl_paths_pool.exists(kind)) begin
-    `uvm_warning("RegModel",{"Unknown HDL Abstraction '",kind,"'"})
-    return;
-  end
-
-  hdl_paths_pool.delete(kind);
-endfunction
-
-
-// add_hdl_path
-
-function void uvm_reg_block::add_hdl_path(string path, string kind = "RTL");
-
-  uvm_queue #(string) paths;
-
-  paths = hdl_paths_pool.get(kind);
-
-  paths.push_back(path);
-
-endfunction
-
-
-// has_hdl_path
-
-function bit  uvm_reg_block::has_hdl_path(string kind = "");
-  if (kind == "") begin
-    kind = get_default_hdl_path();
-  end
-  return hdl_paths_pool.exists(kind);
-endfunction
-
-
-// get_hdl_path
-
-function void uvm_reg_block::get_hdl_path(ref string paths[$], input string kind = "");
-
-  uvm_queue #(string) hdl_paths;
-
-  if (kind == "")
-    kind = get_default_hdl_path();
-
-  if (!has_hdl_path(kind)) begin
-    `uvm_error("RegModel",{"Block does not have hdl path defined for abstraction '",kind,"'"})
-    return;
-  end
-
-  hdl_paths = hdl_paths_pool.get(kind);
-
-  for (int i=0; i<hdl_paths.size();i++)
-    paths.push_back(hdl_paths.get(i));
-
-endfunction
-
-
-// get_full_hdl_path
-
-function void uvm_reg_block::get_full_hdl_path(ref string paths[$],
-    input string kind = "",
-string separator = ".");
-
-if (kind == "")
-  kind = get_default_hdl_path();
-
-paths.delete();
-if (is_hdl_path_root(kind)) begin
-  if (root_hdl_paths[kind] != "")
-    paths.push_back(root_hdl_paths[kind]);
-  return;
-end
-
-if (!has_hdl_path(kind)) begin
-  `uvm_error("RegModel",{"Block does not have hdl path defined for abstraction '",kind,"'"})
-  return;
-end
-
-begin
-  uvm_queue #(string) hdl_paths = hdl_paths_pool.get(kind);
-  string parent_paths[$];
-
-  if (parent != null)
-    parent.get_full_hdl_path(parent_paths, kind, separator);
-
-  for (int i=0; i<hdl_paths.size();i++) begin
-    string hdl_path = hdl_paths.get(i);
-
-    if (parent_paths.size() == 0) begin
-      if (hdl_path != "")
-        paths.push_back(hdl_path);
-
-      continue;
+    if (!has_hdl_path(kind)) begin
+      `uvm_error("RegModel",{"Block does not have hdl path defined for abstraction '",kind,"'"})
+      return;
     end
 
-    foreach (parent_paths[j])  begin
-      if (hdl_path == "")
-        paths.push_back(parent_paths[j]);
-      else
-        paths.push_back({ parent_paths[j], separator, hdl_path });
+    begin
+      uvm_queue #(string) hdl_paths = hdl_paths_pool.get(kind);
+      string parent_paths[$];
+
+      if (parent != null)
+        parent.get_full_hdl_path(parent_paths, kind, separator);
+
+      for (int i=0; i<hdl_paths.size();i++) begin
+        string hdl_path = hdl_paths.get(i);
+
+        if (parent_paths.size() == 0) begin
+          if (hdl_path != "")
+            paths.push_back(hdl_path);
+
+          continue;
+        end
+
+        foreach (parent_paths[j])  begin
+          if (hdl_path == "")
+            paths.push_back(parent_paths[j]);
+          else
+            paths.push_back({ parent_paths[j], separator, hdl_path });
+        end
+      end
     end
-  end
-end
 
-endfunction
+  endfunction
 
 
-// get_default_hdl_path
+  // get_default_hdl_path
 
-function string uvm_reg_block::get_default_hdl_path();
-  if (default_hdl_path == "" && parent != null)
-    return parent.get_default_hdl_path();
-  return default_hdl_path;
-endfunction
+  function string uvm_reg_block::get_default_hdl_path();
+    if (default_hdl_path == "" && parent != null)
+      return parent.get_default_hdl_path();
+    return default_hdl_path;
+  endfunction
 
 
-// set_default_hdl_path
+  // set_default_hdl_path
 
-function void uvm_reg_block::set_default_hdl_path(string kind);
+  function void uvm_reg_block::set_default_hdl_path(string kind);
 
-  if (kind == "") begin
-    if (parent == null) begin
-      `uvm_error("RegModel",{"Block has no parent. ",
-      "Must specify a valid HDL abstraction (kind)"})
+    if (kind == "") begin
+      if (parent == null) begin
+        `uvm_error("RegModel",{"Block has no parent. ",
+        "Must specify a valid HDL abstraction (kind)"})
+      end
+      kind = parent.get_default_hdl_path();
     end
-    kind = parent.get_default_hdl_path();
-  end
 
-  default_hdl_path = kind;
-endfunction
+    default_hdl_path = kind;
+  endfunction
 
 
-// set_hdl_path_root
+  // set_hdl_path_root
 
-function void uvm_reg_block::set_hdl_path_root (string path, string kind = "RTL");
-  if (kind == "")
-    kind = get_default_hdl_path();
+  function void uvm_reg_block::set_hdl_path_root (string path, string kind = "RTL");
+    if (kind == "")
+      kind = get_default_hdl_path();
 
-  root_hdl_paths[kind] = path;
-endfunction
-
-
-// is_hdl_path_root
-
-function bit  uvm_reg_block::is_hdl_path_root (string kind = "");
-  if (kind == "")
-    kind = get_default_hdl_path();
-
-  return root_hdl_paths.exists(kind);
-endfunction
+    root_hdl_paths[kind] = path;
+  endfunction
 
 
-//----------------------------------
-// Group- Basic Object Operations
-//----------------------------------
+  // is_hdl_path_root
 
-// do_print
-function void uvm_reg_block::do_print (uvm_printer printer);
-  super.do_print(printer);
+  function bit  uvm_reg_block::is_hdl_path_root (string kind = "");
+    if (kind == "")
+      kind = get_default_hdl_path();
 
-  foreach(blks[i]) begin
-    uvm_reg_block b = i;
-    uvm_object obj = b;
-    printer.print_object(obj.get_name(), obj);
-  end
+    return root_hdl_paths.exists(kind);
+  endfunction
 
-  foreach(regs[i]) begin
-    uvm_reg r = i;
-    uvm_object obj = r;
-    printer.print_object(obj.get_name(), obj);
-  end
 
-  foreach(vregs[i]) begin
-    uvm_vreg r = i;
-    uvm_object obj = r;
-    printer.print_object(obj.get_name(), obj);
-  end
+  //----------------------------------
+  // Group- Basic Object Operations
+  //----------------------------------
 
-  foreach(mems[i]) begin
-    uvm_mem m = i;
-    uvm_object obj = m;
-    printer.print_object(obj.get_name(), obj);
-  end
+  // do_print
+  function void uvm_reg_block::do_print (uvm_printer printer);
+    super.do_print(printer);
 
-  foreach(maps[i]) begin
-    uvm_reg_map m = i;
-    uvm_object obj = m;
-    printer.print_object(obj.get_name(), obj);
-  end
+    foreach(blks[i]) begin
+      uvm_reg_block b = i;
+      uvm_object obj = b;
+      printer.print_object(obj.get_name(), obj);
+    end
 
-endfunction
+    foreach(regs[i]) begin
+      uvm_reg r = i;
+      uvm_object obj = r;
+      printer.print_object(obj.get_name(), obj);
+    end
+
+    foreach(vregs[i]) begin
+      uvm_vreg r = i;
+      uvm_object obj = r;
+      printer.print_object(obj.get_name(), obj);
+    end
+
+    foreach(mems[i]) begin
+      uvm_mem m = i;
+      uvm_object obj = m;
+      printer.print_object(obj.get_name(), obj);
+    end
+
+    foreach(maps[i]) begin
+      uvm_reg_map m = i;
+      uvm_object obj = m;
+      printer.print_object(obj.get_name(), obj);
+    end
+
+  endfunction
 
 
 
-// clone
+  // clone
 
-function uvm_object uvm_reg_block::clone();
-  `uvm_fatal("RegModel","RegModel blocks cannot be cloned")
-  return null;
-endfunction
+  function uvm_object uvm_reg_block::clone();
+    `uvm_fatal("RegModel","RegModel blocks cannot be cloned")
+    return null;
+  endfunction
 
-// do_copy
+  // do_copy
 
-function void uvm_reg_block::do_copy(uvm_object rhs);
-  `uvm_fatal("RegModel","RegModel blocks cannot be copied")
-endfunction
+  function void uvm_reg_block::do_copy(uvm_object rhs);
+    `uvm_fatal("RegModel","RegModel blocks cannot be copied")
+  endfunction
 
 
-// do_compare
+  // do_compare
 
-function bit uvm_reg_block::do_compare (uvm_object  rhs,
-uvm_comparer comparer);
-`uvm_warning("RegModel","RegModel blocks cannot be compared")
-return 0;
+  function bit uvm_reg_block::do_compare (uvm_object  rhs,
+  uvm_comparer comparer);
+  `uvm_warning("RegModel","RegModel blocks cannot be compared")
+  return 0;
 endfunction
 
 
