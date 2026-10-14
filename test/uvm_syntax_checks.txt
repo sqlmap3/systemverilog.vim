@@ -205,3 +205,5 @@ super\.rf	svThisSuper
 \\n	svStringEscape
 \<my_custom_t\>	svUserType
 \<my_scope_pkg\>\ze::	svScopePrefix
+it_inst\.\zsmy_field	svMemberAccess
+it_inst\.\zsmy_custom_method	svMethodCall

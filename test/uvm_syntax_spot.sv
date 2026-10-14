@@ -266,6 +266,9 @@ function int spot_doc_fn(int req_data);
   string msg = $sformatf("Value: %0d, hex=0x%08h\n", req_data, req_data);
   my_custom_t my_typed_var;
   my_scope_pkg::my_scoped_call();
+  spot_item it_inst;
+  it_inst.my_field = 10;
+  it_inst.my_custom_method(req_data);
   return 1;
 endfunction
 

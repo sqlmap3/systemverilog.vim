@@ -110,6 +110,8 @@ syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>" co
 " all $-system calls ($display, $rose, $clog2, $cast, $fscanf, ...) share one
 " catch-all group instead of a huge redundant keyword list
 syntax match svSystemCall "\$\h\w*\>"
+syntax match svMemberAccess "\w\.\zs\h\w*\>"
+syntax match svMethodCall "\w\.\zs\h\w*\ze\s*("
 syntax match svObjectFunctions "\.\(randomize\|srandomize\|num\|size\|delete\|exists\|first\|last\|next\|prev\|insert\|pop_front\|pop_back\|push_front\|push_back\|find\|find_index\|find_first\|find_first_index\|find_last\|find_last_index\|min\|max\|reverse\|sort\|rsort\|shuffle\|sum\|product\|and\|or\|xor\)\>\_s*("he=e-1
 syntax match svOperator "\(\~\|&\|||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
 syntax match svDelimiter "\({\|}\|(\|)\)"
@@ -428,6 +430,8 @@ highlight! default link svEnumerator Constant
 highlight! default link svStructField Identifier
 highlight! default link svTypedef Typedef
 highlight! default link svSystemCall Function
+highlight! default link svMethodCall Function
+highlight! default link svMemberAccess Identifier
 highlight! default link svOperator Operator
 highlight! default link svNamedPort Identifier
 highlight! default link svAssertLabel Label
