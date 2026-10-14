@@ -124,8 +124,8 @@ virtual class uvm_factory;
 
   pure virtual function
   void set_inst_override_by_type (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-  string full_inst_path);
+                                  uvm_object_wrapper override_type,
+                                  string full_inst_path);
 
   // Function: set_inst_override_by_name
   //
@@ -156,16 +156,16 @@ virtual class uvm_factory;
 
   pure virtual function
   void set_inst_override_by_name (string original_type_name,
-    string override_type_name,
-  string full_inst_path);
+                                  string override_type_name,
+                                  string full_inst_path);
 
 
   // Function: set_type_override_by_type
 
   pure virtual function
   void set_type_override_by_type (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-  bit replace=1);
+                                  uvm_object_wrapper override_type,
+                                  bit replace=1);
 
   // Function: set_type_override_by_name
   //
@@ -188,8 +188,8 @@ virtual class uvm_factory;
 
   pure virtual function
   void set_type_override_by_name (string original_type_name,
-    string override_type_name,
-  bit replace=1);
+                                  string override_type_name,
+                                  bit replace=1);
 
 
   // Group: Creation
@@ -198,23 +198,23 @@ virtual class uvm_factory;
 
   pure virtual function
   uvm_object    create_object_by_type    (uvm_object_wrapper requested_type,  
-    string parent_inst_path="",
-  string name=""); 
+                                          string parent_inst_path="",
+                                          string name=""); 
 
   // Function: create_component_by_type
 
   pure virtual function
   uvm_component create_component_by_type (uvm_object_wrapper requested_type,  
-    string parent_inst_path="",
-    string name, 
-  uvm_component parent);
+                                          string parent_inst_path="",
+                                          string name, 
+                                          uvm_component parent);
 
   // Function: create_object_by_name
 
   pure virtual function
   uvm_object    create_object_by_name    (string requested_type_name,  
-    string parent_inst_path="",
-  string name=""); 
+                                          string parent_inst_path="",
+                                          string name=""); 
 
   // Function: create_component_by_name
   //
@@ -254,9 +254,9 @@ virtual class uvm_factory;
 
   pure virtual function
   uvm_component create_component_by_name (string requested_type_name,  
-    string parent_inst_path="",
-    string name, 
-  uvm_component parent);
+                                          string parent_inst_path="",
+                                          string name, 
+                                          uvm_component parent);
 
   // Group: Debug
 
@@ -264,8 +264,8 @@ virtual class uvm_factory;
 
   pure virtual function
   void debug_create_by_type (uvm_object_wrapper requested_type,
-    string parent_inst_path="",
-  string name="");
+                             string parent_inst_path="",
+                             string name="");
 
   // Function: debug_create_by_name
   //
@@ -277,15 +277,15 @@ virtual class uvm_factory;
 
   pure virtual function
   void debug_create_by_name (string requested_type_name,
-    string parent_inst_path="",
-  string name="");
+                             string parent_inst_path="",
+                             string name="");
 
 
   // Function: find_override_by_type
 
   pure virtual function
   uvm_object_wrapper find_override_by_type (uvm_object_wrapper requested_type,
-  string full_inst_path);
+                                            string full_inst_path);
 
   // Function: find_override_by_name
   //
@@ -296,7 +296,7 @@ virtual class uvm_factory;
 
   pure virtual function
   uvm_object_wrapper find_override_by_name (string requested_type_name,
-  string full_inst_path);
+                                            string full_inst_path);
 
   // Function: find_wrapper_by_name
   //
@@ -344,8 +344,8 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   void set_inst_override_by_type (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-  string full_inst_path);
+                                  uvm_object_wrapper override_type,
+                                  string full_inst_path);
 
   // Function: set_inst_override_by_name
   //
@@ -354,16 +354,16 @@ class uvm_default_factory extends uvm_factory;
   // that matches ~full_inst_path~. 
   extern virtual function
   void set_inst_override_by_name (string original_type_name,
-    string override_type_name,
-  string full_inst_path);
+                                  string override_type_name,
+                                  string full_inst_path);
 
 
   // Function: set_type_override_by_type
 
   extern virtual function
   void set_type_override_by_type (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-  bit replace=1);
+                                  uvm_object_wrapper override_type,
+                                  bit replace=1);
 
   // Function: set_type_override_by_name
   //
@@ -373,8 +373,8 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   void set_type_override_by_name (string original_type_name,
-    string override_type_name,
-  bit replace=1);
+                                  string override_type_name,
+                                  bit replace=1);
 
 
   // Group: Creation
@@ -383,23 +383,23 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   uvm_object    create_object_by_type    (uvm_object_wrapper requested_type,  
-    string parent_inst_path="",
-  string name=""); 
+                                          string parent_inst_path="",
+                                          string name=""); 
 
   // Function: create_component_by_type
 
   extern virtual function
   uvm_component create_component_by_type (uvm_object_wrapper requested_type,  
-    string parent_inst_path="",
-    string name, 
-  uvm_component parent);
+                                          string parent_inst_path="",
+                                          string name, 
+                                          uvm_component parent);
 
   // Function: create_object_by_name
 
   extern virtual function
   uvm_object    create_object_by_name    (string requested_type_name,  
-    string parent_inst_path="",
-  string name=""); 
+                                          string parent_inst_path="",
+                                          string name=""); 
 
   // Function: create_component_by_name
   //
@@ -408,9 +408,9 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   uvm_component create_component_by_name (string requested_type_name,  
-    string parent_inst_path="",
-    string name, 
-  uvm_component parent);
+                                          string parent_inst_path="",
+                                          string name, 
+                                          uvm_component parent);
 
   // Group: Debug
 
@@ -418,8 +418,8 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   void debug_create_by_type (uvm_object_wrapper requested_type,
-    string parent_inst_path="",
-  string name="");
+                             string parent_inst_path="",
+                             string name="");
 
   // Function: debug_create_by_name
   //
@@ -427,15 +427,15 @@ class uvm_default_factory extends uvm_factory;
   // but they do not create new objects. 
   extern virtual function
   void debug_create_by_name (string requested_type_name,
-    string parent_inst_path="",
-  string name="");
+                             string parent_inst_path="",
+                             string name="");
 
 
   // Function: find_override_by_type
 
   extern virtual function
   uvm_object_wrapper find_override_by_type (uvm_object_wrapper requested_type,
-  string full_inst_path);
+                                            string full_inst_path);
 
   // Function: find_override_by_name
   //
@@ -444,7 +444,7 @@ class uvm_default_factory extends uvm_factory;
 
   extern virtual function
   uvm_object_wrapper find_override_by_name (string requested_type_name,
-  string full_inst_path);
+                                            string full_inst_path);
 
   extern virtual 
   function uvm_object_wrapper find_wrapper_by_name            (string type_name);
@@ -487,9 +487,9 @@ class uvm_default_factory extends uvm_factory;
   extern function bit m_has_wildcard(string nm);
 
   extern function bit check_inst_override_exists
-  (uvm_object_wrapper original_type,
-    uvm_object_wrapper override_type,
-  string full_inst_path);
+    (uvm_object_wrapper original_type,
+     uvm_object_wrapper override_type,
+     string full_inst_path);
 
 endclass
 

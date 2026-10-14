@@ -401,6 +401,32 @@ function! s:StatementTailHead( line_num )
 	return 0
 endfunction
 
+" If a:line_num belongs to a split function/task PROTOTYPE declaration
+" (e.g. 'extern function ...' on one line, and '(' or continuation on the
+" next), return the line number of the prototype's opening line; otherwise 0.
+" Stops if a statement boundary (';', '{', '}', group openers/closers) is hit.
+function! s:PrototypeSigHead( line_num )
+	let l:ln = prevnonblank(a:line_num - 1)
+	let l:limit = 6
+	while l:ln > 0 && l:limit > 0
+		let l:l = getline(l:ln)
+		let l:clean = substitute(l:l, '\".\{-}\"', '', 'g')
+		let l:clean = substitute(l:clean, '\/\/.*', '', '')
+		if l:clean =~ '\<\%(function\|task\)\>'
+			return (l:clean =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(l:clean) !~# 'f') ? l:ln : 0
+		endif
+		if l:clean =~ '[;{}]' || l:clean =~ '^\s*`'
+			return 0
+		endif
+		if l:clean =~ '\<\%(end\|endclass\|endfunction\|endtask\|endgroup\|endmodule\|endinterface\|endpackage\)\>'
+			return 0
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
+	endwhile
+	return 0
+endfunction
+
 " If a:line_num is a continuation of a multi-line function/task PROTOTYPE's
 " argument list, return the column (0-based) to align it to - the character
 " right after the signature's opening '(' - so every argument line, and the
@@ -425,8 +451,18 @@ function! s:SigArgColumn( line_num )
 		if l:bal < 0
 			return 0
 		endif
-		if l:net > 0 && l:l =~ '\<\%(function\|task\)\>'
-			return s:ConvertToCodes(l:l) !~# 'f' ? stridx(l:l, '(') + 1 : 0
+		if l:net > 0
+			" the line that opened the enclosing '('
+			if l:l =~ '\<\%(function\|task\)\>'
+				return (l:l =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(l:l) !~# 'f') ? stridx(l:l, '(') + 1 : 0
+			endif
+			" the '(' may be split onto its own line below the signature
+			" ('extern ... function ... name' / '(')
+			let l:head = s:PrototypeSigHead(l:ln)
+			if l:head > 0
+				return stridx(l:l, '(') + 1
+			endif
+			return 0
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
 	endwhile
@@ -626,12 +662,28 @@ function! GetSystemVerilogIndent( line_num )
 		return l:argcol
 	endif
 
+	" if this line opens '(' on its own line below a prototype signature
+	" ('extern static function ...' on prev line, '(' on this line),
+	" indent it one shiftwidth under the declaration
+	if this_codeline =~ '^\s*('
+		let l:head = s:PrototypeSigHead(a:line_num)
+		if l:head > 0
+			return indent(l:head) + &shiftwidth
+		endif
+	endif
+
 	" the line after a signature's closing ');' returns to the declaration's
 	" own level (prototypes only; a definition keeps its body on the normal
 	" indent rules)
 	let l:mhead = s:StatementTailHead(prev1_line_num)
-	if l:mhead > 0 && getline(l:mhead) =~ '\<\%(function\|task\)\>' && s:ConvertToCodes(getline(l:mhead)) !~# 'f'
-		return indent(l:mhead)
+	if l:mhead > 0
+		" the '(' may sit on its own line below the 'function/task ... name'
+		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>' && (getline(l:mhead) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:mhead)) !~# 'f')) ? l:mhead : s:PrototypeSigHead(l:mhead)
+		if l:sig > 0 && getline(l:sig) =~ '\<\%(function\|task\)\>' && (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig)) !~# 'f')
+			" the line after the tail sits at the declaration's level; a
+			" group stop (endclass and friends) dedents one further
+			return indent(l:sig) - (this_codes =~# 'h' ? &shiftwidth : 0)
+		endif
 	endif
 
 	" Tail of a multi-line statement (macro or method call), e.g. the closing
