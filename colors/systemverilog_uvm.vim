@@ -183,6 +183,16 @@ call s:h('svModuleKw',   'keyword', 'gui=bold')
 call s:h('svInterfaceKw','keyword', 'gui=bold')
 call s:h('svPackageKw',  'keyword', 'gui=bold')
 call s:h('svClassKw',    'keyword', 'gui=bold')
+call s:h('svFunctionKw', 'keyword', 'gui=bold')
+call s:h('svTaskKw',     'keyword', 'gui=bold')
+call s:h('Keyword',      'keyword', 'gui=bold')
+call s:h('Statement',    'keyword')
+call s:h('StorageClass', 'storage')
+call s:h('Type',         'type')
+call s:h('Function',     'func')
+call s:h('Constant',     'const')
+call s:h('PreProc',      'keyword')
+call s:h('Special',      'special')
 
 " ---------------------------------------------------------------------------
 " UVM groups - high distinction: each semantic category gets its own color
