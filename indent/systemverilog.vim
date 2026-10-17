@@ -388,7 +388,8 @@ function! s:StatementTailHead( line_num )
 		return 0
 	endif
 	let l:ln = prevnonblank(a:line_num - 1)
-	while l:ln > 0
+	let l:limit = 200
+	while l:ln > 0 && l:limit > 0
 		let l:l = getline(l:ln)
 		let l:l = substitute(l:l, '\".\{-}\"', '', 'g')
 		let l:l = substitute(l:l, '\/\/.*', '', '')
@@ -397,6 +398,7 @@ function! s:StatementTailHead( line_num )
 			return l:ln
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
 	endwhile
 	return 0
 endfunction
@@ -445,9 +447,17 @@ function! s:SigArgColumn( line_num )
 	if l:net0 > 0
 		return 0
 	endif
+	" the line above must end with a continuation character (',' '(' '[' '{'):
+	" signature argument lines follow a ','-ending head. Without this guard
+	" every ordinary body line would walk to the top of the file, making a
+	" whole-buffer re-indent O(n^2).
+	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+		return 0
+	endif
 	let l:bal = 0
 	let l:ln = prevnonblank(a:line_num - 1)
-	while l:ln > 0
+	let l:limit = 40
+	while l:ln > 0 && l:limit > 0
 		let l:l = substitute(getline(l:ln), '\".\{-}\"', '', 'g')
 		let l:l = substitute(l:l, '\/\/.*', '', '')
 		let l:net = len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
@@ -471,6 +481,7 @@ function! s:SigArgColumn( line_num )
 			return 0
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
 	endwhile
 	return 0
 endfunction

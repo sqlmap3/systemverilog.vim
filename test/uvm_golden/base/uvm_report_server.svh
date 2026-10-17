@@ -871,45 +871,45 @@ class uvm_default_report_server extends uvm_report_server;
                                          string composed_message,
                                          int verbosity_level,
                                          uvm_report_object client
-                                         );
-                                         uvm_report_message l_report_message;
+                                       );
+                                       uvm_report_message l_report_message;
 
-                                         l_report_message = uvm_report_message::new_report_message();
-                                         l_report_message.set_report_message(severity, id, message, 
-                                         verbosity_level, filename, line, "");
-                                         l_report_message.set_report_object(client);
-                                         l_report_message.set_report_handler(client.get_report_handler());
-                                         l_report_message.set_file(file);
-                                         l_report_message.set_action(action);
-                                         l_report_message.set_report_server(this);
+                                       l_report_message = uvm_report_message::new_report_message();
+                                       l_report_message.set_report_message(severity, id, message, 
+                                       verbosity_level, filename, line, "");
+                                       l_report_message.set_report_object(client);
+                                       l_report_message.set_report_handler(client.get_report_handler());
+                                       l_report_message.set_file(file);
+                                       l_report_message.set_action(action);
+                                       l_report_message.set_report_server(this);
 
-                                         execute_report_message(l_report_message, composed_message);
-                                       endfunction
+                                       execute_report_message(l_report_message, composed_message);
+                                     endfunction
 
 
-                                       // Function- compose_message
-                                       //
-                                       // Constructs the actual string sent to the file or command line
-                                       // from the severity, component name, report id, and the message itself. 
-                                       //
-                                       // Expert users can overload this method to customize report formatting.
+                                     // Function- compose_message
+                                     //
+                                     // Constructs the actual string sent to the file or command line
+                                     // from the severity, component name, report id, and the message itself. 
+                                     //
+                                     // Expert users can overload this method to customize report formatting.
 
-                                       virtual function string compose_message(
-                                                                               uvm_severity severity,
-                                                                               string name,
-                                                                               string id,
-                                                                               string message,
-                                                                               string filename,
-                                                                               int    line
-                                                                               );
-                                                                               uvm_report_message l_report_message;
+                                     virtual function string compose_message(
+                                                                             uvm_severity severity,
+                                                                             string name,
+                                                                             string id,
+                                                                             string message,
+                                                                             string filename,
+                                                                             int    line
+                                                                           );
+                                                                           uvm_report_message l_report_message;
 
-                                                                               l_report_message = uvm_report_message::new_report_message();
-                                                                               l_report_message.set_report_message(severity, id, message, 
-                                                                               UVM_NONE, filename, line, "");
+                                                                           l_report_message = uvm_report_message::new_report_message();
+                                                                           l_report_message.set_report_message(severity, id, message, 
+                                                                           UVM_NONE, filename, line, "");
 
-                                                                               return compose_report_message(l_report_message, name);
-                                                                             endfunction 
+                                                                           return compose_report_message(l_report_message, name);
+                                                                         endfunction 
 
 
   `endif

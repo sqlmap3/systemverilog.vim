@@ -26,6 +26,10 @@
 #                    casting/streaming, parameterized interface
 #   indent_demo13.sv multi-line function/task prototype signatures
 #   indent_demo14.sv TB instantiation (ports, parameters, wildcard, bind)
+#   indent_demo15.sv `ifdef/`else/`endif inside function/task bodies
+#   indent_demo16.sv macros inside conditionals: `define bodies, utils
+#                    pairs, `uvm_do_with constraints, case items, `elsif
+#                    chains - across every scope
 #
 # To regenerate an expected file after an INTENDED behavior change:
 #   vim -Nu NONE -n -es -c "set rtp^=$(dirname $0)/.." \
