@@ -376,145 +376,145 @@ function void uvm_root::report_header(UVM_FILE file = 0);
     m_relnotes_done=1;
   `endif
 
-    `ifndef UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR
-      if(!m_relnotes_done)      
-        q.push_back("\n  ***********       IMPORTANT RELEASE NOTES         ************\n");
+  `ifndef UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR
+    if(!m_relnotes_done)      
+      q.push_back("\n  ***********       IMPORTANT RELEASE NOTES         ************\n");
 
-      q.push_back("\n  You are using a version of the UVM library that has been compiled\n");
-      q.push_back("  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.\n");
-      q.push_back("  See http://www.eda.org/svdb/view.php?id=3770 for more details.\n");
-      m_relnotes_done=1;
-    `endif
+    q.push_back("\n  You are using a version of the UVM library that has been compiled\n");
+    q.push_back("  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.\n");
+    q.push_back("  See http://www.eda.org/svdb/view.php?id=3770 for more details.\n");
+    m_relnotes_done=1;
+  `endif
 
-    if(m_relnotes_done)
-      q.push_back("\n      (Specify +UVM_NO_RELNOTES to turn off this notice)\n");
+  if(m_relnotes_done)
+    q.push_back("\n      (Specify +UVM_NO_RELNOTES to turn off this notice)\n");
 
-    `uvm_info("UVM/RELNOTES",`UVM_STRING_QUEUE_STREAMING_PACK(q),UVM_LOW)
-  endfunction
+  `uvm_info("UVM/RELNOTES",`UVM_STRING_QUEUE_STREAMING_PACK(q),UVM_LOW)
+endfunction
 
 
 
-  // run_test
-  // --------
+// run_test
+// --------
 
-  task uvm_root::run_test(string test_name="");
+task uvm_root::run_test(string test_name="");
 
-    uvm_report_server l_rs;
-    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-    uvm_factory factory=cs.get_factory();
-    bit testname_plusarg;
-    int test_name_count;
-    string test_names[$];
-    string msg;
-    uvm_component uvm_test_top;
+  uvm_report_server l_rs;
+  uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+  uvm_factory factory=cs.get_factory();
+  bit testname_plusarg;
+  int test_name_count;
+  string test_names[$];
+  string msg;
+  uvm_component uvm_test_top;
 
-    process phase_runner_proc; // store thread forked below for final cleanup
+  process phase_runner_proc; // store thread forked below for final cleanup
 
-    testname_plusarg = 0;
+  testname_plusarg = 0;
 
-    // Set up the process that decouples the thread that drops objections from
-    // the process that processes drop/all_dropped objections. Thus, if the
-    // original calling thread (the "dropper") gets killed, it does not affect
-    // drain-time and propagation of the drop up the hierarchy.
-    // Needs to be done in run_test since it needs to be in an
-    // initial block to fork a process.
-    uvm_objection::m_init_objections();
+  // Set up the process that decouples the thread that drops objections from
+  // the process that processes drop/all_dropped objections. Thus, if the
+  // original calling thread (the "dropper") gets killed, it does not affect
+  // drain-time and propagation of the drop up the hierarchy.
+  // Needs to be done in run_test since it needs to be in an
+  // initial block to fork a process.
+  uvm_objection::m_init_objections();
 
-    `ifndef UVM_NO_DPI
+  `ifndef UVM_NO_DPI
 
-      // Retrieve the test names provided on the command line.  Command line
-      // overrides the argument.
-      test_name_count = clp.get_arg_values("+UVM_TESTNAME=", test_names);
+    // Retrieve the test names provided on the command line.  Command line
+    // overrides the argument.
+    test_name_count = clp.get_arg_values("+UVM_TESTNAME=", test_names);
 
-      // If at least one, use first in queue.
-      if (test_name_count > 0) begin
-        test_name = test_names[0];
-        testname_plusarg = 1;
-      end
-
-      // If multiple, provided the warning giving the number, which one will be
-      // used and the complete list.
-      if (test_name_count > 1) begin
-        string test_list;
-        string sep;
-        for (int i = 0; i < test_names.size(); i++) begin
-          if (i != 0)
-            sep = ", ";
-        test_list = {test_list, sep, test_names[i]};
-      end
-      uvm_report_warning("MULTTST", 
-      $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
-    end
-
-    `else
-
-    // plusarg overrides argument
-    if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
-      `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
+    // If at least one, use first in queue.
+    if (test_name_count > 0) begin
+      test_name = test_names[0];
       testname_plusarg = 1;
     end
 
-    `endif
-
-    // if test now defined, create it using common factory
-    if (test_name != "") begin
-      uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
-      uvm_factory factory=cs.get_factory();
-
-      if(m_children.exists("uvm_test_top")) begin
-        uvm_report_fatal("TTINST",
-        "An uvm_test_top already exists via a previous call to run_test", UVM_NONE);
-        #0; // forces shutdown because $finish is forked
-      end
-      $cast(uvm_test_top, factory.create_component_by_name(test_name,
-      "", "uvm_test_top", null));
-
-      if (uvm_test_top == null) begin
-        msg = testname_plusarg ? {"command line +UVM_TESTNAME=",test_name} : 
-        {"call to run_test(",test_name,")"};
-        uvm_report_fatal("INVTST",
-        {"Requested test from ",msg, " not found." }, UVM_NONE);
-      end
+    // If multiple, provided the warning giving the number, which one will be
+    // used and the complete list.
+    if (test_name_count > 1) begin
+      string test_list;
+      string sep;
+      for (int i = 0; i < test_names.size(); i++) begin
+        if (i != 0)
+          sep = ", ";
+      test_list = {test_list, sep, test_names[i]};
     end
+    uvm_report_warning("MULTTST", 
+    $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
+  end
 
-    if (m_children.num() == 0) begin
-      uvm_report_fatal("NOCOMP",
-        {"No components instantiated. You must either instantiate",
-        " at least one component before calling run_test or use",
-        " run_test to do so. To run a test using run_test,",
-        " use +UVM_TESTNAME or supply the test name in",
-      " the argument to run_test(). Exiting simulation."}, UVM_NONE);
-      return;
+  `else
+
+  // plusarg overrides argument
+  if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
+    `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
+    testname_plusarg = 1;
+  end
+
+  `endif
+
+  // if test now defined, create it using common factory
+  if (test_name != "") begin
+    uvm_coreservice_t cs = uvm_coreservice_t::get();                                                     
+    uvm_factory factory=cs.get_factory();
+
+    if(m_children.exists("uvm_test_top")) begin
+      uvm_report_fatal("TTINST",
+      "An uvm_test_top already exists via a previous call to run_test", UVM_NONE);
+      #0; // forces shutdown because $finish is forked
     end
+    $cast(uvm_test_top, factory.create_component_by_name(test_name,
+    "", "uvm_test_top", null));
 
-    begin
-      if(test_name=="") 
-        uvm_report_info("RNTST", "Running test ...", UVM_LOW); 
-      else if (test_name == uvm_test_top.get_type_name())
-        uvm_report_info("RNTST", {"Running test ",test_name,"..."}, UVM_LOW); 
-      else
-        uvm_report_info("RNTST", {"Running test ",uvm_test_top.get_type_name()," (via factory override for test \"",test_name,"\")..."}, UVM_LOW);
+    if (uvm_test_top == null) begin
+      msg = testname_plusarg ? {"command line +UVM_TESTNAME=",test_name} : 
+      {"call to run_test(",test_name,")"};
+      uvm_report_fatal("INVTST",
+      {"Requested test from ",msg, " not found." }, UVM_NONE);
     end
+  end
 
-    // phase runner, isolated from calling process
-    fork begin
-      // spawn the phase runner task
-      phase_runner_proc = process::self();
-      uvm_phase::m_run_phases();
-    end
-  join_none
-  #0; // let the phase runner start
+  if (m_children.num() == 0) begin
+    uvm_report_fatal("NOCOMP",
+      {"No components instantiated. You must either instantiate",
+      " at least one component before calling run_test or use",
+      " run_test to do so. To run a test using run_test,",
+      " use +UVM_TESTNAME or supply the test name in",
+    " the argument to run_test(). Exiting simulation."}, UVM_NONE);
+    return;
+  end
 
-  wait (m_phase_all_done == 1);
+  begin
+    if(test_name=="") 
+      uvm_report_info("RNTST", "Running test ...", UVM_LOW); 
+    else if (test_name == uvm_test_top.get_type_name())
+      uvm_report_info("RNTST", {"Running test ",test_name,"..."}, UVM_LOW); 
+    else
+      uvm_report_info("RNTST", {"Running test ",uvm_test_top.get_type_name()," (via factory override for test \"",test_name,"\")..."}, UVM_LOW);
+  end
 
-  // clean up after ourselves
-  phase_runner_proc.kill();
+  // phase runner, isolated from calling process
+  fork begin
+    // spawn the phase runner task
+    phase_runner_proc = process::self();
+    uvm_phase::m_run_phases();
+  end
+join_none
+#0; // let the phase runner start
 
-  l_rs = uvm_report_server::get_server();
-  l_rs.report_summarize();
+wait (m_phase_all_done == 1);
 
-  if (finish_on_completion)
-    $finish;
+// clean up after ourselves
+phase_runner_proc.kill();
+
+l_rs = uvm_report_server::get_server();
+l_rs.report_summarize();
+
+if (finish_on_completion)
+  $finish;
 
 endtask
 

@@ -3333,7 +3333,7 @@ endfunction \
  // <uvm_recorder::use_record_attribute> returns true.
  //
 
-`ifndef uvm_record_attribute
+ `ifndef uvm_record_attribute
  `ifdef QUESTA
  `define uvm_record_attribute(TR_HANDLE,NAME,VALUE) \
    $add_attribute(TR_HANDLE,VALUE,NAME);
@@ -3341,113 +3341,113 @@ endfunction \
  `define uvm_record_attribute(TR_HANDLE,NAME,VALUE) \
    recorder.record_generic(NAME, $sformatf("%p", VALUE)); 
  `endif
-`endif
+ `endif
 
-// Macro: `uvm_record_int
-//
-//| `uvm_record_int(NAME,VALUE,SIZE[,RADIX])
-//
-// The ~`uvm_record_int~ macro takes the same arguments as
-// the <uvm_recorder::record_field> method (including the optional ~RADIX~).
-//
-// The default implementation will pass the name/value pair to
-// <`uvm_record_attribute> if enabled, otherwise the information
-// will be passed to <uvm_recorder::record_field>.
-//
+ // Macro: `uvm_record_int
+ //
+ //| `uvm_record_int(NAME,VALUE,SIZE[,RADIX])
+ //
+ // The ~`uvm_record_int~ macro takes the same arguments as
+ // the <uvm_recorder::record_field> method (including the optional ~RADIX~).
+ //
+ // The default implementation will pass the name/value pair to
+ // <`uvm_record_attribute> if enabled, otherwise the information
+ // will be passed to <uvm_recorder::record_field>.
+ //
 
-`ifndef uvm_record_int
-`define uvm_record_int(NAME,VALUE,SIZE,RADIX = UVM_NORADIX) \
-  if (recorder != null && recorder.is_open()) begin \
-    if (recorder.use_record_attribute()) \
-      `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
-    else \
-      if (SIZE > 64) \
-      recorder.record_field(NAME, VALUE, SIZE, RADIX); \
-      else \
-        recorder.record_field_int(NAME, VALUE, SIZE, RADIX); \
-    end
-`endif
+ `ifndef uvm_record_int
+ `define uvm_record_int(NAME,VALUE,SIZE,RADIX = UVM_NORADIX) \
+   if (recorder != null && recorder.is_open()) begin \
+     if (recorder.use_record_attribute()) \
+       `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
+     else \
+       if (SIZE > 64) \
+       recorder.record_field(NAME, VALUE, SIZE, RADIX); \
+       else \
+         recorder.record_field_int(NAME, VALUE, SIZE, RADIX); \
+     end
+ `endif
 
-// Macro: `uvm_record_string
-//
-//| `uvm_record_string(NAME,VALUE)
-//
-// The ~`uvm_record_string~ macro takes the same arguments as
-// the <uvm_recorder::record_string> method.
-//
-// The default implementation will pass the name/value pair to
-// <`uvm_record_attribute> if enabled, otherwise the information
-// will be passed to <uvm_recorder::record_string>.
-//
+ // Macro: `uvm_record_string
+ //
+ //| `uvm_record_string(NAME,VALUE)
+ //
+ // The ~`uvm_record_string~ macro takes the same arguments as
+ // the <uvm_recorder::record_string> method.
+ //
+ // The default implementation will pass the name/value pair to
+ // <`uvm_record_attribute> if enabled, otherwise the information
+ // will be passed to <uvm_recorder::record_string>.
+ //
 
-`ifndef uvm_record_string
-`define uvm_record_string(NAME,VALUE) \
-  if (recorder != null && recorder.is_open()) begin \
-    if (recorder.use_record_attribute()) \
-      `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
-    else \
-      recorder.record_string(NAME,VALUE); \
-  end
-`endif
+ `ifndef uvm_record_string
+ `define uvm_record_string(NAME,VALUE) \
+   if (recorder != null && recorder.is_open()) begin \
+     if (recorder.use_record_attribute()) \
+       `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
+     else \
+       recorder.record_string(NAME,VALUE); \
+   end
+ `endif
 
-// Macro: `uvm_record_time
-//
-//| `uvm_record_time(NAME,VALUE)
-//
-// The ~`uvm_record_time~ macro takes the same arguments as
-// the <uvm_recorder::record_time> method.
-//
-// The default implementation will pass the name/value pair to
-// <`uvm_record_attribute> if enabled, otherwise the information
-// will be passed to <uvm_recorder::record_time>.
-//
-`ifndef uvm_record_time
-`define uvm_record_time(NAME,VALUE) \
-  if (recorder != null && recorder.is_open()) begin \
-    if (recorder.use_record_attribute()) \
-      `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
-    else \
-      recorder.record_time(NAME,VALUE); \
-  end
-`endif
+ // Macro: `uvm_record_time
+ //
+ //| `uvm_record_time(NAME,VALUE)
+ //
+ // The ~`uvm_record_time~ macro takes the same arguments as
+ // the <uvm_recorder::record_time> method.
+ //
+ // The default implementation will pass the name/value pair to
+ // <`uvm_record_attribute> if enabled, otherwise the information
+ // will be passed to <uvm_recorder::record_time>.
+ //
+ `ifndef uvm_record_time
+ `define uvm_record_time(NAME,VALUE) \
+   if (recorder != null && recorder.is_open()) begin \
+     if (recorder.use_record_attribute()) \
+       `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
+     else \
+       recorder.record_time(NAME,VALUE); \
+   end
+ `endif
 
 
-// Macro: `uvm_record_real
-//
-//| `uvm_record_real(NAME,VALUE)
-//
-// The ~`uvm_record_real~ macro takes the same arguments as
-// the <uvm_recorder::record_field_real> method.
-//
-// The default implementation will pass the name/value pair to
-// <`uvm_record_attribute> if enabled, otherwise the information
-// will be passed to <uvm_recorder::record_field_real>.
-//
-`ifndef uvm_record_real
-`define uvm_record_real(NAME,VALUE) \
-  if (recorder != null && recorder.is_open()) begin \
-    if (recorder.use_record_attribute()) \
-      `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
-    else \
-      recorder.record_field_real(NAME,VALUE); \
-  end
-`endif
+ // Macro: `uvm_record_real
+ //
+ //| `uvm_record_real(NAME,VALUE)
+ //
+ // The ~`uvm_record_real~ macro takes the same arguments as
+ // the <uvm_recorder::record_field_real> method.
+ //
+ // The default implementation will pass the name/value pair to
+ // <`uvm_record_attribute> if enabled, otherwise the information
+ // will be passed to <uvm_recorder::record_field_real>.
+ //
+ `ifndef uvm_record_real
+ `define uvm_record_real(NAME,VALUE) \
+   if (recorder != null && recorder.is_open()) begin \
+     if (recorder.use_record_attribute()) \
+       `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
+     else \
+       recorder.record_field_real(NAME,VALUE); \
+   end
+ `endif
 
-// Macro: `uvm_record_field
-//
-// Macro for recording arbitrary name-value pairs into a transaction recording database.
-// Requires a valid transaction handle, as provided by the
-// <uvm_transaction::begin_tr> and <uvm_component::begin_tr> methods. 
-//
-//| `uvm_record_field(NAME, VALUE)
-//
-// The default implementation will pass the name/value pair to
-// <`uvm_record_attribute> if enabled, otherwise the information
-// will be passed to <uvm_recorder::record_generic>, with the
-// ~VALUE~ being converted to a string using "%p" notation.
-//
-// | recorder.record_generic(NAME,$sformatf("%p",VALUE));
-//
+ // Macro: `uvm_record_field
+ //
+ // Macro for recording arbitrary name-value pairs into a transaction recording database.
+ // Requires a valid transaction handle, as provided by the
+ // <uvm_transaction::begin_tr> and <uvm_component::begin_tr> methods. 
+ //
+ //| `uvm_record_field(NAME, VALUE)
+ //
+ // The default implementation will pass the name/value pair to
+ // <`uvm_record_attribute> if enabled, otherwise the information
+ // will be passed to <uvm_recorder::record_generic>, with the
+ // ~VALUE~ being converted to a string using "%p" notation.
+ //
+ // | recorder.record_generic(NAME,$sformatf("%p",VALUE));
+ //
 `define uvm_record_field(NAME,VALUE) \
   if (recorder != null && recorder.is_open()) begin \
     if (recorder.use_record_attribute()) begin \

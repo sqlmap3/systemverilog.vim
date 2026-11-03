@@ -74,6 +74,13 @@ function! s:ConvertToCodes( codeline, ... )
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
 	let delims = substitute(delims, '''[sSdDbBhHoO]\h\+', '', 'g')
+	" 'inside {...}' sets must be dropped BEFORE the concatenation '}' drop
+	" below, or that drop eats the set's closing '}' (preceded by an identifier,
+	" followed by ')') and leaves an unmatched '{' -> 'b' in the codes, which
+	" breaks LINE_INDENT matching for the 'if' line and makes a following
+	" 'end' dedent only one level. Quote-free sets only here; sets containing
+	" a string literal fall through to the later inside drop (same as before).
+	let delims = substitute(delims, '\<inside\s\+{[^}"]*}', '', 'g')
 	let delims = substitute(delims, '\([A-Za-z_")]\)\s*\zs}\ze\s*\([,;):]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
@@ -300,7 +307,50 @@ endfunction
 function! s:GetPreprocIndent( line_num, base_indnt )
 	let l:ln = prevnonblank(a:line_num - 1)
 	if getline(a:line_num) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
-		" opener: sit at the code level, one deeper per enclosing ifdef
+		" opener: sit at the code level, one deeper per enclosing ifdef.
+		" Two cases, distinguished by the nearest preceding directive:
+		" (1) opener after a closed region: align with that closed
+		" region opener, regardless of how deep its last body line
+		" was, or every sequential region leaks +shiftwidth.
+		" (2) otherwise: the old signed-nest rule (base + nest * sw),
+		" which counts enclosing openers (including a top-level
+		" guard, base -1 at file top) and nets off closed regions
+		" encountered before the enclosing code line.
+		let l:first = prevnonblank(a:line_num - 1)
+		while l:first > 0 && getline(l:first) =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			let l:first = prevnonblank(l:first - 1)
+		endwhile
+		if l:first > 0 && getline(l:first) =~ '^\s*`\s*\cendif\>'
+			let l:depth = 0
+			let l:ln = l:first
+			while l:ln > 0
+				let l:line = getline(l:ln)
+				if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+					let l:ln = prevnonblank(l:ln - 1)
+					continue
+				endif
+				if l:line =~ '^\s*`\s*\cendif\>'
+					let l:depth += 1
+				elseif l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+					if l:depth > 0
+						let l:depth -= 1
+						if l:depth == 0
+							return indent(l:ln)
+						endif
+					else
+						return indent(l:ln) + &shiftwidth
+					endif
+				elseif l:line =~ '^\s*`'
+					" other preprocessor directive - transparent
+				elseif l:depth > 0
+					" code inside a closed region: skip it
+				else
+					break
+				endif
+				let l:ln = prevnonblank(l:ln - 1)
+			endwhile
+			return a:base_indnt
+		endif
 		let l:nest = 0
 		while l:ln > 0
 			let l:line = getline(l:ln)
@@ -319,7 +369,7 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 			endif
 			let l:ln = prevnonblank(l:ln - 1)
 		endwhile
-		return a:base_indnt + (l:nest > 0 ? l:nest * &shiftwidth : 0)
+		return a:base_indnt + l:nest * &shiftwidth
 	endif
 	" closer (`else/`elsif/`endif): align with the matching `ifdef
 	let l:m = s:FindIfdefMatch(a:line_num)
@@ -486,6 +536,72 @@ function! s:SigArgColumn( line_num )
 	return 0
 endfunction
 
+" Enclosing code level for code after a closed `ifdef region: walk back
+" from the matching `ifdef to the first code line before the region, and
+" return the level a plain statement after that line would take. If that
+" level is below the `ifdef line's own indent, the region's ifdef level
+" is inflated (e.g. nested ifdefs at column 0 inside a function) and
+" code after the region must return to the enclosing level, or every
+" sequential region leaks +shiftwidth.
+function! s:EnclosingCodeIndent( ifdef_line )
+	let l:depth = 0
+	let l:ln = prevnonblank(a:ifdef_line - 1)
+	while l:ln > 0
+		let l:l = getline(l:ln)
+		if l:l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		if l:l =~ '^\s*`\s*\cendif\>'
+			let l:depth += 1
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		if l:l =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			if l:depth > 0
+				let l:depth -= 1
+				let l:ln = prevnonblank(l:ln - 1)
+				continue
+			endif
+			return indent(l:ln) + &shiftwidth
+		endif
+		if l:l =~ '^\s*`'
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		if l:depth > 0
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		let l:prev2 = s:GetPrevWholeLineNum(l:ln)
+		return s:GetCodeIndent(indent(l:ln), s:ConvertToCodes(s:GetWholeLine(l:prev2)), s:ConvertToCodes(s:GetWholeLine(l:ln)), '')
+	endwhile
+	return 0
+endfunction
+
+" If a:line_num is a bare ');' line closing a multi-line signature or
+" call, return the head line that opened the paren (paren-balance walk,
+" strings and //-comments stripped); otherwise 0.
+function! s:SigTailHead( line_num )
+	if getline(a:line_num) !~ '^\s*);\s*$'
+		return 0
+	endif
+	let l:bal = -1
+	let l:ln = prevnonblank(a:line_num - 1)
+	let l:limit = 200
+	while l:ln > 0 && l:limit > 0
+		let l:l = substitute(getline(l:ln), '".\{-}"', '', 'g')
+		let l:l = substitute(l:l, '//.*', '', '')
+		let l:bal = l:bal + len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
+		if l:bal >= 0
+			return l:ln
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
+	endwhile
+	return 0
+endfunction
+
 function! GetSystemVerilogIndent( line_num )
 	let this_codeline = getline( a:line_num )
 	let prev1_line_num = prevnonblank( a:line_num - 1)
@@ -541,7 +657,8 @@ function! GetSystemVerilogIndent( line_num )
 			if l =~ '^\s*`\s*\cendif\>'
 				let l:m = s:FindIfdefMatch(ln)
 				if l:m > 0
-					return indent(l:m)
+					let l:enc = s:EnclosingCodeIndent(l:m)
+					return l:enc < indent(l:m) ? l:enc : indent(l:m)
 				endif
 				break
 			endif
@@ -579,7 +696,8 @@ function! GetSystemVerilogIndent( line_num )
 						" `ifdef instead of aligning with it
 						let l:prev_start = l:m
 					else
-						return indent(l:m)
+						let l:enc = s:EnclosingCodeIndent(l:m)
+						return l:enc < indent(l:m) ? l:enc : indent(l:m)
 					endif
 				endif
 				break
@@ -605,7 +723,8 @@ function! GetSystemVerilogIndent( line_num )
 			if l =~ '^\s*`\s*\cendif\>'
 				let l:m = s:FindIfdefMatch(ln)
 				if l:m > 0
-					return indent(l:m)
+					let l:enc = s:EnclosingCodeIndent(l:m)
+					return l:enc < indent(l:m) ? l:enc : indent(l:m)
 				endif
 				break
 			endif
@@ -710,6 +829,9 @@ function! GetSystemVerilogIndent( line_num )
 	" out); a DEFINITION's body sits one level in, its endfunction back at
 	" the function's own level
 	let l:mhead = s:StatementTailHead(prev1_line_num)
+	if l:mhead <= 0
+		let l:mhead = s:SigTailHead(prev1_line_num)
+	endif
 	if l:mhead > 0
 		" the '(' may sit on its own line below the 'function/task ... name'
 		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead
@@ -732,6 +854,9 @@ function! GetSystemVerilogIndent( line_num )
 	" matching ')' here, so the tail would dedent spuriously and cascade.
 	" Keep the tail flat with the statement head.
 	let l:mhead = s:StatementTailHead(a:line_num)
+	if l:mhead <= 0
+		let l:mhead = s:SigTailHead(a:line_num)
+	endif
 	if l:mhead > 0
 		return indent(l:mhead)
 	endif

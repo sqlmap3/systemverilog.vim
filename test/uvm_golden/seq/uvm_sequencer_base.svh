@@ -662,47 +662,47 @@ function void uvm_sequencer_base::grant_queued_locks();
   begin
     uvm_sequence_request q[$];
     q = arb_sequence_q.find(item) with (item.request==SEQ_TYPE_LOCK && item.process_id.status inside {process::KILLED,process::FINISHED});
-      foreach(q[idx]) begin
-        `uvm_error("SEQLCKZMB", $sformatf("The task responsible for requesting a lock on sequencer '%s' for sequence '%s' has been killed, to avoid a deadlock the sequence will be removed from the arbitration queues", this.get_full_name(), q[idx].sequence_ptr.get_full_name()))
+    foreach(q[idx]) begin
+      `uvm_error("SEQLCKZMB", $sformatf("The task responsible for requesting a lock on sequencer '%s' for sequence '%s' has been killed, to avoid a deadlock the sequence will be removed from the arbitration queues", this.get_full_name(), q[idx].sequence_ptr.get_full_name()))
 
-        remove_sequence_from_queues(q[idx].sequence_ptr);
-      end	
-    end
+      remove_sequence_from_queues(q[idx].sequence_ptr);
+    end	
+  end
 
-    // now move all is_blocked() into lock_list
-    begin
-      uvm_sequence_request leading_lock_reqs[$],blocked_seqs[$],not_blocked_seqs[$];  
-      int q1[$];
-      int b=arb_sequence_q.size(); // index for first non-LOCK request
-      q1 = arb_sequence_q.find_first_index(item) with (item.request!=SEQ_TYPE_LOCK);
-      if(q1.size())
-        b=q1[0];  
-      if(b!=0) begin // at least one lock
-        leading_lock_reqs = arb_sequence_q[0:b-1]; // set of locks; arb_sequence[b] is the first req!=SEQ_TYPE_LOCK	
-        // split into blocked/not-blocked requests
-        foreach(leading_lock_reqs[i]) begin
-          uvm_sequence_request item = leading_lock_reqs[i];
-          if(is_blocked(item.sequence_ptr)!=0)
-            blocked_seqs.push_back(item);
-          else
-            not_blocked_seqs.push_back(item);
-        end
-
-        if(b>arb_sequence_q.size()-1)
-          arb_sequence_q=blocked_seqs;
+  // now move all is_blocked() into lock_list
+  begin
+    uvm_sequence_request leading_lock_reqs[$],blocked_seqs[$],not_blocked_seqs[$];  
+    int q1[$];
+    int b=arb_sequence_q.size(); // index for first non-LOCK request
+    q1 = arb_sequence_q.find_first_index(item) with (item.request!=SEQ_TYPE_LOCK);
+    if(q1.size())
+      b=q1[0];  
+    if(b!=0) begin // at least one lock
+      leading_lock_reqs = arb_sequence_q[0:b-1]; // set of locks; arb_sequence[b] is the first req!=SEQ_TYPE_LOCK	
+      // split into blocked/not-blocked requests
+      foreach(leading_lock_reqs[i]) begin
+        uvm_sequence_request item = leading_lock_reqs[i];
+        if(is_blocked(item.sequence_ptr)!=0)
+          blocked_seqs.push_back(item);
         else
-      arb_sequence_q={blocked_seqs,arb_sequence_q[b:arb_sequence_q.size()-1]};
+          not_blocked_seqs.push_back(item);
+      end
 
-    foreach(not_blocked_seqs[idx]) begin
-      lock_list.push_back(not_blocked_seqs[idx].sequence_ptr);  
-      m_set_arbitration_completed(not_blocked_seqs[idx].request_id);
-    end
+      if(b>arb_sequence_q.size()-1)
+        arb_sequence_q=blocked_seqs;
+      else
+    arb_sequence_q={blocked_seqs,arb_sequence_q[b:arb_sequence_q.size()-1]};
 
-    // trigger listeners if lock list has changed
-    if(not_blocked_seqs.size()) 	
-      m_update_lists();	
-  end	
-end
+  foreach(not_blocked_seqs[idx]) begin
+    lock_list.push_back(not_blocked_seqs[idx].sequence_ptr);  
+    m_set_arbitration_completed(not_blocked_seqs[idx].request_id);
+  end
+
+  // trigger listeners if lock list has changed
+  if(not_blocked_seqs.size()) 	
+    m_update_lists();	
+end	
+  end
 endfunction
 
 
