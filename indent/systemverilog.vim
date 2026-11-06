@@ -272,6 +272,13 @@ endfunction
 " a:line_num matches, walking back through nested conditionals (comments and
 " plain code are skipped), or 0 if none (an unbalanced/standalone directive).
 function! s:FindIfdefMatch( line_num )
+	if !exists('b:sv_iffind_cache') || b:sv_iffind_tick != b:changedtick
+		let b:sv_iffind_cache = {}
+		let b:sv_iffind_tick = b:changedtick
+	endif
+	if has_key(b:sv_iffind_cache, a:line_num)
+		return b:sv_iffind_cache[a:line_num]
+	endif
 	let l:depth = 0
 	let l:ln = prevnonblank(a:line_num - 1)
 	while l:ln > 0
@@ -287,6 +294,7 @@ function! s:FindIfdefMatch( line_num )
 		endif
 		if l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
 			if l:depth == 0
+				let b:sv_iffind_cache[a:line_num] = l:ln
 				return l:ln
 			endif
 			let l:depth -= 1
@@ -296,6 +304,7 @@ function! s:FindIfdefMatch( line_num )
 		" plain code or other preprocessor directive: keep walking up
 		let l:ln = prevnonblank(l:ln - 1)
 	endwhile
+	let b:sv_iffind_cache[a:line_num] = 0
 	return 0
 endfunction
 
@@ -392,11 +401,41 @@ let b:sv_prev_cache = {}
 let b:sv_whole_cache = {}
 let b:sv_conv_tick = -1
 
+" --- rolling single-pass state (gg=G fast path) ---
+" Valid only while indentexpr is called for consecutive non-blank lines
+" starting at line 1 with an unchanged changedtick (exactly what gg=G
+" does). Any other call pattern falls back to the slow path and
+" invalidates the chain. State is updated for every line in the chain,
+" whichever path computed its indent, so a slow-path line never breaks it.
+let b:sv_roll_tick = -1
+let b:sv_roll_last = -1
+let b:sv_roll_top = 0
+let b:sv_roll_ifdefs = []
+let b:sv_roll_match = {}
+let b:sv_roll_nets = {}
+let b:sv_roll_sig = 0
+let b:sv_roll_first = 0
+let b:sv_roll_run = 0
+let b:sv_roll_codelines = []
+let b:sv_roll_ucodes = {}
+let b:sv_roll_uindent = {}
+let b:sv_roll_incomment = 0
+let b:sv_roll_pend = -1
+let b:sv_roll_pend_ic = 0
+let b:sv_roll_prevnb = 0
+
+" Paren net of one physical line, after the same strips the tail-head walks
+" use (string literals, then //-comment). Lazily computed and memoized per
+" line, so a walk that re-visits lines pays the strips once per pass.
+
 " A function/task whose signature sits on a line after a bare qualifier line
 " (extern / pure / virtual / protected ... with no ';') is a split prototype:
 " its group opener 'f' must not stay open past the signature's closing ');',
 " or every following declaration cascades one level deeper. Strip the 'f'.
 function! s:StripPrototypeF( line_num, codeline, codes )
+	if stridx(a:codeline, 'function') == -1 && stridx(a:codeline, 'task') == -1
+		return a:codes
+	endif
 	if a:codeline =~ '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\)\s\+\)*\%(function\|task\)\>'
 		let l:prev = getline(prevnonblank(a:line_num - 1))
 		if l:prev =~ '^\s*\%(extern\|virtual\|protected\|pure\|static\|local\)\%(\s\+\%(extern\|virtual\|protected\|pure\|static\|local\)\)*\s*$'
@@ -544,6 +583,13 @@ endfunction
 " code after the region must return to the enclosing level, or every
 " sequential region leaks +shiftwidth.
 function! s:EnclosingCodeIndent( ifdef_line )
+	if !exists('b:sv_enc_cache') || b:sv_enc_tick != b:changedtick
+		let b:sv_enc_cache = {}
+		let b:sv_enc_tick = b:changedtick
+	endif
+	if has_key(b:sv_enc_cache, a:ifdef_line)
+		return b:sv_enc_cache[a:ifdef_line]
+	endif
 	let l:depth = 0
 	let l:ln = prevnonblank(a:ifdef_line - 1)
 	while l:ln > 0
@@ -563,6 +609,7 @@ function! s:EnclosingCodeIndent( ifdef_line )
 				let l:ln = prevnonblank(l:ln - 1)
 				continue
 			endif
+			let b:sv_enc_cache[a:ifdef_line] = indent(l:ln) + &shiftwidth
 			return indent(l:ln) + &shiftwidth
 		endif
 		if l:l =~ '^\s*`'
@@ -574,8 +621,10 @@ function! s:EnclosingCodeIndent( ifdef_line )
 			continue
 		endif
 		let l:prev2 = s:GetPrevWholeLineNum(l:ln)
-		return s:GetCodeIndent(indent(l:ln), s:ConvertToCodes(s:GetWholeLine(l:prev2)), s:ConvertToCodes(s:GetWholeLine(l:ln)), '')
+		let b:sv_enc_cache[a:ifdef_line] = s:GetCodeIndent(indent(l:ln), s:ConvertToCodes(s:GetWholeLine(l:prev2)), s:ConvertToCodes(s:GetWholeLine(l:ln)), '')
+		return b:sv_enc_cache[a:ifdef_line]
 	endwhile
+	let b:sv_enc_cache[a:ifdef_line] = 0
 	return 0
 endfunction
 
@@ -602,7 +651,441 @@ function! s:SigTailHead( line_num )
 	return 0
 endfunction
 
+function! s:RollNet( line_num )
+	if has_key(b:sv_roll_nets, a:line_num)
+		return b:sv_roll_nets[a:line_num]
+	endif
+	let l:l = substitute(getline(a:line_num), '".\{-}"', '', 'g')
+	let l:l = substitute(l:l, '//.*', '', '')
+	let l:net = len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
+	let b:sv_roll_nets[a:line_num] = l:net
+	return l:net
+endfunction
+
+function! s:RollReset()
+	let b:sv_roll_tick = b:changedtick
+	let b:sv_roll_last = -1
+	let b:sv_roll_top = 1
+	let b:sv_roll_ifdefs = []
+	let b:sv_roll_match = {}
+	let b:sv_roll_nets = {}
+	let b:sv_roll_sig = 0
+	let b:sv_roll_first = 0
+	let b:sv_roll_run = 0
+	let b:sv_roll_codelines = []
+	let b:sv_roll_ucodes = {}
+	let b:sv_roll_uindent = {}
+	let b:sv_roll_incomment = 0
+	let b:sv_roll_pend = -1
+	let b:sv_roll_pend_ic = 0
+	let b:sv_roll_prevnb = 0
+endfunction
+
+function! s:RollEndsBs( line_num )
+	let l:l = getline(a:line_num)
+	return strlen(l:l) > 0 && strpart(l:l, strlen(l:l) - 1, 1) == '\'
+endfunction
+
+" 1 while the chain is intact: called for consecutive non-blank lines from
+" line 1 with an unchanged changedtick (blank lines are skipped by Vim's
+" = operator, so a gap of blank lines is fine).
+function! s:RollChainOk( line_num )
+	if a:line_num <= 1
+		return 0
+	endif
+	if b:sv_roll_tick != b:changedtick || b:sv_roll_last < 0 || !b:sv_roll_top
+		return 0
+	endif
+	if a:line_num == b:sv_roll_last + 1
+		return 1
+	endif
+	if a:line_num > b:sv_roll_last
+		let l:ln = b:sv_roll_last + 1
+		while l:ln < a:line_num
+			if getline(l:ln) !~ '^\s*$'
+				return 0
+			endif
+			let l:ln += 1
+		endwhile
+		return 1
+	endif
+	return 0
+endfunction
+
+" Maintain rolling state for line a:line_num (indent a:indnt, computed by
+" either path). Seeds a new chain at line 1; continues a valid chain;
+" anything else invalidates the chain and leaves state alone.
+function! s:RollUpdate( line_num, indnt )
+	if a:line_num == 1
+		call s:RollReset()
+	elseif b:sv_roll_tick != b:changedtick || b:sv_roll_last < 0 || !b:sv_roll_top
+		return
+	elseif a:line_num <= b:sv_roll_last
+		let b:sv_roll_last = -1
+		let b:sv_roll_top = 0
+		return
+	else
+		let l:ln = b:sv_roll_last + 1
+		while l:ln < a:line_num
+			if getline(l:ln) !~ '^\s*$'
+				let b:sv_roll_last = -1
+				let b:sv_roll_top = 0
+				return
+			endif
+			let l:ln += 1
+		endwhile
+	endif
+	" a -1 result means 'keep the current indent' (Vim keeps the line as-is,
+	" e.g. indent(0) is -1 when there is no code above); the line's real
+	" indent is its current buffer indent, so normalize before recording it.
+	let l:eff = a:indnt < 0 ? indent(a:line_num) : a:indnt
+	let l:line = getline(a:line_num)
+	let l:blank = (l:line =~ '^\s*$')
+	let l:ends_bs = s:RollEndsBs(a:line_num)
+	let l:prev_bs = (a:line_num > 1 && s:RollEndsBs(a:line_num - 1))
+	if !l:blank
+		let b:sv_roll_prevnb = a:line_num
+	endif
+	" backslash unit bookkeeping: a unit closes on the first line that does
+	" not end with '\' (a blank line closes a pending unit as its last line)
+	if l:ends_bs
+		if b:sv_roll_pend < 0
+			let b:sv_roll_pend = a:line_num
+			let b:sv_roll_pend_ic = b:sv_roll_incomment
+		endif
+	elseif !l:blank || b:sv_roll_pend >= 0
+		let l:ustart = b:sv_roll_pend >= 0 ? b:sv_roll_pend : a:line_num
+		let l:uic = b:sv_roll_pend >= 0 ? b:sv_roll_pend_ic : b:sv_roll_incomment
+		let l:ucodes = s:ConvertToCodes(s:GetWholeLine(l:ustart))
+		if !(l:ucodes =~ s:LINE_COMMENT || l:ucodes =~ s:BLOCK_COMMENT_START || l:ucodes =~ s:BLOCK_COMMENT_STOP || l:ucodes =~ s:PREPROCESSOR || l:uic)
+			call add(b:sv_roll_codelines, l:ustart)
+			let b:sv_roll_ucodes[l:ustart] = l:ucodes
+			let b:sv_roll_uindent[l:ustart] = (l:ustart == a:line_num ? l:eff : indent(l:ustart))
+		endif
+		let b:sv_roll_pend = -1
+	endif
+	" classification from raw text (mirrors the slow path's walks, which
+	" read physical lines, including continuation lines of `define bodies)
+	if !l:blank
+		if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			" comment line: sig/first/run/stack untouched
+		elseif l:line =~ '^\s*`\s*\cinclude\>'
+			let b:sv_roll_first = a:line_num
+		elseif l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			let b:sv_roll_sig = a:line_num
+			let b:sv_roll_first = a:line_num
+			let b:sv_roll_run += 1
+			call add(b:sv_roll_ifdefs, [a:line_num, l:eff])
+		elseif l:line =~ '^\s*`\s*\cendif\>'
+			let b:sv_roll_sig = a:line_num
+			let b:sv_roll_first = a:line_num
+			let b:sv_roll_run -= 1
+			if !empty(b:sv_roll_ifdefs)
+				let l:op = remove(b:sv_roll_ifdefs, -1)
+				let b:sv_roll_match[a:line_num] = l:op[0]
+			endif
+		elseif l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
+			let b:sv_roll_sig = a:line_num
+			let b:sv_roll_first = a:line_num
+		elseif l:line =~ '^\s*`'
+			let b:sv_roll_sig = a:line_num
+			let b:sv_roll_first = a:line_num
+		else
+			let b:sv_roll_sig = a:line_num
+			let b:sv_roll_first = a:line_num
+			let b:sv_roll_run = 0
+		endif
+	endif
+	" forward block-comment state from physical-line codes, like the slow
+	" path's block-comment block; continuation lines never reach it there
+	if !l:prev_bs
+		let l:pcodes = s:ConvertToCodes(l:line)
+		if l:pcodes =~ s:BLOCK_COMMENT_STOP
+			let b:sv_roll_incomment = 0
+		elseif l:pcodes =~ s:BLOCK_COMMENT_START
+			let b:sv_roll_incomment = 1
+		endif
+	endif
+	let b:sv_roll_last = a:line_num
+endfunction
+
+function! s:RollTailHead( line_num )
+	let l:line = getline(a:line_num)
+	if l:line !~ ')\s*;\?\s*$'
+		return 0
+	endif
+	if l:line =~ '^\s*[;)}]'
+	  \ || l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
+		return 0
+	endif
+	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+		return 0
+	endif
+	let l:bal = 0
+	" the tail must close more parens than it opens (it closes the head's
+	" open paren); a balanced or opening line is not a closing tail
+		let l:bal = s:RollNet(a:line_num)
+	if l:bal >= 0
+		return 0
+	endif
+	let l:ln = prevnonblank(a:line_num - 1)
+	let l:limit = 200
+	while l:ln > 0 && l:limit > 0
+			let l:bal = l:bal + s:RollNet(l:ln)
+		if l:bal >= 0
+			return l:ln
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
+	endwhile
+	return 0
+endfunction
+
+function! s:RollSigTailHead( line_num )
+	if getline(a:line_num) !~ '^\s*);\s*$'
+		return 0
+	endif
+	let l:bal = -1
+	let l:ln = prevnonblank(a:line_num - 1)
+	let l:limit = 200
+	while l:ln > 0 && l:limit > 0
+		let l:bal = l:bal + s:RollNet(l:ln)
+		if l:bal >= 0
+			return l:ln
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
+	endwhile
+	return 0
+endfunction
+
+function! s:RollSigArgColumn( line_num )
+		let l:net0 = s:RollNet(a:line_num)
+	if l:net0 > 0
+		return 0
+	endif
+	" the line above must end with a continuation character (',' '(' '[' '{'):
+	" signature argument lines follow a ','-ending head. Without this guard
+	" every ordinary body line would walk to the top of the file, making a
+	" whole-buffer re-indent O(n^2).
+	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+		return 0
+	endif
+	let l:bal = 0
+	let l:ln = prevnonblank(a:line_num - 1)
+	let l:limit = 40
+	while l:ln > 0 && l:limit > 0
+		let l:l = substitute(getline(l:ln), '\".\{-}\"', '', 'g')
+		let l:l = substitute(l:l, '\/\/.*', '', '')
+		let l:net = s:RollNet(l:ln)
+		let l:bal = l:bal + l:net
+		if l:bal < 0
+			return 0
+		endif
+		if l:net > 0
+			" the line that opened the enclosing '('
+			if l:l =~ '\<\%(function\|task\)\>'
+				return stridx(l:l, '(') + 1
+			endif
+			" the '(' may be split onto its own line below the signature
+			" ('extern ... function ... name' / '(')
+			if l:l =~ '^\s*('
+				let l:head = s:PrototypeSigHead(l:ln)
+				if l:head > 0
+					return stridx(l:l, '(') + 1
+				endif
+			endif
+			return 0
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+		let l:limit -= 1
+	endwhile
+	return 0
+endfunction
+
+" Preprocessor indent from rolling state. Mirrors s:GetPreprocIndent:
+" opener after a closed region aligns with that region's opener
+" (sv_roll_match), otherwise base + trailing-directive-run * sw;
+" any other directive aligns with the innermost open `ifdef (stack top).
+function! s:RollPreprocIndent( line_num, base_indnt )
+	let l:line = getline(a:line_num)
+	if l:line =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+		let l:first = b:sv_roll_first
+		if l:first > 0 && getline(l:first) =~ '^\s*`\s*\cendif\>'
+			if has_key(b:sv_roll_match, l:first)
+				return indent(b:sv_roll_match[l:first])
+			endif
+			return a:base_indnt
+		endif
+		return a:base_indnt + b:sv_roll_run * &shiftwidth
+	endif
+	if !empty(b:sv_roll_ifdefs)
+		return b:sv_roll_ifdefs[-1][1]
+	endif
+	return a:base_indnt
+endfunction
+
+" Rolling single-pass fast path for gg=G. Mirrors s:SlowIndent step by step,
+" reading rolling state instead of walking back; returns -1 to fall back to
+" the slow path whenever the state cannot answer exactly.
+function! s:RollFastIndent( line_num )
+	let l:N = a:line_num
+	let l:line = getline(l:N)
+	if l:line =~ '^\s*$'
+		return -1
+	endif
+	if s:RollEndsBs(l:N - 1)
+		return -1
+	endif
+	if b:sv_roll_incomment
+		return -1
+	endif
+	if empty(b:sv_roll_codelines)
+		return -1
+	endif
+	let l:this_codes = s:ConvertToCodes(l:line)
+	let l:sw = &shiftwidth
+	" --- preprocessor-continuation loops (sig = first non-skip line above) ---
+	let l:prev_start = l:N
+	let l:sig = b:sv_roll_sig
+	let l:sig_is_endif = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\cendif\>')
+	let l:sig_is_ifdef = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>')
+	let l:is_include = (l:line =~ '^\s*`\s*\cinclude\>')
+	let l:is_bigdir = (l:line =~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>')
+	if l:is_include
+		if l:sig_is_endif
+			let l:m = get(b:sv_roll_match, l:sig, 0)
+			if l:m > 0
+				let l:enc = s:EnclosingCodeIndent(l:m)
+				return l:enc < indent(l:m) ? l:enc : indent(l:m)
+			endif
+		elseif l:sig_is_ifdef
+			return indent(l:sig) + l:sw
+		endif
+	elseif !l:is_bigdir
+		if l:sig_is_endif
+			let l:m = get(b:sv_roll_match, l:sig, 0)
+			if l:m > 0
+				if l:this_codes =~ '^[he]$'
+					let l:prev_start = l:m
+				else
+					let l:enc = s:EnclosingCodeIndent(l:m)
+					return l:enc < indent(l:m) ? l:enc : indent(l:m)
+				endif
+			endif
+		elseif l:sig_is_ifdef
+			if l:this_codes =~ '^[he]$'
+				let l:prev_start = l:sig
+			else
+				return indent(l:sig) + l:sw
+			endif
+		endif
+	endif
+	" --- prev1 / prev2 from the rolling code-unit list ---
+	let l:p1 = -1
+	let l:p2 = -1
+	let l:i = len(b:sv_roll_codelines) - 1
+	while l:i >= 0
+		if b:sv_roll_codelines[l:i] < l:prev_start
+			let l:p1 = b:sv_roll_codelines[l:i]
+			if l:i > 0
+				let l:p2 = b:sv_roll_codelines[l:i - 1]
+			endif
+			break
+		endif
+		let l:i -= 1
+	endwhile
+	if l:p1 < 0
+		return -1
+	endif
+	let l:p1line = getline(l:p1)
+	if l:p1line =~ '\<endfunction\>' && stridx(l:p1line, ');') >= 0
+		return -1
+	endif
+	let l:p1_codes = s:StripPrototypeF(l:p1, s:GetWholeLine(l:p1), b:sv_roll_ucodes[l:p1])
+	let l:p2_codes = (l:p2 > 0) ? s:StripPrototypeF(l:p2, s:GetWholeLine(l:p2), b:sv_roll_ucodes[l:p2]) : ''
+	let l:this_codes = s:StripPrototypeF(l:N, l:line, l:this_codes)
+	" --- macro-tail case (prev1 is a macro-call tail) ---
+	let l:mhead = s:RollTailHead(l:p1)
+	if l:mhead > 0 && getline(l:mhead) =~ '^\s*`'
+		let l:p1_codes = ';'
+		let l:p2 = s:GetPrevWholeLineNum(l:mhead)
+		let l:p2_codes = s:ConvertToCodes(s:GetWholeLine(l:p2))
+	endif
+	" --- signature argument column ---
+	let l:argcol = s:RollSigArgColumn(l:N)
+	if l:argcol > 0
+		return l:argcol
+	endif
+	" --- '(' on its own line below a prototype signature ---
+	if l:line =~ '^\s*('
+		let l:head = s:PrototypeSigHead(l:N)
+		if l:head > 0
+			return indent(l:head) + l:sw
+		endif
+	endif
+	" --- line after a signature's closing ');' ---
+	let l:mhead = s:RollTailHead(l:p1)
+	if l:mhead <= 0
+		let l:mhead = s:RollSigTailHead(l:p1)
+	endif
+	if l:mhead > 0
+		let l:sigline = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
+		if l:sigline > 0 && getline(l:sigline) =~ '\<\%(function\|task\)\>'
+			let l:is_proto = (getline(l:sigline) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sigline)) !~# 'f')
+			if l:is_proto
+				return indent(l:sigline) - (l:this_codes =~# 'h' ? l:sw : 0)
+			else
+				return indent(l:sigline) + (l:this_codes =~# 'h' ? 0 : l:sw)
+			endif
+		endif
+	endif
+	" --- tail of a multi-line statement ---
+	let l:mhead = s:RollTailHead(l:N)
+	if l:mhead <= 0
+		let l:mhead = s:RollSigTailHead(l:N)
+	endif
+	if l:mhead > 0
+		return indent(l:mhead)
+	endif
+	" --- main code indent ---
+	let l:indnt = s:GetCodeIndent(b:sv_roll_uindent[l:p1], l:p2_codes, l:p1_codes, l:this_codes)
+	" --- block-comment block (body/STOP lines never reach here) ---
+	if l:this_codes =~ s:BLOCK_COMMENT_STOP
+		let b:in_block_comment = 0
+		return indent(l:N)
+	endif
+	if l:this_codes =~ s:BLOCK_COMMENT_START
+		let b:in_block_comment = 1
+		let b:block_comment_line = l:N
+		let b:block_comment_change = b:changedtick
+		return l:indnt
+	endif
+	" --- preprocessor / plain ---
+	if l:this_codes =~ s:PREPROCESSOR
+		return s:RollPreprocIndent(l:N, l:indnt)
+	endif
+	return l:indnt
+endfunction
+
+if !exists('g:sv_roll_fast')
+	let g:sv_roll_fast = 1
+endif
+
 function! GetSystemVerilogIndent( line_num )
+	if g:sv_roll_fast && s:RollChainOk(a:line_num)
+		let l:r = s:RollFastIndent(a:line_num)
+		if l:r >= 0
+			call s:RollUpdate(a:line_num, l:r)
+			return l:r
+		endif
+	endif
+	let l:r = s:SlowIndent(a:line_num)
+	call s:RollUpdate(a:line_num, l:r)
+	return l:r
+endfunction
+
+function! s:SlowIndent( line_num )
 	let this_codeline = getline( a:line_num )
 	let prev1_line_num = prevnonblank( a:line_num - 1)
 	let prev1_codeline = getline( prev1_line_num )
@@ -788,7 +1271,7 @@ function! GetSystemVerilogIndent( line_num )
 		let prev2_codes = s:ConvertToCodes(prev2_codeline)
 	endif
 
-	let this_codes = s:ConvertToCodes( this_codeline )
+	let this_codes = l:this_codes_early
 	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
 
 	" a continuation of a multi-line function/task PROTOTYPE signature aligns
