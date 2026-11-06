@@ -36,7 +36,7 @@ class demo_cond_body;
         b();
       `endif
     `else
-        c();
+      c();
     `endif
     done = 1;
   endfunction

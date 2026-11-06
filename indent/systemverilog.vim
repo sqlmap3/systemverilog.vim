@@ -122,7 +122,7 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<extern\>', '', 'g')
 	let delims = substitute(delims, '\<pure\>', '', 'g')
 	let delims = substitute(delims, '\<disable\>', '', 'g')
-	let delims = substitute(delims, '\<wait\>', '', 'g')
+	let delims = substitute(delims, '\<wait\>', 'x', 'g')
 	let delims = substitute(delims, '\<alias\>', '', 'g')
 	let delims = substitute(delims, '\<final\>', '', 'g')
 	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
@@ -662,7 +662,7 @@ function! GetSystemVerilogIndent( line_num )
 				endif
 				break
 			endif
-			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
 				return indent(ln) + &shiftwidth
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
@@ -702,7 +702,7 @@ function! GetSystemVerilogIndent( line_num )
 				endif
 				break
 			endif
-			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
 				if l:this_codes_early =~ '^[he]$'
 					let l:prev_start = ln
 					break
@@ -728,7 +728,7 @@ function! GetSystemVerilogIndent( line_num )
 				endif
 				break
 			endif
-			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\)\>'
+			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
 				return indent(ln) + &shiftwidth
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'

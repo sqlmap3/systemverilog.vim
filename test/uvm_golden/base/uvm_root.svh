@@ -448,11 +448,11 @@ task uvm_root::run_test(string test_name="");
 
   `else
 
-  // plusarg overrides argument
-  if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
-    `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
-    testname_plusarg = 1;
-  end
+    // plusarg overrides argument
+    if ($value$plusargs("UVM_TESTNAME=%s", test_name)) begin
+      `uvm_info("NO_DPI_TSTNAME", "UVM_NO_DPI defined--getting UVM_TESTNAME directly, without DPI", UVM_NONE)
+      testname_plusarg = 1;
+    end
 
   `endif
 
