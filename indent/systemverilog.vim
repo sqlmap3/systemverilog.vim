@@ -108,17 +108,31 @@ function! s:ConvertToCodes( codeline, ... )
 	" string-concatenation or literal context they must not indent. A
 	" concatenation '{' sits after = ( , ? : ' (the last is the assignment
 	" pattern '{) or at the start of a continuation line, and is followed by
-	" a string or identifier; its '}' is preceded by a string, identifier or
-	" call close (spaces allowed) and followed by , ; ) : (a ternary concat
-	" "? {a}:{b};" has both brace pairs in one line). Bins/range literals ({0}, {[0:15]},
+	" a string, identifier or system task ($display in a randsequence
+	" action, "first : { $display(...); };" — without the '$' the '{' is
+	" kept while its '}' is dropped as a statement close, leaving an
+	" unmatched 'b', demo12); its '}' is preceded by a string, identifier or
+	" call close (spaces allowed) and followed by , ; ) : or an operator
+	" (& | ^ + - * / % = < > ! ? — a concatenation used in an expression,
+	" "({$random, $random} & ~mask)", its '}' is followed by '&', not by a
+	" terminator; a real block-close '}' is never followed by an operator on
+	" the same line, so widening the suffix cannot drop one). A ternary concat
+	" "? {a}:{b};" has both brace pairs in one line). A '}' preceded by ';'
+	" is also dropped: it closes a statement block whose '{' the rule above
+	" dropped (a randsequence action, "first: {val++;} ;" — the '{' follows
+	" ':' so it was dropped as a concatenation, but the '}' follows a
+	" statement, not an expression; leaving it makes an unmatched 'e' that
+	" dedents every following line, demo44). A real struct/enum/constraint
+	" '}' preceded by ';' is never followed by , ; ) : on the same line, so
+	" it is unaffected. Bins/range literals ({0}, {[0:15]},
 	" {8'hF0}) keep their braces so they stay balanced: their '}' is preceded
 	" by a digit or ] which the prefix class excludes. This must run BEFORE
 	" the string strip (the '"' operand boundary distinguishes a
 	" concatenation from a bins value). NOTE: the classes must be spelled
 	" [A-Za-z_"] etc - inside a [] collection \h means the two literal
 	" characters '\' and 'h', not head-of-word.
-	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"]', '\1', 'g')
-	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"]', '', 'g')
+	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"$]', '\1', 'g')
+	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"$]', '', 'g')
 	" based literals (8'hFF, 4'b10X1, 'd42) are number digits, not an
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
@@ -131,7 +145,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" group matches either one non-brace non-quote char or one whole "..."
 	" string, so a "}" inside a string does not end the set early.
 	let delims = substitute(delims, '\<inside\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
-	let delims = substitute(delims, '\([A-Za-z_")]\)\s*\zs}\ze\s*\([,;):]\)', '', 'g')
+	let delims = substitute(delims, '\([A-Za-z_");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)

@@ -290,196 +290,196 @@ class uvm_mem_shared_access_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_re
         // Write a random value,
         v = {$random, $random};
 
-          mem.write(status, offset, v, UVM_FRONTDOOR, maps[j], this);
+        mem.write(status, offset, v, UVM_FRONTDOOR, maps[j], this);
+        if (status != UVM_IS_OK) begin
+          `uvm_error("uvm_mem_shared_access_seq", $sformatf("Status was %s when writing \"%s\"[%0d] through map \"%s\".",
+          status.name(), mem.get_full_name(), offset, maps[j].get_full_name()));
+        end
+
+        // Read back from all other maps
+        foreach (maps[k]) begin
+          uvm_reg_data_t  actual, exp;
+
+          mem.read(status, offset, actual, UVM_FRONTDOOR, maps[k], this);
           if (status != UVM_IS_OK) begin
-            `uvm_error("uvm_mem_shared_access_seq", $sformatf("Status was %s when writing \"%s\"[%0d] through map \"%s\".",
-            status.name(), mem.get_full_name(), offset, maps[j].get_full_name()));
+            `uvm_error("uvm_mem_shared_access_seq", $sformatf("Status was %s when reading %s[%0d] through map \"%s\".",
+            status.name(), mem.get_full_name(), offset, maps[k].get_full_name()));
           end
 
-          // Read back from all other maps
-          foreach (maps[k]) begin
-            uvm_reg_data_t  actual, exp;
-
-            mem.read(status, offset, actual, UVM_FRONTDOOR, maps[k], this);
-            if (status != UVM_IS_OK) begin
-              `uvm_error("uvm_mem_shared_access_seq", $sformatf("Status was %s when reading %s[%0d] through map \"%s\".",
-              status.name(), mem.get_full_name(), offset, maps[k].get_full_name()));
-            end
-
-            // Was it what we expected?
-            exp = v;
-            if (mem.get_access(maps[j]) == "RO") begin
-              exp = prev;
-            end
-            if (mem.get_access(maps[k]) == "WO") begin
-              exp = 0;
-            end
-            // Trim to number of bits
-            exp &= (1 << mem.get_n_bits()) - 1;
-            if (actual !== exp) begin
-              `uvm_error("uvm_mem_shared_access_seq", $sformatf("%s[%0d] through map \"%s\" is 'h%h instead of 'h%h after writing 'h%h via map \"%s\" over 'h%h.",
-              mem.get_full_name(), offset, maps[k].get_full_name(),
-              actual, exp, v, maps[j].get_full_name(), prev));
-            end
+          // Was it what we expected?
+          exp = v;
+          if (mem.get_access(maps[j]) == "RO") begin
+            exp = prev;
+          end
+          if (mem.get_access(maps[k]) == "WO") begin
+            exp = 0;
+          end
+          // Trim to number of bits
+          exp &= (1 << mem.get_n_bits()) - 1;
+          if (actual !== exp) begin
+            `uvm_error("uvm_mem_shared_access_seq", $sformatf("%s[%0d] through map \"%s\" is 'h%h instead of 'h%h after writing 'h%h via map \"%s\" over 'h%h.",
+            mem.get_full_name(), offset, maps[k].get_full_name(),
+            actual, exp, v, maps[j].get_full_name(), prev));
           end
         end
       end
-    endtask: body
-  endclass: uvm_mem_shared_access_seq
+    end
+  endtask: body
+endclass: uvm_mem_shared_access_seq
 
 
 
-  //------------------------------------------------------------------------------
-  // Class: uvm_reg_mem_shared_access_seq
-  //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Class: uvm_reg_mem_shared_access_seq
+//------------------------------------------------------------------------------
+//
+// Verify the accessibility of all shared registers
+// and memories in a block
+// by executing the <uvm_reg_shared_access_seq>
+// and <uvm_mem_shared_access_seq>
+// sequence respectively on every register and memory within it.
+//
+// If bit-type resource named
+// "NO_REG_TESTS", "NO_MEM_TESTS",
+// "NO_REG_SHARED_ACCESS_TEST" or "NO_MEM_SHARED_ACCESS_TEST"
+// in the "REG::" namespace
+// matches the full name of the block,
+// the block is not tested.
+//
+//| uvm_resource_db#(bit)::set({"REG::",regmodel.blk.get_full_name(),".*"},
+//|                            "NO_REG_TESTS", 1, this);
+//
+//------------------------------------------------------------------------------
+
+class uvm_reg_mem_shared_access_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_reg_item));
+
+  // Variable: model
   //
-  // Verify the accessibility of all shared registers
-  // and memories in a block
-  // by executing the <uvm_reg_shared_access_seq>
-  // and <uvm_mem_shared_access_seq>
-  // sequence respectively on every register and memory within it.
+  // The block to be tested
   //
-  // If bit-type resource named
-  // "NO_REG_TESTS", "NO_MEM_TESTS",
-  // "NO_REG_SHARED_ACCESS_TEST" or "NO_MEM_SHARED_ACCESS_TEST"
-  // in the "REG::" namespace
-  // matches the full name of the block,
-  // the block is not tested.
+  //| uvm_reg_block model; 
+
+
+  // Variable: reg_seq
   //
-  //| uvm_resource_db#(bit)::set({"REG::",regmodel.blk.get_full_name(),".*"},
-  //|                            "NO_REG_TESTS", 1, this);
+  // The sequence used to test one register
   //
-  //------------------------------------------------------------------------------
-
-  class uvm_reg_mem_shared_access_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_reg_item));
-
-    // Variable: model
-    //
-    // The block to be tested
-    //
-    //| uvm_reg_block model; 
+  protected uvm_reg_shared_access_seq reg_seq;
 
 
-    // Variable: reg_seq
-    //
-    // The sequence used to test one register
-    //
-    protected uvm_reg_shared_access_seq reg_seq;
+  // Variable: mem_seq
+  //
+  // The sequence used to test one memory
+  //
+  protected uvm_mem_shared_access_seq mem_seq;
+
+  `uvm_object_utils(uvm_reg_mem_shared_access_seq)
+
+  function new(string name="uvm_reg_mem_shared_access_seq");
+    super.new(name);
+  endfunction
 
 
-    // Variable: mem_seq
-    //
-    // The sequence used to test one memory
-    //
-    protected uvm_mem_shared_access_seq mem_seq;
+  // Task: body
+  //
+  // Executes the Shared Register and Memory sequence
+  //
+  virtual task body();
 
-    `uvm_object_utils(uvm_reg_mem_shared_access_seq)
-
-    function new(string name="uvm_reg_mem_shared_access_seq");
-      super.new(name);
-    endfunction
-
-
-    // Task: body
-    //
-    // Executes the Shared Register and Memory sequence
-    //
-    virtual task body();
-
-      if (model == null) begin
-        `uvm_error("uvm_reg_mem_shared_access_seq", "No register model specified to run sequence on");
-        return;
-      end
-
-      uvm_report_info("STARTING_SEQ",{"\n\nStarting ",get_name()," sequence...\n"},UVM_LOW);
-
-      reg_seq = uvm_reg_shared_access_seq::type_id::create("reg_shared_access_seq");
-      mem_seq = uvm_mem_shared_access_seq::type_id::create("reg_shared_access_seq");
-
-      this.reset_blk(model);
-      model.reset();
-
-      do_block(model);
-    endtask: body
-
-
-    // Task: do_block
-    //
-    // Test all of the registers and memories in a block
-    //
-    protected virtual task do_block(uvm_reg_block blk);
-      uvm_reg regs[$];
-      uvm_mem mems[$];
-
-      if (uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
-      "NO_REG_TESTS", 0) != null ||
-      uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
-      "NO_MEM_TESTS", 0) != null ||
-      uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
-      "NO_REG_SHARED_ACCESS_TEST", 0) != null ||
-      uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
-      "NO_MEM_SHARED_ACCESS_TEST", 0) != null )
+    if (model == null) begin
+      `uvm_error("uvm_reg_mem_shared_access_seq", "No register model specified to run sequence on");
       return;
+    end
 
-      this.reset_blk(model);
-      model.reset();
+    uvm_report_info("STARTING_SEQ",{"\n\nStarting ",get_name()," sequence...\n"},UVM_LOW);
 
-      // Iterate over all registers, checking accesses
-      blk.get_registers(regs, UVM_NO_HIER);
-      foreach (regs[i]) begin
-        // Registers with some attributes are not to be tested
-        if (uvm_resource_db#(bit)::get_by_name({"REG::",regs[i].get_full_name()},
-        "NO_REG_TESTS", 0) != null ||
-        uvm_resource_db#(bit)::get_by_name({"REG::",regs[i].get_full_name()},
-        "NO_REG_SHARED_ACCESS_TEST", 0) != null )
-        continue;
-        reg_seq.rg = regs[i];
-        reg_seq.start(this.get_sequencer(), this);
+    reg_seq = uvm_reg_shared_access_seq::type_id::create("reg_shared_access_seq");
+    mem_seq = uvm_mem_shared_access_seq::type_id::create("reg_shared_access_seq");
+
+    this.reset_blk(model);
+    model.reset();
+
+    do_block(model);
+  endtask: body
+
+
+  // Task: do_block
+  //
+  // Test all of the registers and memories in a block
+  //
+  protected virtual task do_block(uvm_reg_block blk);
+    uvm_reg regs[$];
+    uvm_mem mems[$];
+
+    if (uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
+    "NO_REG_TESTS", 0) != null ||
+    uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
+    "NO_MEM_TESTS", 0) != null ||
+    uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
+    "NO_REG_SHARED_ACCESS_TEST", 0) != null ||
+    uvm_resource_db#(bit)::get_by_name({"REG::",blk.get_full_name()},
+    "NO_MEM_SHARED_ACCESS_TEST", 0) != null )
+    return;
+
+    this.reset_blk(model);
+    model.reset();
+
+    // Iterate over all registers, checking accesses
+    blk.get_registers(regs, UVM_NO_HIER);
+    foreach (regs[i]) begin
+      // Registers with some attributes are not to be tested
+      if (uvm_resource_db#(bit)::get_by_name({"REG::",regs[i].get_full_name()},
+      "NO_REG_TESTS", 0) != null ||
+      uvm_resource_db#(bit)::get_by_name({"REG::",regs[i].get_full_name()},
+      "NO_REG_SHARED_ACCESS_TEST", 0) != null )
+      continue;
+      reg_seq.rg = regs[i];
+      reg_seq.start(this.get_sequencer(), this);
+    end
+
+    // Iterate over all memories, checking accesses
+    blk.get_memories(mems, UVM_NO_HIER);
+    foreach (mems[i]) begin
+      // Registers with some attributes are not to be tested
+      if (uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
+      "NO_REG_TESTS", 0) != null ||
+      uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
+      "NO_MEM_TESTS", 0) != null ||
+      uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
+      "NO_REG_SHARED_ACCESS_TEST", 0) != null ||
+      uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
+      "NO_MEM_SHARED_ACCESS_TEST", 0) != null )
+      continue;
+      mem_seq.mem = mems[i];
+      mem_seq.start(this.get_sequencer(), this);
+    end
+
+    begin
+      uvm_reg_block blks[$];
+
+      blk.get_blocks(blks);
+      foreach (blks[i]) begin
+        do_block(blks[i]);
       end
-
-      // Iterate over all memories, checking accesses
-      blk.get_memories(mems, UVM_NO_HIER);
-      foreach (mems[i]) begin
-        // Registers with some attributes are not to be tested
-        if (uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
-        "NO_REG_TESTS", 0) != null ||
-        uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
-        "NO_MEM_TESTS", 0) != null ||
-        uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
-        "NO_REG_SHARED_ACCESS_TEST", 0) != null ||
-        uvm_resource_db#(bit)::get_by_name({"REG::",mems[i].get_full_name()},
-        "NO_MEM_SHARED_ACCESS_TEST", 0) != null )
-        continue;
-        mem_seq.mem = mems[i];
-        mem_seq.start(this.get_sequencer(), this);
-      end
-
-      begin
-        uvm_reg_block blks[$];
-
-        blk.get_blocks(blks);
-        foreach (blks[i]) begin
-          do_block(blks[i]);
-        end
-      end
-    endtask: do_block
+    end
+  endtask: do_block
 
 
-    //
-    // task: reset_blk
-    // Reset the DUT that corresponds to the specified block abstraction class.
-    //
-    // Currently empty.
-    // Will rollback the environment's phase to the ~reset~
-    // phase once the new phasing is available.
-    //
-    // In the meantime, the DUT should be reset before executing this
-    // test sequence or this method should be implemented
-    // in an extension to reset the DUT.
-    //
-    virtual task reset_blk(uvm_reg_block blk);
-    endtask
+  //
+  // task: reset_blk
+  // Reset the DUT that corresponds to the specified block abstraction class.
+  //
+  // Currently empty.
+  // Will rollback the environment's phase to the ~reset~
+  // phase once the new phasing is available.
+  //
+  // In the meantime, the DUT should be reset before executing this
+  // test sequence or this method should be implemented
+  // in an extension to reset the DUT.
+  //
+  virtual task reset_blk(uvm_reg_block blk);
+  endtask
 
 
-  endclass: uvm_reg_mem_shared_access_seq
+endclass: uvm_reg_mem_shared_access_seq
 
