@@ -150,27 +150,27 @@
    // implementations of these two methods, or when you are setting up field macros
    // for an abstract class (i.e. virtual class).
 
- `define uvm_field_utils_begin(T) \
-   function void __m_uvm_field_automation (uvm_object tmp_data__, \
-     int what__, \
-     string str__); \
-     begin \
-       T local_data__; /* Used for copy and compare */ \
-       typedef T ___local_type____; \
-       string string_aa_key; /* Used for associative array lookups */ \
-       uvm_object __current_scopes[$]; \
-       if(what__ inside {UVM_SETINT,UVM_SETSTR,UVM_SETOBJ}) begin \
-         if(__m_uvm_status_container.m_do_cycle_check(this)) begin \
-           return; \
+   `define uvm_field_utils_begin(T) \
+     function void __m_uvm_field_automation (uvm_object tmp_data__, \
+       int what__, \
+       string str__); \
+       begin \
+         T local_data__; /* Used for copy and compare */ \
+         typedef T ___local_type____; \
+         string string_aa_key; /* Used for associative array lookups */ \
+         uvm_object __current_scopes[$]; \
+         if(what__ inside {UVM_SETINT,UVM_SETSTR,UVM_SETOBJ}) begin \
+           if(__m_uvm_status_container.m_do_cycle_check(this)) begin \
+             return; \
+           end \
+           else \
+             __current_scopes=__m_uvm_status_container.m_uvm_cycle_scopes; \
          end \
-         else \
-           __current_scopes=__m_uvm_status_container.m_uvm_cycle_scopes; \
-       end \
-       super.__m_uvm_field_automation(tmp_data__, what__, str__); \
-       /* Type is verified by uvm_object::compare() */ \
-       if(tmp_data__ != null) \
-       /* Allow objects in same hierarchy to be copied/compared */ \
-       if(!$cast(local_data__, tmp_data__)) return;
+         super.__m_uvm_field_automation(tmp_data__, what__, str__); \
+         /* Type is verified by uvm_object::compare() */ \
+         if(tmp_data__ != null) \
+         /* Allow objects in same hierarchy to be copied/compared */ \
+         if(!$cast(local_data__, tmp_data__)) return;
 
  `define uvm_field_utils_end \
    if(what__ inside {UVM_SETINT,UVM_SETSTR,UVM_SETOBJ}) begin \
@@ -3448,14 +3448,14 @@ endfunction \
  //
  // | recorder.record_generic(NAME,$sformatf("%p",VALUE));
  //
-`define uvm_record_field(NAME,VALUE) \
-  if (recorder != null && recorder.is_open()) begin \
-    if (recorder.use_record_attribute()) begin \
-      `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
-    end \
-    else \
-      recorder.record_generic(NAME, $sformatf("%p", VALUE)); \
-  end
+ `define uvm_record_field(NAME,VALUE) \
+   if (recorder != null && recorder.is_open()) begin \
+     if (recorder.use_record_attribute()) begin \
+       `uvm_record_attribute(recorder.get_record_attribute_handle(),NAME,VALUE) \
+     end \
+     else \
+       recorder.record_generic(NAME, $sformatf("%p", VALUE)); \
+   end
 
 
 //------------------------------------------------------------------------------

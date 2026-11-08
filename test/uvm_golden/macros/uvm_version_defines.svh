@@ -115,7 +115,7 @@
  //
  // | `define UVM_MAJOR_REV_1
  //
-`define UVM_MAJOR_REV_1
+ `define UVM_MAJOR_REV_1
 
 // Macro: UVM_MINOR_REV_2
 // Indicates that the MINOR version of this release is '2'.

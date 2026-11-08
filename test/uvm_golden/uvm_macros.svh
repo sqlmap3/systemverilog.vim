@@ -63,7 +63,7 @@
  `ifdef UVM_NO_DEPRECATED
  `endif
 
-`define uvm_delay(TIME) #(TIME);
+ `define uvm_delay(TIME) #(TIME);
 
 
 `include "macros/uvm_version_defines.svh"

@@ -40,6 +40,36 @@ let s:PREPROCESSOR = '^z.*$'
 " optional arg 1: no-parens mode - ()[]{} are dropped instead of mapped to
 " b/e, so unbalanced expression parens do not indent. Used for lines inside
 " a backslash continuation block (`define bodies).
+" True if the line is a plain statement whose ConvertToCodes result is
+" exactly ';' (see the ConvertToCodes fast path). Conservative: any
+" doubt returns 0 and the caller falls through to the full path.
+function! s:IsPlainStmt( line )
+	" Fail fast: most lines have no trailing ';' at all. The big keyword
+	" regex runs last, only for lines that passed every cheap check.
+	if stridx(a:line, ';') < 0 || a:line !~# ';\s*$'
+		return 0
+	endif
+	if a:line =~# '^\s*\(//\|/\*\)'
+		return 0
+	endif
+	if stridx(a:line, '`') >= 0 || stridx(a:line, '"') >= 0
+		return 0
+	endif
+	if stridx(a:line, '@') >= 0 || stridx(a:line, '{') >= 0 || stridx(a:line, '}') >= 0
+		return 0
+	endif
+	if stridx(a:line, '/*') >= 0 || stridx(a:line, '*/') >= 0
+		return 0
+	endif
+	if count(a:line, '(') != count(a:line, ')') || count(a:line, '[') != count(a:line, ']')
+		return 0
+	endif
+	if a:line =~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|return\|break\|continue\|else\|elsif\)\>'
+		return 0
+	endif
+	return 1
+endfunction
+
 function! s:ConvertToCodes( codeline, ... )
 	" keywords that don't affect indent: module endmodule package
 	" endpackage interface endinterface (upstream nachumk behavior; their
@@ -53,6 +83,25 @@ function! s:ConvertToCodes( codeline, ... )
 	let l:key = (a:0 ? '1:' : '0:') . a:codeline
 	if has_key(b:sv_conv_cache, l:key)
 		return b:sv_conv_cache[l:key]
+	endif
+	" Fast path: plain statement -> codes ';'. A simple statement with
+	" no control keyword, no unbalanced delimiter, no directive, no
+	" string, no clocking event, not comment-only, and terminated by
+	" ';' comes out of the full pipeline as just ';' (balanced parens
+	" cancel, identifiers/operators are stripped, stray digits/symbols
+	" do not match any code pattern). Detect it with C-level stridx /
+	" count plus two small regexes instead of ~40 substitutes. Any
+	" doubt falls through to the full path below.
+	if stridx(a:codeline, '`') < 0 && stridx(a:codeline, '"') < 0
+			\ && stridx(a:codeline, '@') < 0 && stridx(a:codeline, '{') < 0
+			\ && stridx(a:codeline, '}') < 0
+			\ && stridx(a:codeline, '/*') < 0 && stridx(a:codeline, '*/') < 0
+			\ && count(a:codeline, '(') == count(a:codeline, ')')
+			\ && count(a:codeline, '[') == count(a:codeline, ']')
+			\ && a:codeline =~# ';\s*$' && a:codeline !~# '^\s*\(//\|/\*\)'
+			\ && a:codeline !~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|return\|break\|continue\|else\|elsif\)\>'
+		let b:sv_conv_cache[l:key] = ';'
+		return ';'
 	endif
 	let delims = a:codeline
 	" '{'/'}' are blocks only as struct/union/enum/constraint bodies; in a
@@ -78,9 +127,10 @@ function! s:ConvertToCodes( codeline, ... )
 	" below, or that drop eats the set's closing '}' (preceded by an identifier,
 	" followed by ')') and leaves an unmatched '{' -> 'b' in the codes, which
 	" breaks LINE_INDENT matching for the 'if' line and makes a following
-	" 'end' dedent only one level. Quote-free sets only here; sets containing
-	" a string literal fall through to the later inside drop (same as before).
-	let delims = substitute(delims, '\<inside\s\+{[^}"]*}', '', 'g')
+	" 'end' dedent only one level. The set may contain string literals: the
+	" group matches either one non-brace non-quote char or one whole "..."
+	" string, so a "}" inside a string does not end the set early.
+	let delims = substitute(delims, '\<inside\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
 	let delims = substitute(delims, '\([A-Za-z_")]\)\s*\zs}\ze\s*\([,;):]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
@@ -271,6 +321,66 @@ endfunction
 " Return the line number of the `ifdef/`ifndef that a `else/`elsif/`endif at
 " a:line_num matches, walking back through nested conditionals (comments and
 " plain code are skipped), or 0 if none (an unbalanced/standalone directive).
+" Return the `define line that starts the multi-line `define whose body
+" contains a:line_num, or 0. A multi-line `define is a contiguous run of
+" lines where every line but the last ends with a backslash; its body
+" lines are macro text, not real conditional compilation, so the
+" directive-counting walks must skip the whole body. The `define line
+" itself is not "inside" the body (it is a real directive, transparent
+" to the counting), so a:line_num equal to the `define line returns 0.
+function! s:DefineBodyStart( line_num )
+	let l:ln = a:line_num
+	while l:ln > 1 && getline(l:ln - 1) =~ '\\$'
+		let l:ln -= 1
+	endwhile
+	if l:ln < a:line_num && getline(l:ln) =~ '^\s*`define\>'
+		return l:ln
+	endif
+	return 0
+endfunction
+
+" Previous effective code line for a [he] close that resolved through a
+" closed `ifdef region (or a `define after one). Walk back from a:line_num
+" (the matching `ifdef line) through any immediately preceding multi-line
+" `define body and any immediately preceding closed `ifdef region, and
+" return the line to use as prev_start so prev1 lands on the code before
+" the whole preprocessor sequence (residual (b): task -> ifdef -> define
+" -> ifdef -> endtask). Returns a:line_num unchanged when there is no
+" such sequence. `ifdef openers are transparent here because a [he] close
+" belongs to the outer level, not the region body.
+function! s:PrevCodeLine( line_num )
+	let l:ln = prevnonblank(a:line_num - 1)
+	while l:ln > 0
+		let l:line = getline(l:ln)
+		if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		let l:ds = s:DefineBodyStart(l:ln)
+		if l:ds > 0
+			let l:ln = prevnonblank(l:ds - 1)
+			continue
+		endif
+		if l:line =~ '^\s*`\s*\cendif\>'
+			let l:m = s:FindIfdefMatch(l:ln)
+			if l:m > 0
+				let l:ln = prevnonblank(l:m - 1)
+				continue
+			endif
+			break
+		endif
+		if l:line =~ '^\s*`'
+			" any other directive (`ifdef/`ifndef/`else/`elsif/`define/
+			" `include ...): transparent for a [he] close, skip it
+			let l:ln = prevnonblank(l:ln - 1)
+			continue
+		endif
+		" a code line: prev_start just after it, so prev1 resolves to it
+		return l:ln + 1
+	endwhile
+	return a:line_num
+endfunction
+
 function! s:FindIfdefMatch( line_num )
 	if !exists('b:sv_iffind_cache') || b:sv_iffind_tick != b:changedtick
 		let b:sv_iffind_cache = {}
@@ -282,6 +392,11 @@ function! s:FindIfdefMatch( line_num )
 	let l:depth = 0
 	let l:ln = prevnonblank(a:line_num - 1)
 	while l:ln > 0
+		let l:ds = s:DefineBodyStart(l:ln)
+		if l:ds > 0
+			let l:ln = prevnonblank(l:ds - 1)
+			continue
+		endif
 		let l:line = getline(l:ln)
 		if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
 			let l:ln = prevnonblank(l:ln - 1)
@@ -313,6 +428,31 @@ endfunction
 " where a nested `ifdef sits one level deeper than its enclosing code and
 " `else/`elsif/`endif align with their matching `ifdef. The top-level file
 " guard (`ifndef ..._SVH at column 0) falls through to the base indent (0).
+" Correct indent for an `ifdef/`ifndef opener line, computed
+" recursively via SlowIndent (which derives its own base from the
+" opener's context) instead of read from the buffer, so a stale
+" indent on the opener cannot leak into the next opener after a
+" closed region. Each recursion moves to a strictly earlier line, so
+" it terminates; the depth guard falls back to the buffer indent for
+" very deep chains (the old behavior, still correct during gg=G).
+" a:base_indnt is accepted for the call sites but not used: the
+" opener's own base is recomputed by SlowIndent.
+function! s:OpenerIndent( line_num, base_indnt )
+	if !exists('b:sv_opener_depth')
+		let b:sv_opener_depth = 0
+	endif
+	if b:sv_opener_depth > 50
+		return indent(a:line_num)
+	endif
+	let b:sv_opener_depth += 1
+	try
+		let l:r = s:SlowIndent(a:line_num)
+	finally
+		let b:sv_opener_depth -= 1
+	endtry
+	return l:r
+endfunction
+
 function! s:GetPreprocIndent( line_num, base_indnt )
 	let l:ln = prevnonblank(a:line_num - 1)
 	if getline(a:line_num) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
@@ -326,13 +466,30 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 		" guard, base -1 at file top) and nets off closed regions
 		" encountered before the enclosing code line.
 		let l:first = prevnonblank(a:line_num - 1)
-		while l:first > 0 && getline(l:first) =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
-			let l:first = prevnonblank(l:first - 1)
+		while l:first > 0
+			if getline(l:first) =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let l:first = prevnonblank(l:first - 1)
+				continue
+			endif
+			" a multi-line `define body is macro text, not a directive:
+			" skip the whole body so case 1 can see the real `endif
+			" before the `define (residual (b), slow path `ifdef B)
+			let l:ds = s:DefineBodyStart(l:first)
+			if l:ds > 0
+				let l:first = prevnonblank(l:ds - 1)
+				continue
+			endif
+			break
 		endwhile
-		if l:first > 0 && getline(l:first) =~ '^\s*`\s*\cendif\>'
+		if l:first > 0 && getline(l:first) =~ '^\s*`\s*\cendif\>' && s:DefineBodyStart(l:first) == 0
 			let l:depth = 0
 			let l:ln = l:first
 			while l:ln > 0
+				let l:ds = s:DefineBodyStart(l:ln)
+				if l:ds > 0
+					let l:ln = prevnonblank(l:ds - 1)
+					continue
+				endif
 				let l:line = getline(l:ln)
 				if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
 					let l:ln = prevnonblank(l:ln - 1)
@@ -344,10 +501,10 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 					if l:depth > 0
 						let l:depth -= 1
 						if l:depth == 0
-							return indent(l:ln)
+							return s:OpenerIndent(l:ln, a:base_indnt)
 						endif
 					else
-						return indent(l:ln) + &shiftwidth
+						return s:OpenerIndent(l:ln, a:base_indnt) + &shiftwidth
 					endif
 				elseif l:line =~ '^\s*`'
 					" other preprocessor directive - transparent
@@ -362,6 +519,12 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 		endif
 		let l:nest = 0
 		while l:ln > 0
+			if s:DefineBodyStart(l:ln) > 0
+				" a line inside a define body is macro text: it breaks the
+				" directive run exactly like a code line does, so stop here
+				" instead of counting the define's internal directives.
+				break
+			endif
 			let l:line = getline(l:ln)
 			if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
 				let l:ln = prevnonblank(l:ln - 1)
@@ -766,7 +929,19 @@ function! s:RollUpdate( line_num, indnt )
 	endif
 	" classification from raw text (mirrors the slow path's walks, which
 	" read physical lines, including continuation lines of `define bodies)
-	if !l:blank
+	" Directives inside a multi-line `define body are macro text, not
+	" real conditional compilation: they must not touch the ifdef stack,
+	" the match dict, the run count, or sig/first.
+	" Likewise a line whose unit started inside a /* */ block comment
+	" is comment text, not a directive (a `define in the middle of a
+	" /* */ block starts with a backtick, so the comment-text check
+	" below does not catch it). l:uic is that block-comment state; it
+	" is only set in the elseif branch, so define it here when the
+	" line ends with a backslash and the if branch ran instead.
+	if !exists('l:uic')
+		let l:uic = b:sv_roll_pend >= 0 ? get(b:, 'sv_roll_pend_ic', 0) : get(b:, 'sv_roll_incomment', 0)
+	endif
+	if !l:blank && s:DefineBodyStart(a:line_num) == 0 && !l:uic
 		if l:line =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
 			" comment line: sig/first/run/stack untouched
 		elseif l:line =~ '^\s*`\s*\cinclude\>'
@@ -925,6 +1100,77 @@ function! s:RollPreprocIndent( line_num, base_indnt )
 	return a:base_indnt
 endfunction
 
+" Plain-line fast lane: a plain statement following a plain statement.
+" Returns its indent, or -1 to fall through to the normal path. For
+" such a line GetCodeIndent returns the base unchanged, so the indent
+" is the previous plain line's (already correct) indent, and the
+" rolling-state update is minimal: append to the code-unit list with
+" codes ';', set sig/first to this line and the directive-run count to
+" 0, leave the ifdef stack and block-comment state untouched. Skips
+" RollFastIndent, RollUpdate and every ConvertToCodes call for the line.
+function! s:RollPlainLine( line_num )
+	if b:sv_roll_tick != b:changedtick || b:sv_roll_last < 0 || !b:sv_roll_top
+		return -1
+	endif
+	if b:sv_roll_incomment
+		return -1
+	endif
+	let l:line = getline(a:line_num)
+	if l:line =~ '^\s*$'
+		return -1
+	endif
+	if !s:IsPlainStmt(l:line)
+		return -1
+	endif
+	let l:prev = prevnonblank(a:line_num - 1)
+	" previous line must be a plain exec unit: its memoized unit codes
+	" are ';' (directives/comments never enter that dict). Cheaper and
+	" more accurate than re-running the text check on it.
+	if l:prev <= 0 || get(b:sv_roll_ucodes, l:prev, '') !=# ';'
+		return -1
+	endif
+	if s:RollEndsBs(a:line_num) || s:RollEndsBs(l:prev)
+		return -1
+	endif
+	if s:DefineBodyStart(a:line_num) != 0
+		return -1
+	endif
+	" gap check (only blank lines may intervene; the chain is in order)
+	if a:line_num != b:sv_roll_last + 1
+		let l:ln = b:sv_roll_last + 1
+		while l:ln < a:line_num
+			if getline(l:ln) !~ '^\s*$'
+				return -1
+			endif
+			let l:ln += 1
+		endwhile
+	endif
+	" GetCodeIndent's dedent rule: prev2 ends with 'x' (a control line)
+	" and prev1 is an exec line (';') -> one level back. prev is the
+	" last code unit, so the unit before it is prev2's unit.
+	let l:ind = indent(l:prev)
+	if len(b:sv_roll_codelines) >= 2 && b:sv_roll_codelines[-1] == l:prev
+		let l:p2codes = get(b:sv_roll_ucodes, b:sv_roll_codelines[-2], '')
+		if l:p2codes[-1:] ==# 'x'
+			let l:ind = l:ind - &shiftwidth
+		endif
+	elseif len(b:sv_roll_codelines) < 2
+		" no prev2 unit: no dedent possible, keep indent(prev)
+	else
+		" prev is not the last unit: state assumption broken, bail out
+		return -1
+	endif
+	let b:sv_roll_prevnb = a:line_num
+	call add(b:sv_roll_codelines, a:line_num)
+	let b:sv_roll_ucodes[a:line_num] = ';'
+	let b:sv_roll_uindent[a:line_num] = l:ind
+	let b:sv_roll_sig = a:line_num
+	let b:sv_roll_first = a:line_num
+	let b:sv_roll_run = 0
+	let b:sv_roll_last = a:line_num
+	return l:ind
+endfunction
+
 " Rolling single-pass fast path for gg=G. Mirrors s:SlowIndent step by step,
 " reading rolling state instead of walking back; returns -1 to fall back to
 " the slow path whenever the state cannot answer exactly.
@@ -950,8 +1196,9 @@ function! s:RollFastIndent( line_num )
 	let l:sig = b:sv_roll_sig
 	let l:sig_is_endif = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\cendif\>')
 	let l:sig_is_ifdef = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>')
+	let l:sig_is_define = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\cdefine\>')
 	let l:is_include = (l:line =~ '^\s*`\s*\cinclude\>')
-	let l:is_bigdir = (l:line =~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>')
+	let l:is_bigdir = (l:line =~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>')
 	if l:is_include
 		if l:sig_is_endif
 			let l:m = get(b:sv_roll_match, l:sig, 0)
@@ -968,6 +1215,7 @@ function! s:RollFastIndent( line_num )
 			if l:m > 0
 				if l:this_codes =~ '^[he]$'
 					let l:prev_start = l:m
+					let l:prev_start = s:PrevCodeLine(l:prev_start)
 				else
 					let l:enc = s:EnclosingCodeIndent(l:m)
 					return l:enc < indent(l:m) ? l:enc : indent(l:m)
@@ -976,8 +1224,59 @@ function! s:RollFastIndent( line_num )
 		elseif l:sig_is_ifdef
 			if l:this_codes =~ '^[he]$'
 				let l:prev_start = l:sig
+			elseif l:line =~ '^\s*`\s*\cdefine\>'
+				" a `define after an `ifdef/`ifndef (the file-guard idiom)
+				" aligns with the `ifdef, not one level deeper
+				return indent(l:sig)
 			else
 				return indent(l:sig) + l:sw
+			endif
+		elseif l:sig_is_define
+			" the sig is a `define: resolve through it to the directive
+			" before it. A `define after an `endif means the next line
+			" sits at the closed region's outer level; a `define after
+			" an `ifdef (guard idiom) or after code means the next line
+			" aligns with the `define itself.
+			" Only when the sig is fresh: lines inside a /* */ comment
+			" or a `define body do not update sig, so it can go stale
+			" (e.g. a file-guard `define far above a line inside a
+			" commented-out macro body). If any line between the sig
+			" and here is not blank and not a comment line, fall
+			" through to the normal prev1/prev2 resolution instead.
+			let l:fresh = 1
+			let l:j = l:sig + 1
+			while l:j < l:N
+				let l:jl = getline(l:j)
+				if l:jl !~ '^\s*$' && l:jl !~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+					let l:fresh = 0
+					break
+				endif
+				let l:j += 1
+			endwhile
+			if l:fresh
+			let l:prev_sig = prevnonblank(l:sig - 1)
+				if l:prev_sig > 0 && getline(l:prev_sig) =~ '^\s*`\s*\cendif\>'
+					let l:m = get(b:sv_roll_match, l:prev_sig, 0)
+					if l:m > 0
+						if l:this_codes =~ '^[he]$'
+							let l:prev_start = l:m
+							let l:prev_start = s:PrevCodeLine(l:prev_start)
+						else
+							let l:enc = s:EnclosingCodeIndent(l:m)
+							return l:enc < indent(l:m) ? l:enc : indent(l:m)
+						endif
+					endif
+				else
+					" `define after an `ifdef (guard idiom) or after code:
+					" fall through to the normal prev1/prev2 +
+					" GetCodeIndent path, which distinguishes a flat
+					" top-level unit (package/module, [0]) from an
+					" indented declaration (typedef, [2]). Returning
+					" indent(sig) here would flatten the latter.
+					if l:this_codes =~ '^[he]$'
+						let l:prev_start = l:sig
+					endif
+				endif
 			endif
 		endif
 	endif
@@ -1074,6 +1373,10 @@ endif
 
 function! GetSystemVerilogIndent( line_num )
 	if g:sv_roll_fast && s:RollChainOk(a:line_num)
+		let l:r = s:RollPlainLine(a:line_num)
+		if l:r >= 0
+			return l:r
+		endif
 		let l:r = s:RollFastIndent(a:line_num)
 		if l:r >= 0
 			call s:RollUpdate(a:line_num, l:r)
@@ -1159,13 +1462,42 @@ function! s:SlowIndent( line_num )
 	" macro CALL line (leading `name(...)) is ordinary code for this: it
 	" takes the ifdef-body +1 and the endif-alignment like any statement.
 	" Only the directives themselves (the `z` codes) are excluded.
-	if this_codeline !~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>'
+	if this_codeline !~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>'
 		let ln = prevnonblank(a:line_num - 1)
 		while ln > 0
 			let l = getline(ln)
 			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\cinclude\>'
 				let ln = prevnonblank(ln - 1)
 				continue
+			endif
+			if l =~ '^\s*`\s*\cdefine\>'
+				" the sig is a `define: resolve through it to the
+				" directive before it. A `define after an `endif means
+				" the next line sits at the closed region's outer level;
+				" a `define after an `ifdef (guard idiom) or after code
+				" means the next line aligns with the `define itself.
+				let l:prev_sig = prevnonblank(ln - 1)
+				if l:prev_sig > 0 && getline(l:prev_sig) =~ '^\s*`\s*\cendif\>'
+					let l:m = s:FindIfdefMatch(l:prev_sig)
+					if l:m > 0
+						if l:this_codes_early =~ '^[he]$'
+							let l:prev_start = l:m
+							let l:prev_start = s:PrevCodeLine(l:prev_start)
+						else
+							let l:enc = s:EnclosingCodeIndent(l:m)
+							return l:enc < indent(l:m) ? l:enc : indent(l:m)
+						endif
+					endif
+					break
+				else
+					" `define after an `ifdef (guard idiom) or after code:
+					" fall through (break) to the normal prev1/prev2 +
+					" GetCodeIndent path; see RollFastIndent above.
+					if l:this_codes_early =~ '^[he]$'
+						let l:prev_start = ln
+					endif
+					break
+				endif
 			endif
 			if l =~ '^\s*`\s*\cendif\>'
 				let l:m = s:FindIfdefMatch(ln)
@@ -1178,6 +1510,7 @@ function! s:SlowIndent( line_num )
 						" the previous code from before the matching
 						" `ifdef instead of aligning with it
 						let l:prev_start = l:m
+						let l:prev_start = s:PrevCodeLine(l:prev_start)
 					else
 						let l:enc = s:EnclosingCodeIndent(l:m)
 						return l:enc < indent(l:m) ? l:enc : indent(l:m)
@@ -1189,6 +1522,11 @@ function! s:SlowIndent( line_num )
 				if l:this_codes_early =~ '^[he]$'
 					let l:prev_start = ln
 					break
+				endif
+				if this_codeline =~ '^\s*`\s*\cdefine\>'
+					" a `define after an `ifdef/`ifndef (the file-guard idiom)
+					" aligns with the `ifdef, not one level deeper
+					return indent(ln)
 				endif
 				return indent(ln) + &shiftwidth
 			endif

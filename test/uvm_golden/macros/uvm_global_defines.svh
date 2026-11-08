@@ -54,6 +54,6 @@
  // <uvm_root::set_timeout> or <uvm_cmdline_processor::+UVM_TIMEOUT>
  //
 
-`define UVM_DEFAULT_TIMEOUT 9200s
+ `define UVM_DEFAULT_TIMEOUT 9200s
 
 `endif //  `ifndef UVM_GLOBAL_DEFINES_SVH
