@@ -453,6 +453,34 @@ function! s:OpenerIndent( line_num, base_indnt )
 	return l:r
 endfunction
 
+function! s:IsFileGuard( ln )
+	" a file guard is an `ifndef X immediately followed by `define X
+	" AND it is the first `ifdef/`ifndef in the file (not nested
+	" inside another conditional). A nested `ifndef X + `define X
+	" (e.g. UVM_MAX_STREAMBITS default) is a conditional default,
+	" not a guard, and its body IS indented +1.
+	let l:line = getline(a:ln)
+	if l:line !~ '^\s*`\s*\cifndef\>'
+		return 0
+	endif
+	let l:gname = matchstr(l:line, '^\s*`\s*\cifndef\s\+\zs\w\+')
+	if l:gname ==# ''
+		return 0
+	endif
+	let l:nx = nextnonblank(a:ln + 1)
+	if l:nx <= 0 || getline(l:nx) !~ '^\s*`\s*\cdefine\s\+' . l:gname . '\>'
+		return 0
+	endif
+	let l:i = 1
+	while l:i < a:ln
+		if getline(l:i) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
+			return 0
+		endif
+		let l:i += 1
+	endwhile
+	return 1
+endfunction
+
 function! s:GetPreprocIndent( line_num, base_indnt )
 	let l:ln = prevnonblank(a:line_num - 1)
 	if getline(a:line_num) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>'
@@ -516,6 +544,42 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 				let l:ln = prevnonblank(l:ln - 1)
 			endwhile
 			return a:base_indnt
+		endif
+		" nested `ifdef after a multi-line `define (demo22): the opener
+		" sits one level deeper than its enclosing `ifdef, but case 2
+		" below breaks on the define body and never counts the enclosing
+		" region. If the nearest preceding directive (skipping define
+		" bodies, `define/`include/`undef lines and comments) is a
+		" non-guard `ifdef/`ifndef opener, align one level deeper
+		" than it. Only when something was actually skipped: a nested
+		" `ifdef directly after its enclosing opener (no `define in
+		" between, e.g. uvm_object_defines.svh `ifndef
+		" uvm_record_attribute / `ifdef QUESTA) stays at the same
+		" level, as the golden files expect. A file guard is excluded:
+		" its body sits at the same level (demo16).
+		let l:enc = prevnonblank(a:line_num - 1)
+		let l:skipped = 0
+		while l:enc > 0
+			let l:el = getline(l:enc)
+			if l:el =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+				let l:enc = prevnonblank(l:enc - 1)
+				continue
+			endif
+			let l:ds = s:DefineBodyStart(l:enc)
+			if l:ds > 0
+				let l:skipped = 1
+				let l:enc = prevnonblank(l:ds - 1)
+				continue
+			endif
+			if l:el =~ '^\s*`\s*\c\(define\|include\|undef\)\>'
+				let l:skipped = 1
+				let l:enc = prevnonblank(l:enc - 1)
+				continue
+			endif
+			break
+		endwhile
+		if l:skipped && l:enc > 0 && getline(l:enc) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>' && !s:IsFileGuard(l:enc)
+			return indent(l:enc) + &shiftwidth
 		endif
 		let l:nest = 0
 		while l:ln > 0
