@@ -1250,6 +1250,13 @@ function! s:RollFastIndent( line_num )
 	if b:sv_roll_incomment
 		return -1
 	endif
+	" macro call containing `inside {...}` sets: the rolling code-unit
+	" bookkeeping miscounts these (phy_common 14290: fast [28] vs slow
+	" [4]); fall back to the slow path, which handles inside sets
+	" correctly (v9 pre-drop in ConvertToCodes)
+	if l:line =~ '^\s*`' && l:line =~ '\<inside\>'
+		return -1
+	endif
 	if empty(b:sv_roll_codelines)
 		return -1
 	endif
