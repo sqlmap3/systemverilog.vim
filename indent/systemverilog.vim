@@ -64,7 +64,7 @@ function! s:IsPlainStmt( line )
 	if count(a:line, '(') != count(a:line, ')') || count(a:line, '[') != count(a:line, ']')
 		return 0
 	endif
-	if a:line =~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|return\|break\|continue\|else\|elsif\)\>'
+	if a:line =~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|wait_order\|return\|break\|continue\|else\|elsif\)\>'
 		return 0
 	endif
 	return 1
@@ -99,7 +99,7 @@ function! s:ConvertToCodes( codeline, ... )
 			\ && count(a:codeline, '(') == count(a:codeline, ')')
 			\ && count(a:codeline, '[') == count(a:codeline, ']')
 			\ && a:codeline =~# ';\s*$' && a:codeline !~# '^\s*\(//\|/\*\)'
-			\ && a:codeline !~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|return\|break\|continue\|else\|elsif\)\>'
+			\ && a:codeline !~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|wait_order\|return\|break\|continue\|else\|elsif\)\>'
 		let b:sv_conv_cache[l:key] = ';'
 		return ';'
 	endif
@@ -137,23 +137,30 @@ function! s:ConvertToCodes( codeline, ... )
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
 	let delims = substitute(delims, '''[sSdDbBhHoO]\h\+', '', 'g')
-	" 'inside {...}' sets must be dropped BEFORE the concatenation '}' drop
-	" below, or that drop eats the set's closing '}' (preceded by an identifier,
-	" followed by ')') and leaves an unmatched '{' -> 'b' in the codes, which
-	" breaks LINE_INDENT matching for the 'if' line and makes a following
-	" 'end' dedent only one level. The set may contain string literals: the
-	" group matches either one non-brace non-quote char or one whole "..."
+	" 'inside {...}' and 'unique {...}' sets must be dropped BEFORE the
+	" concatenation '}' drop below, or that drop eats the set's closing
+	" '}' (preceded by an identifier, followed by ')') and leaves an
+	" unmatched '{' -> 'b' in the codes, which breaks LINE_INDENT
+	" matching for the 'if' line and makes a following 'end' dedent
+	" only one level. The set may contain string literals: the group
+	" matches either one non-brace non-quote char or one whole "..."
 	" string, so a "}" inside a string does not end the set early.
-	let delims = substitute(delims, '\<inside\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
+	" 'unique' takes the same set form in a constraint
+	" ("unique {val, mode};") and its '{' is not dropped by the
+	" concatenation rule (it follows an identifier, not = ( , : ? '),
+	" while its '}' IS dropped, leaving the same unmatched 'b'
+	" (demo70).
+	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
 	let delims = substitute(delims, '\([A-Za-z_");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)
 	let delims = substitute(delims, '\".\{-}\(\\\)\@<!\"', '', 'g')
-	" set-membership 'inside {...}' is an expression, not a block: drop it
-	" whole (after the string strip, so text inside a string cannot trigger
-	" it and eat a real brace beyond the closing quote)
-	let delims = substitute(delims, '\<inside\s\+{[^}]*}', '', 'g')
+	" set-membership 'inside {...}' and constraint 'unique {...}' are
+	" expressions, not blocks: drop them whole (after the string strip,
+	" so text inside a string cannot trigger it and eat a real brace
+	" beyond the closing quote)
+	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{[^}]*}', '', 'g')
 	" context strips that must run BEFORE the keyword filter (their leading
 	" word - import/default - is not in the keep-list and is removed by the
 	" filter): a DPI import's function/task is the imported symbol kind, not
@@ -189,7 +196,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" converted to b/e by the [({]/[)}] rules further down.
 	let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
 	let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
-	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
+	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|wait_order\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
 	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
 	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
@@ -231,7 +238,10 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', 'e', 'g')
 	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|primitive\|randsequence\)\>', 'f', 'g')
 	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', 'h', 'g')
-	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\)\>', 'x', 'g')
+	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\|wait_order\)\>', 'x', 'g')
+	" 'wait_order' is a control statement like 'if': its body indents one
+	" level and its 'else' clause dedents back (demo68). Without this the
+	" body sits at the same level as 'wait_order' itself.
 	" 'else' is a control statement ('x') so a statement on the next line
 	" indents one level, and the dedent rule (prev2 x + prev1 exec) can also
 	" fire for end/endfunction/endtask that follow an else-branch.
@@ -262,6 +272,14 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
 	let delims = substitute(delims, '\s', '', 'g')
 	let delims = substitute(delims, '^o\+:', 'x', 'g')
+	" (no ternary-continuation rule here: a trailing '?' or ':' that
+	" opens a multi-line ternary needs the next line indented, but
+	" marking the line with 'x' dedents a ternary that is itself the
+	" body of an 'if' to the 'if' level via the chained-control rule
+	" (uvm_mem, uvm_reg), and a separate 'y' marker breaks 'else'
+	" matching and cascades through whole files (uvm_mem +1142
+	" lines). Multi-line ternary continuation is a known gap, not
+	" fixed; demo67 uses a single-line ternary.)
 	let delims = substitute(delims, ':', '', 'g')
 	let delims = substitute(delims, 'x\+', 'x', 'g')
 	let delims = substitute(delims, 'o\+', 'o', 'g')
