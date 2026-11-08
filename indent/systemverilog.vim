@@ -607,6 +607,19 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 		endwhile
 		return a:base_indnt + l:nest * &shiftwidth
 	endif
+	" `include inside an `ifdef body (reached when the previous line is code,
+	" so SlowIndent's include block did not return early): an `include is a
+	" body line like any statement, so sit at the code level (base_indnt),
+	" not at the opener level like a closer (`else/`elsif/`endif) or a
+	" `define (which aligns with its opener by convention). But a file
+	" guard's body stays at the guard level (demo16), so a guard
+	" `include falls through to the closer branch below.
+	if getline(a:line_num) =~ '^\s*`\s*\cinclude\>'
+		let l:m = s:FindIfdefMatch(a:line_num)
+		if l:m > 0 && !s:IsFileGuard(l:m)
+			return a:base_indnt
+		endif
+	endif
 	" closer (`else/`elsif/`endif): align with the matching `ifdef
 	let l:m = s:FindIfdefMatch(a:line_num)
 	return l:m > 0 ? indent(l:m) : a:base_indnt
@@ -1157,6 +1170,18 @@ function! s:RollPreprocIndent( line_num, base_indnt )
 			return a:base_indnt
 		endif
 		return a:base_indnt + b:sv_roll_run * &shiftwidth
+	endif
+	" `include inside an `ifdef body: a body line like any statement, so
+	" sit at the code level (base_indnt), not at the opener level like a
+	" closer. Reached when the previous line is code (RollFastIndent's
+	" include branch only returns early after a directive sig). But a
+	" file guard's body stays at the guard level (demo16), so a guard
+	" `include keeps the stack-top level below.
+	if l:line =~ '^\s*`\s*\cinclude\>'
+		if !empty(b:sv_roll_ifdefs) && s:IsFileGuard(b:sv_roll_ifdefs[-1][0])
+			return b:sv_roll_ifdefs[-1][1]
+		endif
+		return a:base_indnt
 	endif
 	if !empty(b:sv_roll_ifdefs)
 		return b:sv_roll_ifdefs[-1][1]
