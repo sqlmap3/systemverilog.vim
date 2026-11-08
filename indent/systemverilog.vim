@@ -1292,9 +1292,9 @@ function! s:RollFastIndent( line_num )
 	let l:sig = b:sv_roll_sig
 	let l:sig_is_endif = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\cendif\>')
 	let l:sig_is_ifdef = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>')
-	let l:sig_is_define = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\cdefine\>')
+	let l:sig_is_define = (l:sig > 0 && getline(l:sig) =~ '^\s*`\s*\c\(define\|undef\)\>')
 	let l:is_include = (l:line =~ '^\s*`\s*\cinclude\>')
-	let l:is_bigdir = (l:line =~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>')
+	let l:is_bigdir = (l:line =~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undefineall\)\>')
 	if l:is_include
 		if l:sig_is_endif
 			let l:m = get(b:sv_roll_match, l:sig, 0)
@@ -1350,7 +1350,14 @@ function! s:RollFastIndent( line_num )
 				let l:j += 1
 			endwhile
 			if l:fresh
+			" walk back through a run of `define/`undef lines to the
+			" directive before the whole run (a `define after an `undef
+			" after an `endif, demo33, resolves through the run to the
+			" closed region, not just to the `undef)
 			let l:prev_sig = prevnonblank(l:sig - 1)
+			while l:prev_sig > 0 && getline(l:prev_sig) =~ '^\s*`\s*\c\(define\|undef\)\>'
+				let l:prev_sig = prevnonblank(l:prev_sig - 1)
+			endwhile
 				if l:prev_sig > 0 && getline(l:prev_sig) =~ '^\s*`\s*\cendif\>'
 					let l:m = get(b:sv_roll_match, l:prev_sig, 0)
 					if l:m > 0
@@ -1558,11 +1565,14 @@ function! s:SlowIndent( line_num )
 	" macro CALL line (leading `name(...)) is ordinary code for this: it
 	" takes the ifdef-body +1 and the endif-alignment like any statement.
 	" Only the directives themselves (the `z` codes) are excluded.
-	if this_codeline !~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>'
+	" `define and `undef are NOT excluded: they must enter this loop so a
+	" `define/`undef after an `endif resolves through the closed region
+	" (residual (a) for `define; same for `undef, demo33).
+	if this_codeline !~ '^\s*`\s*\c\(begin_keywords\|celldefine\|default_nettype\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undefineall\)\>'
 		let ln = prevnonblank(a:line_num - 1)
 		while ln > 0
 			let l = getline(ln)
-			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\cinclude\>'
+			if l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\c\(include\|undef\)\>'
 				let ln = prevnonblank(ln - 1)
 				continue
 			endif
