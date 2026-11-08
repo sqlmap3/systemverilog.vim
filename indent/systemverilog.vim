@@ -157,9 +157,30 @@ function! s:ConvertToCodes( codeline, ... )
 	" context strips that must run BEFORE the keyword filter (their leading
 	" word - import/default - is not in the keep-list and is removed by the
 	" filter): a DPI import's function/task is the imported symbol kind, not
-	" a definition; a default clocking's clocking is a reference, not a block
+	" a definition; a default clocking reference is not a block. There are
+	" three 'default clocking' forms and the strip must tell them apart:
+	" (1) reference "default clocking cb;" — no block, strip it;
+	" (2a) definition "default clocking [@name] @(event); ... endclocking"
+	" — a real block, do NOT strip (its body indents, endclocking closes);
+	" (2b) declaration "default clocking @(event);" with no endclocking —
+	" no block, strip it. The '@' rule below strips (2b) but also (2a)
+	" without a name, whose endclocking then closes the enclosing group
+	" (demo47's checker); the single-line rule first removes a whole
+	" "default clocking ...; endclocking" line, and the identifier rule
+	" strips (1). Multi-line (2a) without a name is still a known gap:
+	" its endclocking closes the enclosing group (no 'default clocking'
+	" appears in UVM/VIP, so it is untested in real code).
 	let delims = substitute(delims, 'import[^\n]*function', '', 'g')
 	let delims = substitute(delims, 'import[^\n]*task', '', 'g')
+	" same for a DPI export ("export \"DPI-C\" function sv_callback;") and
+	" a modport export ("export task run()"): the function/task is the
+	" exported symbol kind, not a definition — without this the 'function'
+	" opens a block and everything after it indents one level too deep
+	" (demo48)
+	let delims = substitute(delims, 'export[^\n]*function', '', 'g')
+	let delims = substitute(delims, 'export[^\n]*task', '', 'g')
+	let delims = substitute(delims, 'default\s\+clocking[^;]*;\s*endclocking', '', 'g')
+	let delims = substitute(delims, 'default\s\+clocking\ze\s\+\h\w*\s*;', '', 'g')
 	let delims = substitute(delims, 'default\s\+clocking\ze\s*[@;]', '', 'g')
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
