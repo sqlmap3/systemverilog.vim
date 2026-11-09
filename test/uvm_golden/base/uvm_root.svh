@@ -440,11 +440,11 @@ task uvm_root::run_test(string test_name="");
       for (int i = 0; i < test_names.size(); i++) begin
         if (i != 0)
           sep = ", ";
-      test_list = {test_list, sep, test_names[i]};
+        test_list = {test_list, sep, test_names[i]};
+      end
+      uvm_report_warning("MULTTST", 
+      $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
     end
-    uvm_report_warning("MULTTST", 
-    $sformatf("Multiple (%0d) +UVM_TESTNAME arguments provided on the command line.  '%s' will be used.  Provided list: %s.", test_name_count, test_name, test_list), UVM_NONE);
-  end
 
   `else
 
@@ -702,21 +702,21 @@ function void uvm_root::m_do_timeout_settings();
       for (int i = 0; i < timeout_settings.size(); i++) begin
         if (i != 0)
           sep = "; ";
-      timeout_list = {timeout_list, sep, timeout_settings[i]};
+        timeout_list = {timeout_list, sep, timeout_settings[i]};
+      end
+      uvm_report_warning("MULTTIMOUT", 
+        $sformatf("Multiple (%0d) +UVM_TIMEOUT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
+      timeout_count, timeout, timeout_list), UVM_NONE);
     end
-    uvm_report_warning("MULTTIMOUT", 
-      $sformatf("Multiple (%0d) +UVM_TIMEOUT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
-    timeout_count, timeout, timeout_list), UVM_NONE);
+    uvm_report_info("TIMOUTSET",
+    $sformatf("'+UVM_TIMEOUT=%s' provided on the command line is being applied.", timeout), UVM_NONE);
+    void'($sscanf(timeout,"%d,%s",timeout_int,override_spec));
+    case(override_spec)
+      "YES"   : set_timeout(timeout_int, 1);
+      "NO"    : set_timeout(timeout_int, 0);
+      default : set_timeout(timeout_int, 1);
+    endcase
   end
-  uvm_report_info("TIMOUTSET",
-  $sformatf("'+UVM_TIMEOUT=%s' provided on the command line is being applied.", timeout), UVM_NONE);
-  void'($sscanf(timeout,"%d,%s",timeout_int,override_spec));
-  case(override_spec)
-    "YES"   : set_timeout(timeout_int, 1);
-    "NO"    : set_timeout(timeout_int, 0);
-    default : set_timeout(timeout_int, 1);
-  endcase
-end
 endfunction
 
 
@@ -888,8 +888,8 @@ function void uvm_root::m_process_default_sequence(string cfg);
   end
   else begin
     uvm_report_info("UVM_CMDLINE_PROC", {"Setting default sequence from the command line: +uvm_set_default_sequence=", cfg}, UVM_NONE);
-  uvm_config_db#(uvm_object_wrapper)::set(this, {split_val[0], ".", split_val[1]}, "default_sequence", w);
-end 
+    uvm_config_db#(uvm_object_wrapper)::set(this, {split_val[0], ".", split_val[1]}, "default_sequence", w);
+  end 
 
 endfunction : m_process_default_sequence
 
@@ -937,22 +937,22 @@ function void uvm_root::m_do_max_quit_settings();
       for (int i = 0; i < max_quit_settings.size(); i++) begin
         if (i != 0)
           sep = "; ";
-      max_quit_list = {max_quit_list, sep, max_quit_settings[i]};
+        max_quit_list = {max_quit_list, sep, max_quit_settings[i]};
+      end
+      uvm_report_warning("MULTMAXQUIT", 
+        $sformatf("Multiple (%0d) +UVM_MAX_QUIT_COUNT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
+      max_quit_count, max_quit, max_quit_list), UVM_NONE);
     end
-    uvm_report_warning("MULTMAXQUIT", 
-      $sformatf("Multiple (%0d) +UVM_MAX_QUIT_COUNT arguments provided on the command line.  '%s' will be used.  Provided list: %s.", 
-    max_quit_count, max_quit, max_quit_list), UVM_NONE);
+    uvm_report_info("MAXQUITSET",
+    $sformatf("'+UVM_MAX_QUIT_COUNT=%s' provided on the command line is being applied.", max_quit), UVM_NONE);
+    uvm_split_string(max_quit, ",", split_max_quit);
+    max_quit_int = split_max_quit[0].atoi();
+    case(split_max_quit[1])
+      "YES"   : srvr.set_max_quit_count(max_quit_int, 1);
+      "NO"    : srvr.set_max_quit_count(max_quit_int, 0);
+      default : srvr.set_max_quit_count(max_quit_int, 1);
+    endcase
   end
-  uvm_report_info("MAXQUITSET",
-  $sformatf("'+UVM_MAX_QUIT_COUNT=%s' provided on the command line is being applied.", max_quit), UVM_NONE);
-  uvm_split_string(max_quit, ",", split_max_quit);
-  max_quit_int = split_max_quit[0].atoi();
-  case(split_max_quit[1])
-    "YES"   : srvr.set_max_quit_count(max_quit_int, 1);
-    "NO"    : srvr.set_max_quit_count(max_quit_int, 0);
-    default : srvr.set_max_quit_count(max_quit_int, 1);
-  endcase
-end
 endfunction
 
 
@@ -1013,39 +1013,39 @@ function void uvm_root::m_check_verbosity();
     for (int i = 0; i < verb_settings.size(); i++) begin
       if (i != 0)
         sep = ", ";
-    verb_list = {verb_list, sep, verb_settings[i]};
-  end
-  uvm_report_warning("MULTVERB", 
-  $sformatf("Multiple (%0d) +UVM_VERBOSITY arguments provided on the command line.  '%s' will be used.  Provided list: %s.", verb_count, verb_string, verb_list), UVM_NONE);
-end
-
-if(plusarg == 1) begin
-  case(verb_string)
-    "UVM_NONE"    : verbosity = UVM_NONE;
-    "NONE"        : verbosity = UVM_NONE;
-    "UVM_LOW"     : verbosity = UVM_LOW;
-    "LOW"         : verbosity = UVM_LOW;
-    "UVM_MEDIUM"  : verbosity = UVM_MEDIUM;
-    "MEDIUM"      : verbosity = UVM_MEDIUM;
-    "UVM_HIGH"    : verbosity = UVM_HIGH;
-    "HIGH"        : verbosity = UVM_HIGH;
-    "UVM_FULL"    : verbosity = UVM_FULL;
-    "FULL"        : verbosity = UVM_FULL;
-    "UVM_DEBUG"   : verbosity = UVM_DEBUG;
-    "DEBUG"       : verbosity = UVM_DEBUG;
-    default       : begin
-      verbosity = verb_string.atoi();
-      if(verbosity > 0)
-        uvm_report_info("NSTVERB", $sformatf("Non-standard verbosity value, using provided '%0d'.", verbosity), UVM_NONE);
-      if(verbosity == 0) begin
-        verbosity = UVM_MEDIUM;
-        uvm_report_warning("ILLVERB", "Illegal verbosity value, using default of UVM_MEDIUM.", UVM_NONE);
-      end
+      verb_list = {verb_list, sep, verb_settings[i]};
     end
-  endcase
-end
+    uvm_report_warning("MULTVERB", 
+    $sformatf("Multiple (%0d) +UVM_VERBOSITY arguments provided on the command line.  '%s' will be used.  Provided list: %s.", verb_count, verb_string, verb_list), UVM_NONE);
+  end
 
-set_report_verbosity_level_hier(verbosity);
+  if(plusarg == 1) begin
+    case(verb_string)
+      "UVM_NONE"    : verbosity = UVM_NONE;
+      "NONE"        : verbosity = UVM_NONE;
+      "UVM_LOW"     : verbosity = UVM_LOW;
+      "LOW"         : verbosity = UVM_LOW;
+      "UVM_MEDIUM"  : verbosity = UVM_MEDIUM;
+      "MEDIUM"      : verbosity = UVM_MEDIUM;
+      "UVM_HIGH"    : verbosity = UVM_HIGH;
+      "HIGH"        : verbosity = UVM_HIGH;
+      "UVM_FULL"    : verbosity = UVM_FULL;
+      "FULL"        : verbosity = UVM_FULL;
+      "UVM_DEBUG"   : verbosity = UVM_DEBUG;
+      "DEBUG"       : verbosity = UVM_DEBUG;
+      default       : begin
+        verbosity = verb_string.atoi();
+        if(verbosity > 0)
+          uvm_report_info("NSTVERB", $sformatf("Non-standard verbosity value, using provided '%0d'.", verbosity), UVM_NONE);
+        if(verbosity == 0) begin
+          verbosity = UVM_MEDIUM;
+          uvm_report_warning("ILLVERB", "Illegal verbosity value, using default of UVM_MEDIUM.", UVM_NONE);
+        end
+      end
+    endcase
+  end
+
+  set_report_verbosity_level_hier(verbosity);
 
 endfunction
 

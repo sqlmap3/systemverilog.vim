@@ -1050,13 +1050,13 @@ function string uvm_table_printer::emit();
     int m;
     int qq[$];
 
-  q = '{m_max_name,m_max_type,m_max_size,m_max_value,100};
-  qq = q.max;
-  m = qq[0];
-  if(dash.len()<m) begin
-  dash = {m{"-"}};
-space = {m{" "}};
-    end
+    q = '{m_max_name,m_max_type,m_max_size,m_max_value,100};
+    qq = q.max;
+    m = qq[0];
+    if(dash.len()<m) begin
+    dash = {m{"-"}};
+  space = {m{" "}};
+end
   end
 
   if (knobs.header) begin

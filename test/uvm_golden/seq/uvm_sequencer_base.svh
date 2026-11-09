@@ -691,17 +691,17 @@ function void uvm_sequencer_base::grant_queued_locks();
       if(b>arb_sequence_q.size()-1)
         arb_sequence_q=blocked_seqs;
       else
-    arb_sequence_q={blocked_seqs,arb_sequence_q[b:arb_sequence_q.size()-1]};
+        arb_sequence_q={blocked_seqs,arb_sequence_q[b:arb_sequence_q.size()-1]};
 
-  foreach(not_blocked_seqs[idx]) begin
-    lock_list.push_back(not_blocked_seqs[idx].sequence_ptr);  
-    m_set_arbitration_completed(not_blocked_seqs[idx].request_id);
-  end
+      foreach(not_blocked_seqs[idx]) begin
+        lock_list.push_back(not_blocked_seqs[idx].sequence_ptr);  
+        m_set_arbitration_completed(not_blocked_seqs[idx].request_id);
+      end
 
-  // trigger listeners if lock list has changed
-  if(not_blocked_seqs.size()) 	
-    m_update_lists();	
-end	
+      // trigger listeners if lock list has changed
+      if(not_blocked_seqs.size()) 	
+        m_update_lists();	
+    end	
   end
 endfunction
 

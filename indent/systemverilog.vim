@@ -124,15 +124,38 @@ function! s:ConvertToCodes( codeline, ... )
 	" statement, not an expression; leaving it makes an unmatched 'e' that
 	" dedents every following line, demo44). A real struct/enum/constraint
 	" '}' preceded by ';' is never followed by , ; ) : on the same line, so
-	" it is unaffected. Bins/range literals ({0}, {[0:15]},
-	" {8'hF0}) keep their braces so they stay balanced: their '}' is preceded
-	" by a digit or ] which the prefix class excludes. This must run BEFORE
-	" the string strip (the '"' operand boundary distinguishes a
+	" it is unaffected. The '{' follow class and the '}' prefix class both
+	" include digits, so a concatenation whose first element is an
+	" identifier and whose last is a based literal ("{sig, 2'b0, 4'b0}")
+	" drops BOTH braces: dropping only the '{' leaves an unmatched 'e'
+	" that dedents the line and everything after it (rlaphy_env.sv
+	" else-begin call, 2026-11-09). Bins/range literals ({0}, {8'hF0},
+	" {[0:15]}) likewise drop both braces (their '{' is followed by a
+	" digit or '[' and their '}' is preceded by a digit or ']'), so they
+	" stay balanced. A digit after '{' is NOT dropped when it is a
+	" replication count ("{2{data}}"): the digit must not be followed by
+	" more digits and then '{', or the outer '{' would be dropped while
+	" its '}' (preceded by ']' or '}') is kept (demo67). This must run
+	" BEFORE the string strip (the '"' operand boundary distinguishes a
 	" concatenation from a bins value). NOTE: the classes must be spelled
 	" [A-Za-z_"] etc - inside a [] collection \h means the two literal
 	" characters '\' and 'h', not head-of-word.
-	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*[A-Za-z_"$]', '\1', 'g')
-	let delims = substitute(delims, '^\s*{\ze\s*[A-Za-z_"$]', '', 'g')
+	" 'dist {...}' and 'intersect {...}' sets: the '{' follows a keyword,
+	" not = ( , : ? ', so the concatenation '{' rule below does not drop
+	" it — but the '}' rule does drop a '}' preceded by a digit, leaving
+	" an unmatched 'b' that over-indents everything after (demo3,
+	" demo9, demo11, demo46). Drop the '{' here when followed by a digit
+	" (not a replication count) or an identifier, same follow class as
+	" below. 'inside'/'unique' sets are dropped whole by their own rules.
+	" A '}' preceded by ']' is dropped too (a concatenation ending in a
+	" bit-select, "{sig[1], sig[0]}", whose '{' was dropped as a
+	" concatenation but whose '}' the digit-only prefix kept, leaving an
+	" unmatched 'e' — rlaphy_env.sv 1496/1497, 2026-11-09); the matching
+	" '{' for a range literal "{[0:15]}" is dropped as well (its follow
+	" class gains '['), so the pair stays balanced either way.
+	let delims = substitute(delims, '\<\(dist\|intersect\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '\1', 'g')
+	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '\1', 'g')
+	let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '', 'g')
 	" based literals (8'hFF, 4'b10X1, 'd42) are number digits, not an
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
@@ -151,7 +174,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" while its '}' IS dropped, leaving the same unmatched 'b'
 	" (demo70).
 	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
-	let delims = substitute(delims, '\([A-Za-z_");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?]\)', '', 'g')
+	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?]\)', '', 'g')
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)

@@ -748,6 +748,6 @@ function automatic string m_uvm_string_queue_join(ref string i[$]);
     m_uvm_string_queue_join = {>>{i}};
   `else
     foreach(i[idx])
-  m_uvm_string_queue_join = {m_uvm_string_queue_join,i[idx]};
+      m_uvm_string_queue_join = {m_uvm_string_queue_join,i[idx]};
   `endif
 endfunction

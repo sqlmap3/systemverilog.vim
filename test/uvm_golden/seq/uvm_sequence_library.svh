@@ -189,160 +189,160 @@ class uvm_sequence_library #(type REQ=uvm_sequence_item,RSP=REQ) extends uvm_seq
   //
   //
   //
-protected int seqs_distrib[string]  = '{default:0};
+  protected int seqs_distrib[string]  = '{default:0};
 
 
-// Variable- sequences
-//
-// The container of all registered sequence types. For <sequence_count>
-// times, this sequence library will randomly select and execute a
-// sequence from this list of sequence types.
-//
-protected uvm_object_wrapper sequences[$];
-
-
-
-// Constraint: valid_rand_selection
-//
-// Constrains <select_rand> to be a valid index into the ~sequences~ array
-//
-constraint valid_rand_selection {
-  select_rand inside {[0:sequences.size()-1]};
-}
+  // Variable- sequences
+  //
+  // The container of all registered sequence types. For <sequence_count>
+  // times, this sequence library will randomly select and execute a
+  // sequence from this list of sequence types.
+  //
+  protected uvm_object_wrapper sequences[$];
 
 
 
-// Constraint: valid_randc_selection
-//
-// Constrains <select_randc> to be a valid index into the ~sequences~ array
-//
-constraint valid_randc_selection {
-  select_randc inside {[0:sequences.size()-1]};
-}
-
-
-// Constraint: valid_sequence_count
-//
-// Constrains <sequence_count> to lie within the range defined by
-// <min_random_count> and <max_random_count>.
-//
-constraint valid_sequence_count {
-  sequence_count inside {[min_random_count:max_random_count]};
-}
+  // Constraint: valid_rand_selection
+  //
+  // Constrains <select_rand> to be a valid index into the ~sequences~ array
+  //
+  constraint valid_rand_selection {
+    select_rand inside {[0:sequences.size()-1]};
+  }
 
 
 
-// Function: select_sequence
-//
-// Generates an index used to select the next sequence to execute. 
-// Overrides must return a value between 0 and ~max~, inclusive.
-// Used only for <UVM_SEQ_LIB_USER> selection mode. The
-// default implementation returns 0, incrementing on successive calls,
-// wrapping back to 0 when reaching ~max~.
-//
-extern virtual function int unsigned select_sequence(int unsigned max);
+  // Constraint: valid_randc_selection
+  //
+  // Constrains <select_randc> to be a valid index into the ~sequences~ array
+  //
+  constraint valid_randc_selection {
+    select_randc inside {[0:sequences.size()-1]};
+  }
+
+
+  // Constraint: valid_sequence_count
+  //
+  // Constrains <sequence_count> to lie within the range defined by
+  // <min_random_count> and <max_random_count>.
+  //
+  constraint valid_sequence_count {
+    sequence_count inside {[min_random_count:max_random_count]};
+  }
 
 
 
-//-----------------------------
-// Group: Sequence registration
-//-----------------------------
-
-// Function: add_typewide_sequence
-//
-// Registers the provided sequence type with this sequence library
-// type. The sequence type will be available for selection by all instances
-// of this class. Sequence types already registered are silently ignored.
-//
-extern static function void add_typewide_sequence(uvm_object_wrapper seq_type);
+  // Function: select_sequence
+  //
+  // Generates an index used to select the next sequence to execute. 
+  // Overrides must return a value between 0 and ~max~, inclusive.
+  // Used only for <UVM_SEQ_LIB_USER> selection mode. The
+  // default implementation returns 0, incrementing on successive calls,
+  // wrapping back to 0 when reaching ~max~.
+  //
+  extern virtual function int unsigned select_sequence(int unsigned max);
 
 
 
-// Function: add_typewide_sequences
-//
-// Registers the provided sequence types with this sequence library
-// type. The sequence types will be available for selection by all instances
-// of this class. Sequence types already registered are silently ignored.
-//
-extern static function void add_typewide_sequences(uvm_object_wrapper seq_types[$]);
+  //-----------------------------
+  // Group: Sequence registration
+  //-----------------------------
+
+  // Function: add_typewide_sequence
+  //
+  // Registers the provided sequence type with this sequence library
+  // type. The sequence type will be available for selection by all instances
+  // of this class. Sequence types already registered are silently ignored.
+  //
+  extern static function void add_typewide_sequence(uvm_object_wrapper seq_type);
 
 
-// Function: add_sequence
-//
-// Registers the provided sequence type with this sequence library
-// instance. Sequence types already registered are silently ignored.
-//
-extern function void add_sequence(uvm_object_wrapper seq_type);
+
+  // Function: add_typewide_sequences
+  //
+  // Registers the provided sequence types with this sequence library
+  // type. The sequence types will be available for selection by all instances
+  // of this class. Sequence types already registered are silently ignored.
+  //
+  extern static function void add_typewide_sequences(uvm_object_wrapper seq_types[$]);
 
 
-// Function: add_sequences
-//
-// Registers the provided sequence types with this sequence library
-// instance. Sequence types already registered are silently ignored.
-//
-extern virtual function void add_sequences(uvm_object_wrapper seq_types[$]);
+  // Function: add_sequence
+  //
+  // Registers the provided sequence type with this sequence library
+  // instance. Sequence types already registered are silently ignored.
+  //
+  extern function void add_sequence(uvm_object_wrapper seq_type);
 
 
-// Function: remove_sequence
-//
-// Removes the given sequence type from this sequence library
-// instance. If the type was registered statically, the sequence queues of
-// all instances of this library will be updated accordingly.
-// A warning is issued if the sequence is not registered.
-//
-extern virtual function void remove_sequence(uvm_object_wrapper seq_type);
+  // Function: add_sequences
+  //
+  // Registers the provided sequence types with this sequence library
+  // instance. Sequence types already registered are silently ignored.
+  //
+  extern virtual function void add_sequences(uvm_object_wrapper seq_types[$]);
 
 
-// Function: get_sequences
-//
-// 
-// Append to the provided ~seq_types~ array the list of registered ~sequences~.
-//
-extern virtual function void get_sequences(ref uvm_object_wrapper seq_types[$]);
+  // Function: remove_sequence
+  //
+  // Removes the given sequence type from this sequence library
+  // instance. If the type was registered statically, the sequence queues of
+  // all instances of this library will be updated accordingly.
+  // A warning is issued if the sequence is not registered.
+  //
+  extern virtual function void remove_sequence(uvm_object_wrapper seq_type);
 
 
-// Function: init_sequence_library
-//
-// All subtypes of this class must call init_sequence_library in its
-// constructor.
-extern function void init_sequence_library();
+  // Function: get_sequences
+  //
+  // 
+  // Append to the provided ~seq_types~ array the list of registered ~sequences~.
+  //
+  extern virtual function void get_sequences(ref uvm_object_wrapper seq_types[$]);
 
-// Macro: uvm_sequence_library_utils
-//
-// All subtypes of this class must invoke the `uvm_sequence_library_utils
-// macro.
-//
-//| class my_seq_lib extends uvm_sequence_library #(my_item);
-//|   `uvm_object_utils(my_seq_lib)
-//|   `uvm_sequence_library_utils(my_seq_lib)
-//|    function new(string name="");
-//|      super.new(name);
-//|      init_sequence_library();
-//|    endfunction
-//|    ...
-//| endclass
 
-//------------------------------------------
-// PRIVATE - INTERNAL - NOT PART OF STANDARD
-//------------------------------------------
+  // Function: init_sequence_library
+  //
+  // All subtypes of this class must call init_sequence_library in its
+  // constructor.
+  extern function void init_sequence_library();
 
-`uvm_object_param_utils(uvm_sequence_library #(REQ,RSP))
-typedef uvm_sequence_library #(REQ,RSP) this_type;
+  // Macro: uvm_sequence_library_utils
+  //
+  // All subtypes of this class must invoke the `uvm_sequence_library_utils
+  // macro.
+  //
+  //| class my_seq_lib extends uvm_sequence_library #(my_item);
+  //|   `uvm_object_utils(my_seq_lib)
+  //|   `uvm_sequence_library_utils(my_seq_lib)
+  //|    function new(string name="");
+  //|      super.new(name);
+  //|      init_sequence_library();
+  //|    endfunction
+  //|    ...
+  //| endclass
 
-static const string type_name = "uvm_sequence_library #(REQ,RSP)";
-static protected uvm_object_wrapper m_typewide_sequences[$];
-bit m_abort;
+  //------------------------------------------
+  // PRIVATE - INTERNAL - NOT PART OF STANDARD
+  //------------------------------------------
 
-extern static   function bit  m_static_check(uvm_object_wrapper seq_type);
-extern static   function bit  m_check(uvm_object_wrapper seq_type, this_type lib);
-extern          function bit  m_dyn_check(uvm_object_wrapper seq_type);
-extern          function void m_get_config();
-extern static   function bit  m_add_typewide_sequence(uvm_object_wrapper seq_type);
-extern virtual  task          execute(uvm_object_wrapper wrap);
+  `uvm_object_param_utils(uvm_sequence_library #(REQ,RSP))
+  typedef uvm_sequence_library #(REQ,RSP) this_type;
 
-extern virtual  task          body();
-extern virtual  function void do_print(uvm_printer printer);
-extern          function void pre_randomize();
+  static const string type_name = "uvm_sequence_library #(REQ,RSP)";
+  static protected uvm_object_wrapper m_typewide_sequences[$];
+  bit m_abort;
+
+  extern static   function bit  m_static_check(uvm_object_wrapper seq_type);
+  extern static   function bit  m_check(uvm_object_wrapper seq_type, this_type lib);
+  extern          function bit  m_dyn_check(uvm_object_wrapper seq_type);
+  extern          function void m_get_config();
+  extern static   function bit  m_add_typewide_sequence(uvm_object_wrapper seq_type);
+  extern virtual  task          execute(uvm_object_wrapper wrap);
+
+  extern virtual  task          body();
+  extern virtual  function void do_print(uvm_printer printer);
+  extern          function void pre_randomize();
 
 endclass
 
