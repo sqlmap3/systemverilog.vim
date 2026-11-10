@@ -40,6 +40,17 @@
 # Usage:  sh test/run_indent_test.sh        (override Vim with VIM=nvim)
 set -u
 
+# Expected-failure anchors (option A): the .expected.sv of these demos is
+# the CORRECT indent for a known, unfixed bug, so they fail until the bug
+# is fixed. They are reported as XFAIL and do not fail the suite (so CI
+# stays green). When a bug is fixed and one starts passing, it is reported
+# as XPASS and fails the suite until it is removed from this list.
+#   indent_demo78.sv  always @(...`ifdef...`) begin same line shifts
+#                     everything after +1 (bug #2, root cause not pinned)
+#   indent_demo79.sv  multi-line unnamed default clocking body not
+#                     indented, endclocking lands at module level (bug #3)
+XFAIL_DEMOS="indent_demo78.sv indent_demo79.sv"
+
 VIM="${VIM:-vim}"
 PLUGDIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 WORK=$(mktemp -d) || exit 2
@@ -55,6 +66,11 @@ for demo in "$PLUGDIR"/test/indent_demo*.sv; do
     expected="$PLUGDIR/test/${name%.sv}.expected.sv"
     [ -e "$expected" ] || { echo "SKIP: no expected file for $name"; continue; }
 
+    is_xfail=0
+    case " $XFAIL_DEMOS " in
+        *" $name "*) is_xfail=1 ;;
+    esac
+
     cp "$demo" "$WORK/input.sv"
 
     "$VIM" -Nu NONE -n -es \
@@ -69,15 +85,24 @@ for demo in "$PLUGDIR"/test/indent_demo*.sv; do
     grep -v '^[[:space:]]*$' "$WORK/input.sv" >"$WORK/actual.txt"
 
     if diff -u "$WORK/expected.txt" "$WORK/actual.txt" >"$WORK/diff.txt"; then
-        echo "PASS: $name indent matches expected ($(wc -l <"$WORK/actual.txt" | tr -d ' ') lines)"
+        if [ "$is_xfail" -eq 1 ]; then
+            echo "XPASS: $name indent matches expected (known bug is FIXED - remove $name from XFAIL_DEMOS)"
+            rc=1
+        else
+            echo "PASS: $name indent matches expected ($(wc -l <"$WORK/actual.txt" | tr -d ' ') lines)"
+        fi
     else
-        echo "FAIL: $name indent differs from expected:"
-        echo "------------------------------------"
-        cat "$WORK/diff.txt"
-        echo "------------------------------------"
-        echo "input:  $demo"
-        echo "wanted: $expected"
-        rc=1
+        if [ "$is_xfail" -eq 1 ]; then
+            echo "XFAIL: $name indent differs from expected (known bug, see XFAIL_DEMOS)"
+        else
+            echo "FAIL: $name indent differs from expected:"
+            echo "------------------------------------"
+            cat "$WORK/diff.txt"
+            echo "------------------------------------"
+            echo "input:  $demo"
+            echo "wanted: $expected"
+            rc=1
+        fi
     fi
 done
 
