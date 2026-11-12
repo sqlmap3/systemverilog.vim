@@ -943,12 +943,13 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	return -1
 endfunction
 
-" True if the region ending at a:endif_ln ends with a control statement
-" that lives INSIDE the region (a direct control line, or a control tail
-" whose opener is inside the region). False for Form 1, where the tail
-" resolves to an opener ABOVE the `ifdef: the body after such an `endif
-" belongs to the enclosing if, and the line after the body dedents via
-" the normal prev2 rule, not through the region.
+" True if the region ending at a:endif_ln ends with a control statement:
+" a direct control line, a control tail whose opener is inside the
+" region, or a control tail whose opener sits above the `ifdef (Form 1)
+" and is reached by crossing a directive. The Form 1 case must count:
+" the body after such an `endif belongs to the enclosing if, and a
+" compound body (begin...end) after it can only dedent back through
+" the region (the normal prev2 rule does not see past the `end`).
 function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
 	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
 	if l:last <= 0
@@ -957,9 +958,31 @@ function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
 	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
 		return 1
 	endif
-	" see s:AfterEndifBodyIndent: no directive crossing required here
+	" see s:AfterEndifBodyIndent: no directive crossing required here.
+	" Entry and exit must agree: either the head is inside the region,
+	" or the tail walk crosses a directive to reach a head above it
+	" (Form 1) -- both govern the lines after the `endif.
 	let l:chead = s:ControlTailHead(l:last, 0)
-	return l:chead > a:ifdef_ln
+	return l:chead > a:ifdef_ln || s:ControlTailHead(l:last, 1) > 0
+endfunction
+
+" If the region ending at a:endif_ln (whose matching `ifdef is
+" a:ifdef_ln) ends with a control statement, return the line the code
+" after the region's body resolves through: the `ifdef line when the
+" control lives inside the region (Form 2), or the control head above
+" the region when the region's last line is a tail resolving there
+" (Form 1: the following line aligns with that head, not with the
+" region, whose level is the head's body level). Otherwise 0.
+function! s:RegionExitLine( endif_ln, ifdef_ln )
+	if !s:RegionEndsWithControl(a:endif_ln, a:ifdef_ln)
+		return 0
+	endif
+	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
+	let l:chead = l:last > 0 ? s:ControlTailHead(l:last, 0) : 0
+	if l:chead > 0 && l:chead <= a:ifdef_ln
+		return l:chead
+	endif
+	return a:ifdef_ln
 endfunction
 
 " True when the code line at a:prev2_ln sits inside a conditional region
@@ -993,10 +1016,12 @@ endfunction
 " If a:prev1_ln sits inside a branch that is mutually exclusive with
 " the branch holding a:line_num (an `else/`elsif strictly between the
 " two whose matching `ifdef is at or above a:prev1_ln), return the code
-" line before that `ifdef; otherwise return a:prev1_ln unchanged. Used
-" only for `)`-tail lines: a condition continuation in the second
-" branch must see the same enclosing context as the first branch, not
-" the sibling branch's closing tail (demo86).
+" line before that `ifdef; otherwise return a:prev1_ln unchanged. The
+" redirect applies only when the line closes the shared condition (a
+" `)`-tail line) or continues it past a sibling line that already
+" closed the paren (the code before the `ifdef has an unclosed
+" paren/begin): a fresh statement after the sibling branch keeps its
+" natural prev1 (demo86, demo91).
 function! s:PrevBeforeBranch( prev1_ln, line_num )
 	let l:ln = prevnonblank(a:line_num - 1)
 	while l:ln > a:prev1_ln
@@ -1022,7 +1047,32 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 					endif
 					let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
 				endwhile
-				return l:pl
+				" redirect only for a `)`-tail line (more closes than
+				" opens: a complete `if (c)` head is not a tail), or
+				" for a continuation line: an unterminated line that
+				" is not itself a complete balanced head, whose
+				" sibling line closed the shared paren (so it cannot
+				" govern this line), inside a construct whose head
+				" above the `ifdef is itself unclosed (a fresh
+				" statement, or a continuation after a plain sibling
+				" line, keeps its natural prev1)
+				let l:cur = substitute(getline(a:line_num), '"\(\\.\|[^"\\]\)*"', '', 'g')
+				let l:cur = substitute(l:cur, '/\*.\{-}\*/', '', 'g')
+				let l:cur = substitute(l:cur, '\/\/.*', '', '')
+				let l:opens = len(substitute(l:cur, '[^(]', '', 'g'))
+				let l:closes = len(substitute(l:cur, '[^)]', '', 'g'))
+				if getline(a:line_num) =~ ')\s*$' && getline(a:line_num) !~ ');\s*$' && l:closes > l:opens
+					return l:pl
+				endif
+				if getline(a:line_num) !~ ';\s*$' && !(getline(a:line_num) =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl)) =~ 'b'
+					let l:sib = substitute(getline(a:prev1_ln), '"\(\\.\|[^"\\]\)*"', '', 'g')
+					let l:sib = substitute(l:sib, '/\*.\{-}\*/', '', 'g')
+					let l:sib = substitute(l:sib, '\/\/.*', '', '')
+					if len(substitute(l:sib, '[^)]', '', 'g')) > len(substitute(l:sib, '[^(]', '', 'g'))
+						return l:pl
+					endif
+				endif
+				return a:prev1_ln
 			endif
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
@@ -1053,24 +1103,73 @@ endfunction
 
 " If a:p1_ln is an `else`/`else if` continuation line, walk up the
 " if/else-if chain to the first `if` line and return it; otherwise
-" return a:p1_ln unchanged. The chain must be unbroken: every
-" stepped-to line starts with `if` or `else if`. At most 8 steps.
+" return a:p1_ln unchanged. A branch may be a single statement, a
+" multi-line condition (resolved via s:ControlTailHead), or a
+" begin...end block (stepped over via s:MatchBlockOpener, whether the
+" `end` sits on its own line or shares the line with the `else`).
+" At most 8 steps.
 function! s:ElseChainHead( p1_ln )
 	let l:ln = a:p1_ln
 	let l:limit = 8
-	while l:limit > 0 && getline(l:ln) =~ '^\s*else\>'
+	while l:limit > 0 && getline(l:ln) =~ '^\s*\%(end\s\+\)\?else\>'
 		let l:limit -= 1
-		let l:prev = prevnonblank(l:ln - 1)
-		if l:prev <= 0
-			break
-		endif
-		if getline(l:prev) =~ '^\s*\(else\s\+\)\?if\>'
-			let l:ln = l:prev
+		if getline(l:ln) =~ '^\s*end\s\+else\>'
+			let l:op = s:MatchBlockOpener(l:ln)
+			if l:op <= 0
+				break
+			endif
+			let l:cand = getline(l:op) =~ '^\s*begin\>' ? prevnonblank(l:op - 1) : l:op
 		else
+			let l:body = prevnonblank(l:ln - 1)
+			if l:body <= 0
+				break
+			endif
+			if s:ConvertToCodes(getline(l:body)) =~ '^[he]$'
+				let l:op = s:MatchBlockOpener(l:body)
+				if l:op <= 0
+					break
+				endif
+				let l:cand = getline(l:op) =~ '^\s*begin\>' ? prevnonblank(l:op - 1) : l:op
+			elseif getline(l:body) =~ '^\s*\%(else\s\+\)\?if\>'
+				" the previous branch's body sits on its `if` line
+				" (`if (c) y = 1;`): the body line IS the chain link
+				let l:cand = l:body
+			else
+				let l:cand = prevnonblank(l:body - 1)
+			endif
+		endif
+		if l:cand <= 0
 			break
 		endif
+		if getline(l:cand) =~ '^\s*\%(else\s\+\)\?if\>'
+			let l:ln = l:cand
+			continue
+		endif
+		let l:ch = s:ControlTailHead(l:cand, 0)
+		if l:ch > 0
+			let l:ln = l:ch
+			continue
+		endif
+		break
 	endwhile
 	return l:ln
+endfunction
+
+" The line before the chain head above a:ln, for region resolution:
+" resolve a:ln through its else-chain, and if the line before the head
+" is itself a bare `else` (the head's body sits between the `else` and
+" a:ln), resolve that `else` through its chain too. An `else` that
+" opens a block (`else begin`, `end else begin`) is not stepped over:
+" the line above it sits inside that block. Returns 0 when there is
+" no line above the head.
+function! s:ChainHeadPrev( ln )
+	let l:hd = s:ElseChainHead(a:ln)
+	let l:pe = prevnonblank(l:hd - 1)
+	if l:pe > 0 && getline(l:pe) =~ '^\s*\%(end\s\+\)\?else\>' && s:ConvertToCodes(getline(l:pe)) !~ 'b'
+		let l:hd = s:ElseChainHead(l:pe)
+		let l:pe = prevnonblank(l:hd - 1)
+	endif
+	return l:pe
 endfunction
 
 " Return the line number of the block/group opener matching the close at
@@ -1094,12 +1193,13 @@ endfunction
 
 " If a:line_num's prev1 is a statement that is itself the body of a control
 " statement inside an `ifdef region (the line before prev1 is an `endif and
-" AfterEndifBodyIndent says prev1 is that control's body), return the
-" matching `ifdef line number; otherwise 0. Likewise if prev1 closes a
-" begin/end (or {...}) block whose opener is itself such a body: the
-" current line follows the whole if statement and resolves through the
-" region. Used to resolve a line that follows such a body (a close or a
-" new statement) through the region.
+" AfterEndifBodyIndent says prev1 is that control's body), return the line
+" the current line resolves through: the matching `ifdef for an in-region
+" control, or the enclosing control head for a Form-1 tail; otherwise 0.
+" Likewise if prev1 closes a begin/end (or {...}) block whose opener is
+" itself such a body: the current line follows the whole if statement and
+" resolves through the region. Used to resolve a line that follows such
+" a body (a close or a new statement) through the region.
 function! s:BodyAfterEndifIfdef( line_num )
 	" an `else` continuation belongs to the if statement above it, not to
 	" the line after the body: it aligns with its `if` via the normal
@@ -1136,12 +1236,13 @@ function! s:BodyAfterEndifIfdef( line_num )
 		endif
 		" the opener may itself be an `else` continuation (else begin):
 		" resolve from the first `if` of its chain
-		let l:ope = prevnonblank(s:ElseChainHead(l:op) - 1)
+		let l:ope = s:ChainHeadPrev(l:op)
 		let l:ope_endif = l:ope > 0 ? s:ChainToEndif(l:ope) : 0
 		if l:ope_endif > 0
 			let l:m = s:FindIfdefMatch(l:ope_endif)
-			if l:m > 0 && s:RegionEndsWithControl(l:ope_endif, l:m)
-				return l:m
+			let l:res = l:m > 0 ? s:RegionExitLine(l:ope_endif, l:m) : 0
+			if l:res > 0
+				return l:res
 			endif
 		endif
 		return 0
@@ -1153,13 +1254,13 @@ function! s:BodyAfterEndifIfdef( line_num )
 	" of a chain of bare control heads hanging off an `endif, or the
 	" tail of an if/else-if chain whose first `if` is such a body
 	" (transitive: the current line follows the whole if statement)
-	let l:hd = s:ElseChainHead(l:p1)
-	let l:pe = prevnonblank(l:hd - 1)
+	let l:pe = s:ChainHeadPrev(l:p1)
 	let l:pe_endif = l:pe > 0 ? s:ChainToEndif(l:pe) : 0
 	if l:pe_endif > 0
 		let l:m = s:FindIfdefMatch(l:pe_endif)
-		if l:m > 0 && s:RegionEndsWithControl(l:pe_endif, l:m)
-			return l:m
+		let l:res = l:m > 0 ? s:RegionExitLine(l:pe_endif, l:m) : 0
+		if l:res > 0
+			return l:res
 		endif
 	endif
 	return 0
@@ -1661,10 +1762,10 @@ function! s:RollPlainLine( line_num )
 	" through the region in the full path; this shortcut's one-level
 	" dedent from the body indent lands one level too deep. The chain
 	" pre-check keeps the common case cheap: from the line before prev
-	" (or before the first `if` of prev's else-chain), walk up over
-	" bare control heads to an `endif; only then run the full check.
-	let l:hd = s:ElseChainHead(l:prev)
-	let l:pe = prevnonblank(l:hd - 1)
+	" (or before the first `if` of prev's else-chain, stepping over a
+	" bare `else` when prev is that branch's body), walk up over bare
+	" control heads to an `endif; only then run the full check.
+	let l:pe = s:ChainHeadPrev(l:prev)
 	if l:pe > 0 && s:ChainToEndif(l:pe) > 0 && s:BodyAfterEndifIfdef(a:line_num) > 0
 		return -1
 	endif
@@ -1793,7 +1894,14 @@ function! s:RollFastIndent( line_num )
 				" aligns with the `ifdef, not one level deeper
 				return indent(l:sig)
 			else
-				return indent(l:sig) + l:sw
+				" a condition continuation split across branches must see
+				" the code before the `ifdef, not indent+sw off the
+				" directive: fall through to the prev1/prev2 resolution
+				" below when PrevBeforeBranch would redirect this line
+				let l:pp = prevnonblank(l:sig - 1)
+				if !(l:pp > 0 && s:PrevBeforeBranch(l:pp, l:N) != l:pp)
+					return indent(l:sig) + l:sw
+				endif
 			endif
 		elseif l:sig_is_define
 			" the sig is a `define: resolve through it to the directive
@@ -1868,10 +1976,11 @@ function! s:RollFastIndent( line_num )
 	if l:p1 < 0
 		return -1
 	endif
-	" a `)`-tail line in a branch after `else/`elsif must see the code
-	" before the `ifdef, not the sibling branch's closing tail; prev2
-	" follows from the new prev1's position in the rolling list
-	if l:p1 > 0 && l:line =~ ')\s*$' && l:line !~ ');\s*$'
+	" a line in a branch after `else/`elsif must see the code before
+	" the `ifdef, not the sibling branch's lines, when it closes the
+	" shared condition or continues it (s:PrevBeforeBranch decides);
+	" prev2 follows from the new prev1's position in the rolling list
+	if l:p1 > 0
 		let l:np1 = s:PrevBeforeBranch(l:p1, l:N)
 		if l:np1 > 0 && l:np1 != l:p1 && has_key(b:sv_roll_ucodes, l:np1)
 			let l:p1 = l:np1
@@ -2164,6 +2273,14 @@ function! s:SlowIndent( line_num )
 					" aligns with the `ifdef, not one level deeper
 					return indent(ln)
 				endif
+				" a condition continuation split across branches must see
+				" the code before the `ifdef, not indent+sw off the
+				" directive: fall through to the prev1 resolution below
+				" when PrevBeforeBranch would redirect this line
+				let l:pp = prevnonblank(ln - 1)
+				if l:pp > 0 && s:PrevBeforeBranch(l:pp, a:line_num) != l:pp
+					break
+				endif
 				return indent(ln) + &shiftwidth
 			endif
 			break
@@ -2213,9 +2330,10 @@ function! s:SlowIndent( line_num )
 		let prev1_codes = s:ConvertToCodes(prev1_codeline)
 	endwhile
 
-	" a `)`-tail line in a branch after `else/`elsif must see the code
-	" before the `ifdef, not the sibling branch's closing tail
-	if prev1_line_num > 0 && this_codeline =~ ')\s*$' && this_codeline !~ ');\s*$'
+	" a line in a branch after `else/`elsif must see the code before
+	" the `ifdef, not the sibling branch's lines, when it closes the
+	" shared condition or continues it (s:PrevBeforeBranch decides)
+	if prev1_line_num > 0
 		let l:np1 = s:PrevBeforeBranch(prev1_line_num, a:line_num)
 		if l:np1 > 0 && l:np1 != prev1_line_num
 			let prev1_line_num = l:np1
