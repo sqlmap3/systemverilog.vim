@@ -6,9 +6,9 @@
 
 **Language:** English  
 **Maintainer:** [sqlmap3](https://github.com/sqlmap3/systemverilog.vim)  
-**Version:** 0.3  
+**Version:** 0.6.0  
 **First Change:** 2025-12-06  
-**Last Change:** Fri Oct 09 2026  
+**Last Change:** Thu Nov 12 2026  
 
 ---
 
@@ -20,10 +20,12 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
 ## Features
 
 - Accurate indentation for SystemVerilog and UVM, including:
+  - Preprocessor-selected conditionals (`` `ifdef `` / `` `else `` / `` `endif ``) with `if/else`, `begin...end`, and multi-line conditions spanning directives
+  - Complex `else if` chains and loop constructs (`for`, `foreach`) under preprocessor blocks
   - Case branch labels (`{10,11}:`, numeric/literal, `default:`) align with subsequent `if/else`
   - UVM macro lines (e.g., `` `uvm_info ``, `` `uvm_error ``) treated as statement terminators
   - Stable grouping for `class/endclass`, `function/endfunction`, `task/endtask`
-  - Handles block/line comments and strings robustly
+  - Handles block/line comments and strings robustly (with trailing inline comment immunity)
   - UVM-specific syntax highlighting and matchit pairs
   - Indentation fixes for single-line `if ... begin ... end` and `else` on next line
   - Lower priority for `assert`/`else` in multi-line conditions (if/else jump preferred)
@@ -51,6 +53,18 @@ It fixes indentation edge cases (case labels, single-line `if`, grouping blocks)
   set background=dark        " or light
   colorscheme systemverilog_uvm
   ```
+
+## Recent Changes (2026-11-12, v0.6.0)
+
+- **Preprocessor & Control Flow Indentation (`` `ifdef `` / `` `else `` / `` `endif ``)**:
+  - Form 1 & Form 2 conditional resolution: conditions split across `` `ifdef `` / `` `else `` / `` `endif `` directives now indent accurately, and following statements/blocks dedent to the true enclosing level (Demos 81–89).
+  - Multi-line `else if` chains & nested loops: resolved `ElseChainHead` across `begin...end` blocks and multi-line condition heads; bare loops (`for`/`foreach`) under bare `else` after `` `endif `` resolve properly (Demos 90–93).
+  - Trailing comment immunity: `PrevBeforeBranch` strips line comments and string literals before pattern matching, preventing trailing inline comments from breaking branch redirect.
+  - Performance optimization: consolidated `RegionEndsWithControl` and `RegionExitLine` to eliminate redundant backwards scans over macro regions.
+- **Test Infrastructure & Verification**:
+  - Expanded demo suite to 93 test cases (91 PASS, 2 tracked XFAIL anchors).
+  - Added native `xfail` (expected failure) test harness support in `run_indent_test.sh`.
+  - Full idempotency regression verified on UVM 1.2 source tree (145 files) and industry UCIe VIP corpora (844 files).
 
 ## Recent Changes (2026-10-09)
 
@@ -345,12 +359,13 @@ Indent notes:
 
 ## Tests
 
-- `sh test/run_indent_test.sh` — golden-file indent regression test:
-  re-indents [test/indent_demo.sv](test/indent_demo.sv) (deliberately
-  mis-indented) with `gg=G` in a headless Vim and diffs against
-  [test/indent_demo.expected.sv](test/indent_demo.expected.sv). Coverage
-  includes UVM field-macro blocks, single-line `if` + macro + `else`
-  chains, `else if`, case labels, `fork`/`join_any`, labeled
+- `sh test/run_indent_test.sh` — golden-file indent regression test suite:
+  re-indents all demo files ([test/indent_demo.sv](test/indent_demo.sv) through [test/indent_demo93.sv](test/indent_demo93.sv))
+  with `gg=G` in a headless Vim and diffs against corresponding `.expected.sv` files.
+  Features built-in `XFAIL` support for known bug tracking.
+  Coverage includes UVM field-macro blocks, preprocessor-selected conditionals (`` `ifdef `` / `` `else `` / `` `endif ``),
+  multi-line condition tails, `else if` chains, nested loops under bare `else`,
+  case labels, `fork`/`join_any`, labeled
   `generate` blocks (`if`/`else`/`for`/`case`), multi-line
   instantiations, `` `include `` chains (plain and inside `` `ifdef ``
   / `` `elsif ``), multi-line `` `define ``, `` `undef `` / `` `timescale ``
@@ -358,6 +373,8 @@ Indent notes:
   `package` bodies, `function new` / `super.new`, `interface class`,
   and block comments. Use `VIM=nvim sh test/run_indent_test.sh` for
   Neovim.
+- `sh test/run_uvm_golden_test.sh` — golden snapshot regression test comparing
+  re-indented outputs against canonical formatting across 145 UVM library files.
 - `sh test/run_fold_test.sh` — golden-file fold-level regression test:
   computes the fold level of every line of [test/fold_demo.sv](test/fold_demo.sv)
   through the `foldexpr` engine (without touching the buffer) and diffs
@@ -368,7 +385,7 @@ Indent notes:
   `// {{{`/`// }}}` markers. Use `VIM=nvim sh test/run_fold_test.sh` for
   Neovim.
 - `sh test/run_uvm_syntax_test.sh` — syntax regression test against UVM 1.2:
-  1. spot-checks ~100 representative tokens in
+  1. spot-checks ~166 representative tokens in
      [test/uvm_syntax_spot.sv](test/uvm_syntax_spot.sv) (constructs lifted
      from the UVM 1.2 library: classes, scalar types, `` `include ``/`` `define ``
      /`` `ifdef `` directives, macros, `uvm_report_*` calls, config/resource
@@ -381,14 +398,12 @@ Indent notes:
      `UVM_SRC=/path/to/uvm-1.2/src` or skip with `UVM_SRC=`.
 - `sh test/run_uvm_indent_test.sh` — indent idempotency test over the real
   UVM 1.2 library sources (`~/test/uvm-1.2/src`, `UVM_SRC=` to override,
-  skipped when the tree is absent): re-indents every file with `gg=G`
-  twice — the second pass must not change anything, no line may exceed 40
-  columns of indent (runaway check), and the indent engine must not raise.
+  supports `NPAR=8` parallel chunking): re-indents every file with `gg=G`
+  twice — the second pass must not change anything, no line may exceed runaway
+  limits, and the indent engine must not raise.
   The first pass normalizes to the engine's own style, so the library's
   original formatting is irrelevant — only the stability of the engine is
-  asserted. This re-indents the whole library twice and takes a few
-  minutes; pass a subdirectory (e.g. `UVM_SRC=~/test/uvm-1.2/src/base`)
-  for a quicker run.
+  asserted. Also verified against UCIe VIP corpora (844 files, 100% idempotent).
 
 ## Examples
 
