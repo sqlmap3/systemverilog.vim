@@ -391,6 +391,15 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 		endif
 	endif
 
+	" NOTE: no floor at 0 here, and none at the callers either, on
+	" purpose. A negative result makes Vim keep the line's current
+	" indent, and several UVM golden files rely on exactly that (a stop
+	" dedenting from a 0 base keeps the original file's indent, which is
+	" the baked convention). Flooring the result — inside this function
+	" or at the final returns — shifted 12, then 3, golden files. An
+	" over-dedent caused by a stale prev2 is fixed at the source instead:
+	" callers pass '' for a prev2 buried in a region that closed before
+	" prev1 (s:IsStalePrev2), so the dedent rule never fires on it.
 	return indnt
 endfunction
 
@@ -832,7 +841,8 @@ function! s:ControlTailHead( line_num )
 	if l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
 		return 0
 	endif
-	let l:l = substitute(l:line, '\".\{-}\"', '', 'g')
+	let l:l = substitute(l:line, '"\(\\.\|[^"\\]\)*"', '', 'g')
+	let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
 	let l:l = substitute(l:l, '\/\/.*', '', '')
 	let l:bal = len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
 	if l:bal >= 0
@@ -842,11 +852,24 @@ function! s:ControlTailHead( line_num )
 	let l:ln = prevnonblank(a:line_num - 1)
 	let l:limit = 200
 	while l:ln > 0 && l:limit > 0
+		let l:limit -= 1
 		let l:l = getline(l:ln)
-		if l:l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\|endif\)\>'
+		if l:l =~ '^\s*`\s*\c\(else\|elsif\)\>'
+			" the sibling branch is mutually exclusive with the branch
+			" the tail came from: skip it entirely (jump to before
+			" the matching `ifdef) instead of counting its parens
+			" into l:bal a second time
+			let l:saw_preproc = 1
+			let l:m = s:FindIfdefMatch(l:ln)
+			if l:m > 0
+				let l:ln = prevnonblank(l:m - 1)
+				continue
+			endif
+		elseif l:l =~ '^\s*`\s*\c\(ifdef\|ifndef\|endif\)\>'
 			let l:saw_preproc = 1
 		endif
-		let l:l = substitute(l:l, '\".\{-}\"', '', 'g')
+		let l:l = substitute(l:l, '"\(\\.\|[^"\\]\)*"', '', 'g')
+		let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
 		let l:l = substitute(l:l, '\/\/.*', '', '')
 		let l:bal = l:bal + len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
 		if l:bal >= 0
@@ -856,9 +879,35 @@ function! s:ControlTailHead( line_num )
 			return 0
 		endif
 		let l:ln = prevnonblank(l:ln - 1)
-		let l:limit -= 1
 	endwhile
 	return 0
+endfunction
+
+" Return the last code line inside the `ifdef region ending at a:endif_ln
+" (whose matching `ifdef is a:ifdef_ln), skipping comments, directives
+" and whole nested `ifdef...`endif blocks, or 0 if the region holds no
+" code line of its own.
+function! s:RegionLastCodeLine( endif_ln, ifdef_ln )
+	let l:last = prevnonblank(a:endif_ln - 1)
+	while l:last > a:ifdef_ln
+		let l:ll = getline(l:last)
+		if l:ll =~ '^\s*`\s*\cendif\>'
+			" a nested `ifdef...`endif block: skip the whole block so
+			" a control buried inside it is not mistaken for this
+			" region's own last code line
+			let l:m = s:FindIfdefMatch(l:last)
+			if l:m > 0 && l:m > a:ifdef_ln
+				let l:last = prevnonblank(l:m - 1)
+				continue
+			endif
+		endif
+		if l:ll =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\|endif\|define\|undef\|include\)\>'
+			let l:last = prevnonblank(l:last - 1)
+			continue
+		endif
+		break
+	endwhile
+	return l:last > a:ifdef_ln ? l:last : 0
 endfunction
 
 " If the last code line inside the `ifdef region ending at a:endif_ln
@@ -868,18 +917,11 @@ endfunction
 " whose opener is the last code line inside the region (demo84 Form 2:
 " `ifdef X / if (b) / `else / if (c) / `endif / `MACRO; — the macro is
 " the body of the if). A control tail (multi-line condition) resolves
-" through s:ControlTailHead to its opener.
+" through s:ControlTailHead to its opener, whether the opener sits
+" inside the region or above it (Form 1).
 function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
-	let l:last = prevnonblank(a:endif_ln - 1)
-	while l:last > a:ifdef_ln
-		let l:ll = getline(l:last)
-		if l:ll =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/\|^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\|endif\|define\|undef\|include\)\>'
-			let l:last = prevnonblank(l:last - 1)
-			continue
-		endif
-		break
-	endwhile
-	if l:last <= a:ifdef_ln
+	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
+	if l:last <= 0
 		return -1
 	endif
 	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
@@ -892,26 +934,150 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	return -1
 endfunction
 
+" True if the region ending at a:endif_ln ends with a control statement
+" that lives INSIDE the region (a direct control line, or a control tail
+" whose opener is inside the region). False for Form 1, where the tail
+" resolves to an opener ABOVE the `ifdef: the body after such an `endif
+" belongs to the enclosing if, and the line after the body dedents via
+" the normal prev2 rule, not through the region.
+function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
+	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
+	if l:last <= 0
+		return 0
+	endif
+	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
+		return 1
+	endif
+	let l:chead = s:ControlTailHead(l:last)
+	return l:chead > a:ifdef_ln
+endfunction
+
+" True when the code line at a:prev2_ln sits inside a conditional region
+" that closed (or switched branch) before a:prev1_ln: an `endif/`else/`elsif
+" strictly between the two lines whose matching `ifdef is at or above
+" a:prev2_ln. Such a prev2 is stale: it governs nothing below the region,
+" so the "prev2 control + prev1 statement" dedent rule must not see it as
+" a control (repro_p2b: a bare `if` buried in a nested region otherwise
+" double-dedents the `end` below the outer `endif below 0, and Vim then
+" keeps the line's stale indent). Exception: a prev2 that is the tail of
+" a control opening above the region (Form 1: the control spans the
+" region and does govern the lines below it) is not stale.
+function! s:IsStalePrev2( prev2_ln, prev1_ln )
+	let l:ln = prevnonblank(a:prev1_ln - 1)
+	while l:ln > a:prev2_ln
+		if getline(l:ln) =~ '^\s*`\s*\c\%(endif\|else\|elsif\)\>'
+			let l:m = s:FindIfdefMatch(l:ln)
+			if l:m > 0 && l:m <= a:prev2_ln
+				let l:chead = s:ControlTailHead(a:prev2_ln)
+				if l:chead > 0 && l:chead <= l:m
+					return 0
+				endif
+				return 1
+			endif
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
+" Return the line number of the block/group opener matching the close at
+" a:close_ln (whose codes are exactly 'e' or 'h'), counting b/f opens
+" against e/h closes while walking up, or 0 if none is found.
+function! s:MatchBlockOpener( close_ln )
+	let l:depth = 1
+	let l:ln = prevnonblank(a:close_ln - 1)
+	let l:limit = 500
+	while l:ln > 0 && l:limit > 0
+		let l:limit -= 1
+		let l:c = s:ConvertToCodes(getline(l:ln))
+		let l:depth += len(substitute(l:c, '[^eh]', '', 'g')) - len(substitute(l:c, '[^bf]', '', 'g'))
+		if l:depth <= 0
+			return l:ln
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
 " If a:line_num's prev1 is a statement that is itself the body of a control
 " statement inside an `ifdef region (the line before prev1 is an `endif and
 " AfterEndifBodyIndent says prev1 is that control's body), return the
-" matching `ifdef line number; otherwise 0. Used to resolve a line that
-" follows such a body (a close or a new statement) through the region.
+" matching `ifdef line number; otherwise 0. Likewise if prev1 closes a
+" begin/end (or {...}) block whose opener is itself such a body: the
+" current line follows the whole if statement and resolves through the
+" region. Used to resolve a line that follows such a body (a close or a
+" new statement) through the region.
 function! s:BodyAfterEndifIfdef( line_num )
 	let l:p1 = prevnonblank(a:line_num - 1)
 	if l:p1 <= 0
 		return 0
 	endif
+	" a directive line is not a body (but a macro call is: only the known
+	" directive keywords are excluded, not every backtick-led line)
+	let l:p1_line = getline(l:p1)
+	if l:p1_line =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\|endif\|define\|undef\|include\)\>'
+		return 0
+	endif
+	let l:p1_codes = s:ConvertToCodes(l:p1_line)
+	" p1 opens a block, is itself a bare control head, or is a control
+	" tail: the current line belongs to p1's construct, not to the
+	" region outside the `endif. A complete single-line if (`if (c)
+	" y;', codes ending in ';') is still a body: only a bare head
+	" (codes ending in 'x') is excluded.
+	if l:p1_codes =~ '[b]' || l:p1_codes =~ s:LINE_INDENT || s:ControlTailHead(l:p1) > 0
+		return 0
+	endif
+	if l:p1_codes =~ '^[he]$'
+		" p1 closes a block: resolve through the region only if the
+		" matching opener is itself the body-after-endif, directly
+		" or as the body of a bare control head that is
+		let l:op = s:MatchBlockOpener(l:p1)
+		if l:op <= 0
+			return 0
+		endif
+		let l:ope = prevnonblank(l:op - 1)
+		if l:ope <= 0
+			return 0
+		endif
+		if getline(l:ope) =~ '^\s*`\s*\cendif\>'
+			let l:m = s:FindIfdefMatch(l:ope)
+			if l:m > 0 && s:RegionEndsWithControl(l:ope, l:m)
+				return l:m
+			endif
+			return 0
+		endif
+		if s:ConvertToCodes(getline(l:ope)) =~ s:LINE_INDENT
+			let l:pe2 = prevnonblank(l:ope - 1)
+			if l:pe2 > 0 && getline(l:pe2) =~ '^\s*`\s*\cendif\>'
+				let l:m = s:FindIfdefMatch(l:pe2)
+				if l:m > 0 && s:RegionEndsWithControl(l:pe2, l:m)
+					return l:m
+				endif
+			endif
+		endif
+		return 0
+	endif
+	if l:p1_codes =~ '[he]'
+		return 0
+	endif
+	" p1 is a completed statement directly after an `endif, or the body
+	" of a bare control head that is itself the body-after-endif
+	" (transitive: the current line follows the whole if statement)
 	let l:pe = prevnonblank(l:p1 - 1)
-	if l:pe <= 0 || getline(l:pe) !~ '^\s*`\s*\cendif\>'
-		return 0
+	if l:pe > 0 && getline(l:pe) =~ '^\s*`\s*\cendif\>'
+		let l:m = s:FindIfdefMatch(l:pe)
+		if l:m > 0 && s:RegionEndsWithControl(l:pe, l:m)
+			return l:m
+		endif
 	endif
-	let l:m = s:FindIfdefMatch(l:pe)
-	if l:m <= 0
-		return 0
-	endif
-	if s:AfterEndifBodyIndent(l:pe, l:m) >= 0
-		return l:m
+	if l:pe > 0 && s:ConvertToCodes(getline(l:pe)) =~ s:LINE_INDENT
+		let l:pe2 = prevnonblank(l:pe - 1)
+		if l:pe2 > 0 && getline(l:pe2) =~ '^\s*`\s*\cendif\>'
+			let l:m = s:FindIfdefMatch(l:pe2)
+			if l:m > 0 && s:RegionEndsWithControl(l:pe2, l:m)
+				return l:m
+			endif
+		endif
 	endif
 	return 0
 endfunction
@@ -1408,6 +1574,20 @@ function! s:RollPlainLine( line_num )
 	if s:DefineBodyStart(a:line_num) != 0
 		return -1
 	endif
+	" a plain statement after a body-after-endif (Form 2) resolves
+	" through the region in the full path; this shortcut's one-level
+	" dedent from the body indent lands one level too deep. The `endif
+	" pre-checks keep the common case cheap: direct (prev sits right
+	" after an `endif) or transitive (prev is the body of a bare
+	" control head right after an `endif).
+	let l:pe = prevnonblank(l:prev - 1)
+	if l:pe > 0 && getline(l:pe) =~ '^\s*`\s*\cendif\>' && s:BodyAfterEndifIfdef(a:line_num) > 0
+		return -1
+	endif
+	let l:pe2 = l:pe > 0 ? prevnonblank(l:pe - 1) : 0
+	if l:pe2 > 0 && getline(l:pe) !~ ';\s*$' && getline(l:pe2) =~ '^\s*`\s*\cendif\>' && s:BodyAfterEndifIfdef(a:line_num) > 0
+		return -1
+	endif
 	" gap check (only blank lines may intervene; the chain is in order)
 	if a:line_num != b:sv_roll_last + 1
 		let l:ln = b:sv_roll_last + 1
@@ -1420,11 +1600,13 @@ function! s:RollPlainLine( line_num )
 	endif
 	" GetCodeIndent's dedent rule: prev2 ends with 'x' (a control line)
 	" and prev1 is an exec line (';') -> one level back. prev is the
-	" last code unit, so the unit before it is prev2's unit.
+	" last code unit, so the unit before it is prev2's unit. A control
+	" tail (multi-line condition ending in ')') counts as the control
+	" line, mirroring the override in the full paths.
 	let l:ind = indent(l:prev)
 	if len(b:sv_roll_codelines) >= 2 && b:sv_roll_codelines[-1] == l:prev
 		let l:p2codes = get(b:sv_roll_ucodes, b:sv_roll_codelines[-2], '')
-		if l:p2codes[-1:] ==# 'x'
+		if l:p2codes[-1:] ==# 'x' || s:ControlTailHead(b:sv_roll_codelines[-2]) > 0
 			let l:ind = l:ind - &shiftwidth
 		endif
 	elseif len(b:sv_roll_codelines) < 2
@@ -1624,7 +1806,8 @@ function! s:RollFastIndent( line_num )
 	" control line ('x') so the next line (the body) indents one level.
 	" Likewise p2: after a control body, the "prev2 x + prev1 exec" rule
 	" must see the control line to dedent the following statement.
-	if s:ControlTailHead(l:p1) > 0
+	let l:chead1 = s:ControlTailHead(l:p1)
+	if l:chead1 > 0
 		let l:p1_codes = 'x'
 	endif
 	if l:p2 > 0 && s:ControlTailHead(l:p2) > 0
@@ -1667,7 +1850,16 @@ function! s:RollFastIndent( line_num )
 		return indent(l:mhead)
 	endif
 	" --- main code indent ---
-	let l:indnt = s:GetCodeIndent(b:sv_roll_uindent[l:p1], l:p2_codes, l:p1_codes, l:this_codes)
+	" the control head, not the (possibly deeper) condition tail, is the
+	" indent base for the body
+	let l:base = l:chead1 > 0 ? get(b:sv_roll_uindent, l:chead1, indent(l:chead1)) : b:sv_roll_uindent[l:p1]
+	" a prev2 buried in a region that closed before prev1 must not feed
+	" the "prev2 control + prev1 statement" dedent rule (s:IsStalePrev2)
+	let l:p2_gci = l:p2_codes
+	if l:p2 > 0 && l:p2_codes =~ s:LINE_INDENT && s:IsStalePrev2(l:p2, l:p1)
+		let l:p2_gci = ''
+	endif
+	let l:indnt = s:GetCodeIndent(l:base, l:p2_gci, l:p1_codes, l:this_codes)
 	" --- block-comment block (body/STOP lines never reach here) ---
 	if l:this_codes =~ s:BLOCK_COMMENT_STOP
 		let b:in_block_comment = 0
@@ -1958,7 +2150,8 @@ function! s:SlowIndent( line_num )
 	" next line (the body) indents one level via the LINE_INDENT rule.
 	" Likewise prev2: after a control body, the "prev2 x + prev1 exec"
 	" rule must see the control line to dedent the following statement.
-	if s:ControlTailHead(prev1_line_num) > 0
+	let l:chead1 = s:ControlTailHead(prev1_line_num)
+	if l:chead1 > 0
 		let prev1_codes = 'x'
 	endif
 	if prev2_line_num > 0 && s:ControlTailHead(prev2_line_num) > 0
@@ -2039,8 +2232,20 @@ function! s:SlowIndent( line_num )
 	endif
 
 	let indnt = indent( prev1_line_num )
+	if l:chead1 > 0
+		" the control head, not the (possibly deeper) condition tail,
+		" is the indent base for the body
+		let indnt = indent(l:chead1)
+	endif
 
-	let indnt = s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes)
+	" a prev2 buried in a region that closed before prev1 must not feed
+	" the "prev2 control + prev1 statement" dedent rule (s:IsStalePrev2)
+	let prev2_gci_codes = prev2_codes
+	if prev2_line_num > 0 && prev2_codes =~ s:LINE_INDENT && s:IsStalePrev2(prev2_line_num, prev1_line_num)
+		let prev2_gci_codes = ''
+	endif
+
+	let indnt = s:GetCodeIndent ( indnt, prev2_gci_codes, prev1_codes, this_codes)
 
 	if this_codes =~ s:BLOCK_COMMENT_STOP || b:block_comment_change != b:changedtick || b:block_comment_line != prev1_for_comment_line
 		let b:in_block_comment = 0
