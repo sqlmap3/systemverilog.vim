@@ -830,7 +830,7 @@ endfunction
 " opener must classify as a control line (its codes contain 'x'), so a
 " function/method call tail returns 0 (its head has no 'x'). A bare ')'
 " on its own line is a valid tail.
-function! s:ControlTailHead( line_num )
+function! s:ControlTailHead( line_num, ... )
 	let l:line = getline(a:line_num)
 	if l:line !~ ')\s*$' || l:line =~ ');\s*$'
 		return 0
@@ -841,6 +841,12 @@ function! s:ControlTailHead( line_num )
 	if l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
 		return 0
 	endif
+	" by default the walk must cross a preprocessor directive: ungated,
+	" ordinary multi-line if bodies (flat by golden convention) regress.
+	" Callers that already know the tail sits inside an `ifdef region
+	" (s:AfterEndifBodyIndent, s:RegionEndsWithControl) pass 0, so a
+	" multi-line control wholly inside one branch still resolves.
+	let l:require_preproc = a:0 >= 1 ? a:1 : 1
 	let l:l = substitute(l:line, '"\(\\.\|[^"\\]\)*"', '', 'g')
 	let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
 	let l:l = substitute(l:l, '\/\/.*', '', '')
@@ -873,7 +879,7 @@ function! s:ControlTailHead( line_num )
 		let l:l = substitute(l:l, '\/\/.*', '', '')
 		let l:bal = l:bal + len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
 		if l:bal >= 0
-			if l:saw_preproc && s:ConvertToCodes(getline(l:ln)) =~ 'x'
+			if (!l:require_preproc || l:saw_preproc) && s:ConvertToCodes(getline(l:ln)) =~ 'x'
 				return l:ln
 			endif
 			return 0
@@ -927,7 +933,10 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
 		return indent(l:last) + &shiftwidth
 	endif
-	let l:chead = s:ControlTailHead(l:last)
+	" l:last is confirmed inside the region, so the tail walk needs no
+	" directive crossing: a multi-line control wholly inside one branch
+	" (no directive between its head and tail) must still resolve
+	let l:chead = s:ControlTailHead(l:last, 0)
 	if l:chead > 0
 		return indent(l:chead) + &shiftwidth
 	endif
@@ -948,7 +957,8 @@ function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
 	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
 		return 1
 	endif
-	let l:chead = s:ControlTailHead(l:last)
+	" see s:AfterEndifBodyIndent: no directive crossing required here
+	let l:chead = s:ControlTailHead(l:last, 0)
 	return l:chead > a:ifdef_ln
 endfunction
 
@@ -980,6 +990,89 @@ function! s:IsStalePrev2( prev2_ln, prev1_ln )
 	return 0
 endfunction
 
+" If a:prev1_ln sits inside a branch that is mutually exclusive with
+" the branch holding a:line_num (an `else/`elsif strictly between the
+" two whose matching `ifdef is at or above a:prev1_ln), return the code
+" line before that `ifdef; otherwise return a:prev1_ln unchanged. Used
+" only for `)`-tail lines: a condition continuation in the second
+" branch must see the same enclosing context as the first branch, not
+" the sibling branch's closing tail (demo86).
+function! s:PrevBeforeBranch( prev1_ln, line_num )
+	let l:ln = prevnonblank(a:line_num - 1)
+	while l:ln > a:prev1_ln
+		if getline(l:ln) =~ '^\s*`\s*\c\%(else\|elsif\)\>'
+			let l:m = s:FindIfdefMatch(l:ln)
+			if l:m > 0 && l:m <= a:prev1_ln
+				let l:pl = s:GetPrevWholeLineNum(l:m)
+				if l:pl <= 0
+					return 0
+				endif
+				let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
+				let l:in_comment = 0
+				while l:pl > 0 && (l:pl_codes =~ s:LINE_COMMENT || l:in_comment || l:pl_codes =~ s:BLOCK_COMMENT_STOP || l:pl_codes =~ s:BLOCK_COMMENT_START || l:pl_codes =~ s:PREPROCESSOR)
+					if l:pl_codes =~ s:BLOCK_COMMENT_STOP
+						let l:in_comment = 1
+					endif
+					if l:pl_codes =~ s:BLOCK_COMMENT_START
+						let l:in_comment = 0
+					endif
+					let l:pl = s:GetPrevWholeLineNum(l:pl)
+					if l:pl <= 0
+						break
+					endif
+					let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
+				endwhile
+				return l:pl
+			endif
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return a:prev1_ln
+endfunction
+
+" Walk up from a:ln over bare single-line control heads (codes ending
+" in 'x': if/for/while with no body of their own) to the `endif the
+" chain hangs off, returning that `endif line, or 0. a:ln itself may be
+" the `endif. At most 4 heads are stepped over; a deeper chain falls
+" back to the normal rules instead of resolving through the region.
+function! s:ChainToEndif( ln )
+	let l:ln = a:ln
+	let l:limit = 4
+	while l:ln > 0
+		if getline(l:ln) =~ '^\s*`\s*\cendif\>'
+			return l:ln
+		endif
+		if l:limit <= 0 || s:ConvertToCodes(getline(l:ln)) !~ s:LINE_INDENT
+			return 0
+		endif
+		let l:limit -= 1
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
+" If a:p1_ln is an `else`/`else if` continuation line, walk up the
+" if/else-if chain to the first `if` line and return it; otherwise
+" return a:p1_ln unchanged. The chain must be unbroken: every
+" stepped-to line starts with `if` or `else if`. At most 8 steps.
+function! s:ElseChainHead( p1_ln )
+	let l:ln = a:p1_ln
+	let l:limit = 8
+	while l:limit > 0 && getline(l:ln) =~ '^\s*else\>'
+		let l:limit -= 1
+		let l:prev = prevnonblank(l:ln - 1)
+		if l:prev <= 0
+			break
+		endif
+		if getline(l:prev) =~ '^\s*\(else\s\+\)\?if\>'
+			let l:ln = l:prev
+		else
+			break
+		endif
+	endwhile
+	return l:ln
+endfunction
+
 " Return the line number of the block/group opener matching the close at
 " a:close_ln (whose codes are exactly 'e' or 'h'), counting b/f opens
 " against e/h closes while walking up, or 0 if none is found.
@@ -1008,6 +1101,12 @@ endfunction
 " region. Used to resolve a line that follows such a body (a close or a
 " new statement) through the region.
 function! s:BodyAfterEndifIfdef( line_num )
+	" an `else` continuation belongs to the if statement above it, not to
+	" the line after the body: it aligns with its `if` via the normal
+	" rules and must never be yanked to the region's outer level
+	if getline(a:line_num) =~ '^\s*else\>'
+		return 0
+	endif
 	let l:p1 = prevnonblank(a:line_num - 1)
 	if l:p1 <= 0
 		return 0
@@ -1035,24 +1134,14 @@ function! s:BodyAfterEndifIfdef( line_num )
 		if l:op <= 0
 			return 0
 		endif
-		let l:ope = prevnonblank(l:op - 1)
-		if l:ope <= 0
-			return 0
-		endif
-		if getline(l:ope) =~ '^\s*`\s*\cendif\>'
-			let l:m = s:FindIfdefMatch(l:ope)
-			if l:m > 0 && s:RegionEndsWithControl(l:ope, l:m)
+		" the opener may itself be an `else` continuation (else begin):
+		" resolve from the first `if` of its chain
+		let l:ope = prevnonblank(s:ElseChainHead(l:op) - 1)
+		let l:ope_endif = l:ope > 0 ? s:ChainToEndif(l:ope) : 0
+		if l:ope_endif > 0
+			let l:m = s:FindIfdefMatch(l:ope_endif)
+			if l:m > 0 && s:RegionEndsWithControl(l:ope_endif, l:m)
 				return l:m
-			endif
-			return 0
-		endif
-		if s:ConvertToCodes(getline(l:ope)) =~ s:LINE_INDENT
-			let l:pe2 = prevnonblank(l:ope - 1)
-			if l:pe2 > 0 && getline(l:pe2) =~ '^\s*`\s*\cendif\>'
-				let l:m = s:FindIfdefMatch(l:pe2)
-				if l:m > 0 && s:RegionEndsWithControl(l:pe2, l:m)
-					return l:m
-				endif
 			endif
 		endif
 		return 0
@@ -1061,22 +1150,16 @@ function! s:BodyAfterEndifIfdef( line_num )
 		return 0
 	endif
 	" p1 is a completed statement directly after an `endif, or the body
-	" of a bare control head that is itself the body-after-endif
+	" of a chain of bare control heads hanging off an `endif, or the
+	" tail of an if/else-if chain whose first `if` is such a body
 	" (transitive: the current line follows the whole if statement)
-	let l:pe = prevnonblank(l:p1 - 1)
-	if l:pe > 0 && getline(l:pe) =~ '^\s*`\s*\cendif\>'
-		let l:m = s:FindIfdefMatch(l:pe)
-		if l:m > 0 && s:RegionEndsWithControl(l:pe, l:m)
+	let l:hd = s:ElseChainHead(l:p1)
+	let l:pe = prevnonblank(l:hd - 1)
+	let l:pe_endif = l:pe > 0 ? s:ChainToEndif(l:pe) : 0
+	if l:pe_endif > 0
+		let l:m = s:FindIfdefMatch(l:pe_endif)
+		if l:m > 0 && s:RegionEndsWithControl(l:pe_endif, l:m)
 			return l:m
-		endif
-	endif
-	if l:pe > 0 && s:ConvertToCodes(getline(l:pe)) =~ s:LINE_INDENT
-		let l:pe2 = prevnonblank(l:pe - 1)
-		if l:pe2 > 0 && getline(l:pe2) =~ '^\s*`\s*\cendif\>'
-			let l:m = s:FindIfdefMatch(l:pe2)
-			if l:m > 0 && s:RegionEndsWithControl(l:pe2, l:m)
-				return l:m
-			endif
 		endif
 	endif
 	return 0
@@ -1576,16 +1659,13 @@ function! s:RollPlainLine( line_num )
 	endif
 	" a plain statement after a body-after-endif (Form 2) resolves
 	" through the region in the full path; this shortcut's one-level
-	" dedent from the body indent lands one level too deep. The `endif
-	" pre-checks keep the common case cheap: direct (prev sits right
-	" after an `endif) or transitive (prev is the body of a bare
-	" control head right after an `endif).
-	let l:pe = prevnonblank(l:prev - 1)
-	if l:pe > 0 && getline(l:pe) =~ '^\s*`\s*\cendif\>' && s:BodyAfterEndifIfdef(a:line_num) > 0
-		return -1
-	endif
-	let l:pe2 = l:pe > 0 ? prevnonblank(l:pe - 1) : 0
-	if l:pe2 > 0 && getline(l:pe) !~ ';\s*$' && getline(l:pe2) =~ '^\s*`\s*\cendif\>' && s:BodyAfterEndifIfdef(a:line_num) > 0
+	" dedent from the body indent lands one level too deep. The chain
+	" pre-check keeps the common case cheap: from the line before prev
+	" (or before the first `if` of prev's else-chain), walk up over
+	" bare control heads to an `endif; only then run the full check.
+	let l:hd = s:ElseChainHead(l:prev)
+	let l:pe = prevnonblank(l:hd - 1)
+	if l:pe > 0 && s:ChainToEndif(l:pe) > 0 && s:BodyAfterEndifIfdef(a:line_num) > 0
 		return -1
 	endif
 	" gap check (only blank lines may intervene; the chain is in order)
@@ -1787,6 +1867,26 @@ function! s:RollFastIndent( line_num )
 	endwhile
 	if l:p1 < 0
 		return -1
+	endif
+	" a `)`-tail line in a branch after `else/`elsif must see the code
+	" before the `ifdef, not the sibling branch's closing tail; prev2
+	" follows from the new prev1's position in the rolling list
+	if l:p1 > 0 && l:line =~ ')\s*$' && l:line !~ ');\s*$'
+		let l:np1 = s:PrevBeforeBranch(l:p1, l:N)
+		if l:np1 > 0 && l:np1 != l:p1 && has_key(b:sv_roll_ucodes, l:np1)
+			let l:p1 = l:np1
+			let l:p2 = -1
+			let l:j = len(b:sv_roll_codelines) - 1
+			while l:j >= 0
+				if b:sv_roll_codelines[l:j] == l:p1
+					if l:j > 0
+						let l:p2 = b:sv_roll_codelines[l:j - 1]
+					endif
+					break
+				endif
+				let l:j -= 1
+			endwhile
+		endif
 	endif
 	let l:p1line = getline(l:p1)
 	if l:p1line =~ '\<endfunction\>' && stridx(l:p1line, ');') >= 0
@@ -2112,6 +2212,17 @@ function! s:SlowIndent( line_num )
 		let prev1_codeline = s:GetWholeLine (prev1_line_num)
 		let prev1_codes = s:ConvertToCodes(prev1_codeline)
 	endwhile
+
+	" a `)`-tail line in a branch after `else/`elsif must see the code
+	" before the `ifdef, not the sibling branch's closing tail
+	if prev1_line_num > 0 && this_codeline =~ ')\s*$' && this_codeline !~ ');\s*$'
+		let l:np1 = s:PrevBeforeBranch(prev1_line_num, a:line_num)
+		if l:np1 > 0 && l:np1 != prev1_line_num
+			let prev1_line_num = l:np1
+			let prev1_codeline = s:GetWholeLine (prev1_line_num)
+			let prev1_codes = s:ConvertToCodes(prev1_codeline)
+		endif
+	endif
 
 	let prev2_line_num = s:GetPrevWholeLineNum (prev1_line_num)
 	let prev2_codeline = s:GetWholeLine (prev2_line_num)
