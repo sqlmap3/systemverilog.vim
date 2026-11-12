@@ -943,29 +943,6 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	return -1
 endfunction
 
-" True if the region ending at a:endif_ln ends with a control statement:
-" a direct control line, a control tail whose opener is inside the
-" region, or a control tail whose opener sits above the `ifdef (Form 1)
-" and is reached by crossing a directive. The Form 1 case must count:
-" the body after such an `endif belongs to the enclosing if, and a
-" compound body (begin...end) after it can only dedent back through
-" the region (the normal prev2 rule does not see past the `end`).
-function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
-	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
-	if l:last <= 0
-		return 0
-	endif
-	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
-		return 1
-	endif
-	" see s:AfterEndifBodyIndent: no directive crossing required here.
-	" Entry and exit must agree: either the head is inside the region,
-	" or the tail walk crosses a directive to reach a head above it
-	" (Form 1) -- both govern the lines after the `endif.
-	let l:chead = s:ControlTailHead(l:last, 0)
-	return l:chead > a:ifdef_ln || s:ControlTailHead(l:last, 1) > 0
-endfunction
-
 " If the region ending at a:endif_ln (whose matching `ifdef is
 " a:ifdef_ln) ends with a control statement, return the line the code
 " after the region's body resolves through: the `ifdef line when the
@@ -974,15 +951,30 @@ endfunction
 " (Form 1: the following line aligns with that head, not with the
 " region, whose level is the head's body level). Otherwise 0.
 function! s:RegionExitLine( endif_ln, ifdef_ln )
-	if !s:RegionEndsWithControl(a:endif_ln, a:ifdef_ln)
+	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
+	if l:last <= 0
 		return 0
 	endif
-	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
-	let l:chead = l:last > 0 ? s:ControlTailHead(l:last, 0) : 0
-	if l:chead > 0 && l:chead <= a:ifdef_ln
-		return l:chead
+	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
+		return a:ifdef_ln
 	endif
-	return a:ifdef_ln
+	" see s:AfterEndifBodyIndent: no directive crossing required here.
+	" Entry and exit must agree: either the head is inside the region,
+	" or the tail walk crosses a directive to reach a head above it
+	" (Form 1) -- both govern the lines after the `endif.
+	let l:chead = s:ControlTailHead(l:last, 0)
+	if l:chead > 0
+		return l:chead <= a:ifdef_ln ? l:chead : a:ifdef_ln
+	endif
+	return 0
+endfunction
+
+" True if the region ending at a:endif_ln ends with a control statement:
+" a direct control line, a control tail whose opener is inside the
+" region, or a control tail whose opener sits above the `ifdef (Form 1)
+" and is reached by crossing a directive.
+function! s:RegionEndsWithControl( endif_ln, ifdef_ln )
+	return s:RegionExitLine(a:endif_ln, a:ifdef_ln) > 0
 endfunction
 
 " True when the code line at a:prev2_ln sits inside a conditional region
@@ -1061,10 +1053,10 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 				let l:cur = substitute(l:cur, '\/\/.*', '', '')
 				let l:opens = len(substitute(l:cur, '[^(]', '', 'g'))
 				let l:closes = len(substitute(l:cur, '[^)]', '', 'g'))
-				if getline(a:line_num) =~ ')\s*$' && getline(a:line_num) !~ ');\s*$' && l:closes > l:opens
+				if l:cur =~ ')\s*$' && l:cur !~ ');\s*$' && l:closes > l:opens
 					return l:pl
 				endif
-				if getline(a:line_num) !~ ';\s*$' && !(getline(a:line_num) =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl)) =~ 'b'
+				if l:cur !~ ';\s*$' && !(l:cur =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl)) =~ 'b'
 					let l:sib = substitute(getline(a:prev1_ln), '"\(\\.\|[^"\\]\)*"', '', 'g')
 					let l:sib = substitute(l:sib, '/\*.\{-}\*/', '', 'g')
 					let l:sib = substitute(l:sib, '\/\/.*', '', '')
