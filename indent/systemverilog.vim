@@ -1092,6 +1092,23 @@ function! s:ChainToEndif( ln )
 		if getline(l:ln) =~ '^\s*`\s*\cendif\>'
 			return l:ln
 		endif
+		if getline(l:ln) =~ '^\s*\%(end\s\+\)\?else\>' && s:ConvertToCodes(getline(l:ln)) !~ 'b'
+			" a bare `else` between the walked heads and the region:
+			" jump over the whole if/else-if chain and continue
+			" above its first `if`. The step above the head is
+			" essential: the head may carry its body on the same
+			" line (`if (c) x = 1;`), so re-checking the head
+			" itself against LINE_INDENT would fail and break
+			" the chain. An `else` that opens a block (`else
+			" begin`) is not stepped over: the line above it
+			" sits inside that block.
+			if l:limit <= 0
+				return 0
+			endif
+			let l:limit -= 1
+			let l:ln = prevnonblank(s:ElseChainHead(l:ln) - 1)
+			continue
+		endif
 		if l:limit <= 0 || s:ConvertToCodes(getline(l:ln)) !~ s:LINE_INDENT
 			return 0
 		endif
@@ -1160,14 +1177,27 @@ endfunction
 " is itself a bare `else` (the head's body sits between the `else` and
 " a:ln), resolve that `else` through its chain too. An `else` that
 " opens a block (`else begin`, `end else begin`) is not stepped over:
-" the line above it sits inside that block. Returns 0 when there is
-" no line above the head.
+" the line above it sits inside that block. A multi-line control head
+" above the chain head is jumped to its first line: an `else if` head
+" then takes the second chain resolution, and a plain `if` head is
+" itself the chain head, so the line above it is returned. The
+" block-open test exempts a jumped-to head: its codes contain 'b'
+" from the unclosed paren, not from a `begin`.
 function! s:ChainHeadPrev( ln )
 	let l:hd = s:ElseChainHead(a:ln)
 	let l:pe = prevnonblank(l:hd - 1)
-	if l:pe > 0 && getline(l:pe) =~ '^\s*\%(end\s\+\)\?else\>' && s:ConvertToCodes(getline(l:pe)) !~ 'b'
+	" a multi-line control head: the line above the head is the
+	" head's `)`-tail line, not the head's first line; jump to the
+	" head so the tests below can see it
+	let l:ch = l:pe > 0 ? s:ControlTailHead(l:pe, 0) : 0
+	if l:ch > 0
+		let l:pe = l:ch
+	endif
+	if l:pe > 0 && getline(l:pe) =~ '^\s*\%(end\s\+\)\?else\>' && (l:ch > 0 || s:ConvertToCodes(getline(l:pe)) !~ 'b')
 		let l:hd = s:ElseChainHead(l:pe)
 		let l:pe = prevnonblank(l:hd - 1)
+	elseif l:ch > 0
+		let l:pe = prevnonblank(l:pe - 1)
 	endif
 	return l:pe
 endfunction
@@ -1222,8 +1252,13 @@ function! s:BodyAfterEndifIfdef( line_num )
 	" tail: the current line belongs to p1's construct, not to the
 	" region outside the `endif. A complete single-line if (`if (c)
 	" y;', codes ending in ';') is still a body: only a bare head
-	" (codes ending in 'x') is excluded.
-	if l:p1_codes =~ '[b]' || l:p1_codes =~ s:LINE_INDENT || s:ControlTailHead(l:p1) > 0
+	" (codes ending in 'x') is excluded. The tail test is ungated
+	" (require_preproc 0): a multi-line head directly above the
+	" region crosses no directive, and without the gate its `)`-tail
+	" line (codes 'e') would fall into the block-close path below,
+	" match the head as if it were a `begin`, and yank the head's
+	" own body out to the region's outer level.
+	if l:p1_codes =~ '[b]' || l:p1_codes =~ s:LINE_INDENT || s:ControlTailHead(l:p1, 0) > 0
 		return 0
 	endif
 	if l:p1_codes =~ '^[he]$'
