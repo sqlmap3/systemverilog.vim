@@ -178,7 +178,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)
-	let delims = substitute(delims, '\".\{-}\(\\\)\@<!\"', '', 'g')
+	let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
 	" set-membership 'inside {...}' and constraint 'unique {...}' are
 	" expressions, not blocks: drop them whole (after the string strip,
 	" so text inside a string cannot trigger it and eat a real brace
@@ -273,7 +273,7 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<else\>', 'x', 'g')
 	let delims = substitute(delims, '^\s*\/\/.*$', 'l', 'g')
 	let delims = substitute(delims, '\/\/.*', '', 'g')
-	let delims = substitute(delims, '\".\{-}\(\\\)\@<!\"', '', 'g')
+	let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
 	let delims = substitute(delims, '\/\*', 's', 'g')
 	let delims = substitute(delims, '\*\/', 'p', 'g')
 	let delims = substitute(delims, '\[[^:\[\]]*:[^:\[\]]*\]', '', 'g')

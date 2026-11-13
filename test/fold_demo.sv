@@ -151,4 +151,12 @@ class dpi_proto_c;
   endfunction
 endclass
 
+class str_edge_c;
+  function void f();
+    $display("begin // x\\");
+    $display("http://ok");
+    $display("a\\");
+  endfunction
+endclass
+
 `endif // FOLD_DEMO_SV

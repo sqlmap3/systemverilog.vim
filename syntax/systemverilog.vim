@@ -20,6 +20,7 @@ syntax match svFormatSpecifier "%[0-9]*\(\.[0-9]\+\)\?[cdieEfgGhHoxXsuUvVzZtTmbB
 syntax match svStringEscape "\\[ntrfbaev\\"'?]" contained
 syntax match svStringEscape "\\x[0-9a-fA-F]\{1,2\}" contained
 syntax match svStringEscape "\\[0-7]\{1,3\}" contained
+syntax match svStringEscape "\\$" contained
 syntax region svString start=+"+ skip=+\\"+ end=+"+ contains=svFormatSpecifier,svStringEscape
 syntax match svUserType "\<\h\w*_[tes]\>"
 syntax match svScopePrefix "\<\h\w*\ze::"
@@ -53,7 +54,7 @@ syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(o\|O\)\s*[0-7_ZzXx?]\+"
 syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(b\|B\)\s*[01_ZzXx?]\+"
 syntax match svInteger "\<'\(d\|D\|h\|H\|o\|O\|b\|B\)\>"
-syntax match svInteger "'[01xXzZ?]\>"
+syntax match svInteger "'[01xXzZ]\>\|'?"
 syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
 syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
 " struct/union/enum are NOT keywords on purpose: a keyword would win the
@@ -137,9 +138,9 @@ syntax match svIfndefName "\h\%(\w\|\$\)*" contained
 syntax match svIfdefName  "\h\%(\w\|\$\)*" contained
 syntax match svDefineName "\h\%(\w\|\$\)*" contained nextgroup=svMacroArgs skipwhite
 syntax region svMacroArgs start="(" end=")" contained contains=NONE
-syntax match svUpperDot    "\<[A-Z0-9_]\+\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
+syntax match svUpperDot    "\<[A-Z0-9_]*[A-Z][A-Z0-9_]*\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
 syntax match svUpperIdent  "\<\(UVM_\)\@![A-Z][A-Z0-9_]*\>"
-syntax match svHashNumber  "\(\#\)\@<!#[0-9_]\+" containedin=ALL
+syntax match svHashNumber  "\(\#\)\@<!#[0-9_]\+\(\s*\%(fs\|ps\|ns\|us\|ms\|s\|step\)\>\|[0-9_]\)\@!" containedin=ALL
 syntax match svTimeUnitHash     "#[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
 syntax match svTimeUnitHash     "#[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
 syntax match svTimeUnitPlain    "\<[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL

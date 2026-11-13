@@ -207,3 +207,8 @@ super\.rf	svThisSuper
 \<my_scope_pkg\>\ze::	svScopePrefix
 it_inst\.\zsmy_field	svMemberAccess
 it_inst\.\zsmy_custom_method	svMethodCall
+#
+# --- round-6: lone '? literal, dotted real, #delay time unit ---
+[^0-9(]10\zsns	svTimeUnitPlain
+'?	svInteger
+2\.5	svReal

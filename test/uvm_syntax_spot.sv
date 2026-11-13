@@ -272,4 +272,10 @@ function int spot_doc_fn(int req_data);
   return 1;
 endfunction
 
+initial begin
+  #10ns;
+  x = '?;
+  r = 2.5;
+end
+
 `endif

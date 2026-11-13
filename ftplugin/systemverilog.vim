@@ -14,7 +14,7 @@ endif
 let b:did_ftplugin = 1
 
 " Undo the plugin effect
-let b:undo_ftplugin = "setlocal fo< com< tw<"
+let b:undo_ftplugin = "setlocal fo< com< tw< commentstring< suffixesadd< include< define<"
     \ . "| unlet! b:browsefilter b:match_ignorecase b:match_words"
 
 " Set 'formatoptions' to break comment lines but not other lines,
@@ -23,6 +23,13 @@ setlocal fo-=t fo+=croqlm1
 
 " Set 'comments' to format dashed lists in comments.
 setlocal comments=sO:*\ -,mO:*\ \ ,exO:*/,s1:/*,mb:*,ex:*/,://
+
+" Line-comment string for gc (Neovim) / vim-commentary.
+setlocal commentstring=//\ %s
+" gf on `include "...", [i / [d for `define'd macros.
+setlocal suffixesadd=.sv,.svh,.v,.vh
+setlocal include=^\\s*`include\\>
+setlocal define=^\\s*`define\\>
 
 " Format comments to be up to 78 characters long
 "if &textwidth == 0 

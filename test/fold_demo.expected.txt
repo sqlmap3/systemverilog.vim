@@ -151,4 +151,12 @@
  3|  endfunction
  2|endclass
  1|
+ 2|class str_edge_c;
+ 3|  function void f();
+ 3|    $display("begin // x\\");
+ 3|    $display("http://ok");
+ 3|    $display("a\\");
+ 3|  endfunction
+ 2|endclass
+ 1|
  1|`endif // FOLD_DEMO_SV

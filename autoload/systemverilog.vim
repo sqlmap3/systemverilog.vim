@@ -118,7 +118,7 @@ function! s:Scan(lnum) abort
 
 		" strip char literals and strings first
 		let l:t = substitute(l:t, "'\\.'", '', 'g')
-		let l:t = substitute(l:t, '"\%(\%(\\"\|[^"\\]\)*\)"', '', 'g')
+		let l:t = substitute(l:t, '"\(\\.\|[^"\\]\)*"', '', 'g')
 
 		" manual fold markers (// {{{ / // }}}) live inside comments, so
 		" they must be counted before line comments are stripped
