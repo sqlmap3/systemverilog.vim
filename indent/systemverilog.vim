@@ -153,9 +153,15 @@ function! s:ConvertToCodes( codeline, ... )
 	" unmatched 'e' — rlaphy_env.sv 1496/1497, 2026-11-09); the matching
 	" '{' for a range literal "{[0:15]}" is dropped as well (its follow
 	" class gains '['), so the pair stays balanced either way.
-	let delims = substitute(delims, '\<\(dist\|intersect\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '\1', 'g')
-	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '\1', 'g')
-	let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$]\)', '', 'g')
+	let delims = substitute(delims, '\<\(dist\|intersect\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '', 'g')
+	" The '{' follow class also includes ' (an unsized based literal
+	" first element, "{'h0, sig[0]}"): without it the '{' is kept
+	" while the '}' is dropped, leaving an unmatched 'b' that
+	" over-indents every following line (demo96).
+	" The class also covers expression starters (, ~, !, +, backtick, -;
+	" nested concat {{x}, y} still leaks (pairing gap, not widened).
 	" based literals (8'hFF, 4'b10X1, 'd42) are number digits, not an
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
@@ -212,6 +218,22 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, 'default\s\+clocking[^;]*;\s*endclocking', '', 'g')
 	let delims = substitute(delims, 'default\s\+clocking\ze\s\+\h\w*\s*;', '', 'g')
 	let delims = substitute(delims, 'default\s\+clocking\ze\s*[@;]', '', 'g')
+	" A control line whose body is a complete block on the SAME line
+	" ("if (a) begin b = 1; end") must not indent the next line: the
+	" b/e cancel leaves a trailing 'x' (LINE_INDENT) and the following
+	" statement sits one level too deep (demo97). Neutralize the span
+	" here, after the string strip (so an "end" inside a string cannot
+	" match) and before the keyword filter: replace the complete block
+	" with ';' so the control classifies as a terminated statement.
+	" The span must contain no structural keyword and no comment opener
+	" (a nested control, a second block, or a commented-out 'end' all
+	" defeat the match and keep current behavior); the gap between the
+	" control and the block must not cross a block opener/closer (a
+	" nested 'begin' would leave a dangling 'end' behind). Multi-line
+	" blocks have no 'end' on the line and are untouched. Bare
+	" 'begin...end' and case-label items already reduce to empty codes
+	" and need no control prefix, so they are left alone.
+	let delims = substitute(delims, '\%(\<\%(if\|for\|foreach\|do\|while\|forever\|repeat\|else\|always\|always_comb\|always_ff\|always_latch\|initial\|wait\|wait_order\)\>\|@\)\%(\%(\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\|end\|join_any\|join_none\|join\|endcase\|endgenerate\|endtable\)\>\)\@!.\)\{-}\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\)\>\%(\%(\<\%(begin\|end\|if\|else\|for\|foreach\|while\|forever\|repeat\|do\|case\|casex\|casez\|fork\|join\|join_any\|join_none\|function\|endfunction\|task\|endtask\|class\|endclass\|module\|endmodule\|generate\|endgenerate\|endcase\|table\|endtable\|randcase\|clocking\|endclocking\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|cover\|assume\|restrict\|import\|export\|wait\|wait_order\|always\|always_comb\|always_ff\|always_latch\|initial\)\>\|/\*\|//\)\@!.\)\{-}\<\%(endcase\|endgenerate\|endtable\|end\|join_any\|join_none\|join\)\>', ';', 'g')
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
 	" They are mapped to braces here on purpose: the keyword filter below
