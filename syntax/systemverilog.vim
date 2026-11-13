@@ -27,7 +27,14 @@ syntax keyword svType real realtime event reg wire integer logic bit time byte c
 syntax keyword svDirection input output inout ref
 syntax keyword svStorageClass virtual var protected rand const static automatic extern forkjoin export import
 syntax match svMacroRef "`\h\%(\w\|\$\)*"
-syntax match svDefine "^\s*`define\>" nextgroup=svDefineName skipwhite
+syntax region svDefine start="^\s*`define\>" skip="\\$" end="$" contains=svMacroArgs,svLineComment,svBlockComment,svDocLineComment,svDocBlockComment,svString
+" the macro name right after `define keeps its own highlight: the
+" plain svDefineName pattern cannot live in the region contains
+" list (it would match every bare identifier in the body), so a
+" second svDefineName pattern anchored to the keyword with a
+" lookbehind is admitted via containedin instead; the arg list
+" follows it via nextgroup.
+syntax match svDefineName "\(`define\>\s\+\)\@<=\h\%(\w\|\$\)*" contained containedin=svDefine nextgroup=svMacroArgs skipwhite
 syntax match svUndef  "^\s*`undef\>"  nextgroup=svDefineName skipwhite
 syntax match svPreProc "^\s*`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|default_nettype\|end_keywords\|endcelldefine\|line\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undefineall\)\>"
 syntax match svInclude "^\s*`include\>" nextgroup=svIncludeString,svIncludeAngle skipwhite

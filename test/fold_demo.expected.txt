@@ -137,4 +137,18 @@
  2|  second : { $display("second"); };
  2|endsequence
  1|
+ 2|class dpi_proto_c;
+ 2|  extern function void f1();
+ 2|  import "DPI-C" function void dpi_f();
+ 2|  import "DPI-C" context function void dpi_ctx();
+ 2|  import "DPI-C" pure function void dpi_pure();
+ 2|  export "DPI-C" function exp_f;
+ 3|  task real_t();
+ 3|    $display("t");
+ 3|  endtask
+ 3|  function void real_f();
+ 3|    $display("f");
+ 3|  endfunction
+ 2|endclass
+ 1|
  1|`endif // FOLD_DEMO_SV

@@ -137,4 +137,18 @@ randsequence (main)
   second : { $display("second"); };
 endsequence
 
+class dpi_proto_c;
+  extern function void f1();
+  import "DPI-C" function void dpi_f();
+  import "DPI-C" context function void dpi_ctx();
+  import "DPI-C" pure function void dpi_pure();
+  export "DPI-C" function exp_f;
+  task real_t();
+    $display("t");
+  endtask
+  function void real_f();
+    $display("f");
+  endfunction
+endclass
+
 `endif // FOLD_DEMO_SV

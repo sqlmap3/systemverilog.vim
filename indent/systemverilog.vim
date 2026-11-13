@@ -356,7 +356,7 @@ function! s:GetWholeLine ( line_num )
 	let codeline = getline( line_num )
 	while ( strpart( codeline , strlen(codeline) - 1 , 1) == '\' )
 		let line_num = line_num + 1
-		let codeline = strpart( codeline , 0 , strlen( codeline ) - 2 ) . " " . getline (line_num)
+		let codeline = strpart( codeline , 0 , strlen( codeline ) - 1 ) . " " . getline (line_num)
 	endwhile
 
 	let b:sv_whole_cache[a:line_num] = codeline

@@ -40,10 +40,13 @@ let s:UVM_OPEN    = '`\h\w*_utils_begin\>'
 let s:UVM_CLOSE   = '`\h\w*_utils_end\>'
 
 " function/task prototypes never open a fold
-" (extern/pure [virtual] function/task, DPI-C imports)
+" (extern/pure [virtual] function/task, DPI-C imports/exports).
+" NOTE: s:Scan strips string literals before this test, so the DPI
+" forms below match with the "DPI-C" string already removed;
+" requiring the quoted string here could never match.
 let s:PROTOTYPE =
 	\ '^\s*\%(\%(\%(extern\|pure\)\s\+\)\+\%(virtual\s\+\)\=' .
-	\ '\|import\s\+"[^"]*"\s\+\)\%(function\|task\)\>'
+	\ '\|\%(import\s\+\%(context\s\+\|pure\s\+\)\?\|export\s\+\)\)\%(function\|task\)\>'
 
 " heuristic start of a multi-line instantiation: <type> [#(...)] <inst> (...
 " (must not start with a keyword; module parameters/ports often get folded)
