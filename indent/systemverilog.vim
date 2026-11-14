@@ -18,7 +18,14 @@ if exists("*GetSystemVerilogIndent")
 	finish
 endif
 
-let s:BLOCK_COMMENT_START = '^s.*$'
+" A line opens a block comment when an 's' code survives anywhere in
+" its codes: the s[^sp]*p cancel loop in s:ConvertToCodes removes complete
+" pairs, so a leftover 's' is an unterminated '/*' even with
+" code before it on the line ("y = 2; /* open" codes ';s').
+" Anchoring at '^s' missed mid-line openers, so comment text below
+" them (an 'end' inside the comment) was counted as code, and the
+" slow-path skip loop walked past line 1 forever (demo100).
+let s:BLOCK_COMMENT_START = 's'
 let s:BLOCK_COMMENT_STOP = '^.*p$'
 let s:LINE_COMMENT = '^l$'
 let s:GROUP_INDENT_START = 'f'
@@ -153,8 +160,25 @@ function! s:ConvertToCodes( codeline, ... )
 	" unmatched 'e' — rlaphy_env.sv 1496/1497, 2026-11-09); the matching
 	" '{' for a range literal "{[0:15]}" is dropped as well (its follow
 	" class gains '['), so the pair stays balanced either way.
-	let delims = substitute(delims, '\<\(dist\|intersect\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
-	let delims = substitute(delims, '\([=,(]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	" 'return {' is the same shape: a concatenation returned as an
+	" expression (demo102).
+	let delims = substitute(delims, '\<\(dist\|intersect\|return\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	" Streaming operators ({<<{...}}, {>>{...}}) open a brace pair whose
+	" inner '{' must survive as a block code: the outer '{' is kept
+	" (followed by '<'/'>', outside the gate follow class) and
+	" both '}'s are kept, so 'bbee' cancels to nothing. If the
+	" gate below dropped the inner '{' (it follows '<'/'>'), one
+	" 'e' would leak (demo52). Rewrite the inner '{' to '('
+	" (the same 'b' code) to a fixpoint, so nested streaming is
+	" protected level by level.
+	let l:stream_pat = '[{(]\s*\(<<\|>>\)\s*\zs{'
+	while delims =~ l:stream_pat
+		let delims = substitute(delims, l:stream_pat, '(', '')
+	endwhile
+	" The '{' gate also covers operators: a '{' after + - * / %
+	" & | ^ < > ~ ! is an expression operand (a concatenation), never
+	" a block (demo102).
+	let delims = substitute(delims, '\([=,(+*/%&|^<>~!-]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
 	let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '', 'g')
 	" The '{' follow class also includes ' (an unsized based literal
 	" first element, "{'h0, sig[0]}"): without it the '{' is kept
@@ -180,7 +204,21 @@ function! s:ConvertToCodes( codeline, ... )
 	" while its '}' IS dropped, leaving the same unmatched 'b'
 	" (demo70).
 	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
-	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?]\)', '', 'g')
+	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?.]\)', '', 'g')
+	" A concatenation '}' before '[' or ']'
+	" ("{a, b}[i]", "foo[{a, b}]") must drop exactly
+	" when its '{' was dropped above: the '{' drops run
+	" first, so a '{' still standing before the '}' (a
+	" replication or a kept nested '{') means the '}' must
+	" stay paired with it. The tempered gap walks back from the
+	" '}' to the line start or a previous '}' without
+	" crossing a '{'; one '}' per pass, to a fixpoint (demo98).
+	if delims =~ '}\s*[\[\]]'
+		let l:pair_pat = '\(^\|}\)\%(\({\)\@!.\)\{-}\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*[\[\]]'
+		while delims =~ l:pair_pat
+			let delims = substitute(delims, l:pair_pat, '', '')
+		endwhile
+	endif
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
 	" classification below (the later strip becomes a no-op)
@@ -938,6 +976,33 @@ function! s:RegionLastCodeLine( endif_ln, ifdef_ln )
 	return l:last > a:ifdef_ln ? l:last : 0
 endfunction
 
+" If the last code line inside the 'ifdef region ending at a:endif_ln
+" (whose matching 'ifdef is a:ifdef_ln) opens a block whose close sits
+" outside the region, return that line; otherwise 0. A control+begin
+" line codes 'xb' (possibly with a trailing statement, 'xb;'), with no
+" 'e' before it: an 'end else begin' line ('exb') closes a block
+" first, and its indent is governed by the close-after-directive
+" handling, not by this helper (the else-split shape keeps its
+" pristine behavior). A bare opener codes 'b' -- but so does a
+" multi-line call head ('foo('), so the bare form additionally
+" requires an opener keyword at the start of the line. The flat-tail
+" golden convention forbids treating a bare 'b' as an opener
+" without that text check (demo101).
+function! s:RegionEndsWithBlockOpener( endif_ln, ifdef_ln )
+	let l:last = s:RegionLastCodeLine(a:endif_ln, a:ifdef_ln)
+	if l:last <= 0
+		return 0
+	endif
+	let l:codes = s:ConvertToCodes(getline(l:last))
+	if l:codes =~ '^[^e]*xb;*$'
+		return l:last
+	endif
+	if l:codes =~ '^b;*$' && getline(l:last) =~ '^\s*\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\)\>'
+		return l:last
+	endif
+	return 0
+endfunction
+
 " If the last code line inside the `ifdef region ending at a:endif_ln
 " (whose matching `ifdef is a:ifdef_ln) is a control statement, return the
 " indent its body should take (control indent + shiftwidth); otherwise -1.
@@ -954,6 +1019,13 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	endif
 	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
 		return indent(l:last) + &shiftwidth
+	endif
+	" a block opener (if/for/... begin, or a bare begin/fork/case) as
+	" the region's last code line opens a block whose body sits after
+	" the 'endif (demo101): the body indents one level past the opener
+	let l:op = s:RegionEndsWithBlockOpener(a:endif_ln, a:ifdef_ln)
+	if l:op > 0
+		return indent(l:op) + &shiftwidth
 	endif
 	" l:last is confirmed inside the region, so the tail walk needs no
 	" directive crossing: a multi-line control wholly inside one branch
@@ -1235,6 +1307,25 @@ function! s:MatchBlockOpener( close_ln )
 	return 0
 endfunction
 
+" If a block opener at a:opener_ln is the last code line inside an 'ifdef
+" region that closed between it and a:close_ln, return the matching
+" 'ifdef line; otherwise 0. The block is split across the 'endif: its
+" opener sits inside the region, its close outside, so a line after the
+" close resolves to the region's outer level (demo101).
+function! s:SplitBlockIfdef( opener_ln, close_ln )
+	let l:ln = prevnonblank(a:close_ln - 1)
+	while l:ln > a:opener_ln
+		if getline(l:ln) =~ '^\s*`\s*\cendif\>'
+			let l:m = s:FindIfdefMatch(l:ln)
+			if l:m > 0 && l:m <= a:opener_ln && s:RegionEndsWithBlockOpener(l:ln, l:m) == a:opener_ln
+				return l:m
+			endif
+		endif
+		let l:ln = prevnonblank(l:ln - 1)
+	endwhile
+	return 0
+endfunction
+
 " If a:line_num's prev1 is a statement that is itself the body of a control
 " statement inside an `ifdef region (the line before prev1 is an `endif and
 " AfterEndifBodyIndent says prev1 is that control's body), return the line
@@ -1293,6 +1384,14 @@ function! s:BodyAfterEndifIfdef( line_num )
 			if l:res > 0
 				return l:res
 			endif
+		endif
+		" the opener may be the last code line inside an 'ifdef region
+		" that closed between it and the close (demo101): the block is
+		" split across the 'endif, so the line after the close sits at
+		" the region's outer level, not at the close's indent
+		let l:sp = s:SplitBlockIfdef(l:op, a:line_num)
+		if l:sp > 0
+			return l:sp
 		endif
 		return 0
 	endif
@@ -1920,6 +2019,16 @@ function! s:RollFastIndent( line_num )
 		if l:sig_is_endif
 			let l:m = get(b:sv_roll_match, l:sig, 0)
 			if l:m > 0
+				" a bare block close (end, not a group close) after an
+				" 'endif whose region ends with a block opener closes
+				" that opener: align with it instead of resolving
+				" through the region (demo101)
+				if l:this_codes ==# 'e'
+					let l:op = s:RegionEndsWithBlockOpener(l:sig, l:m)
+					if l:op > 0
+						return indent(l:op)
+					endif
+				endif
 				if l:this_codes =~ '^[he]$'
 					let l:prev_start = l:m
 					let l:prev_start = s:PrevCodeLine(l:prev_start)
@@ -2289,6 +2398,16 @@ function! s:SlowIndent( line_num )
 			if l =~ '^\s*`\s*\cendif\>'
 				let l:m = s:FindIfdefMatch(ln)
 				if l:m > 0
+					" a bare block close (end, not a group close) after an
+					" 'endif whose region ends with a block opener closes
+					" that opener: align with it instead of resolving
+					" through the region (demo101)
+					if l:this_codes_early ==# 'e'
+						let l:op = s:RegionEndsWithBlockOpener(ln, l:m)
+						if l:op > 0
+							return indent(l:op)
+						endif
+					endif
 					if l:this_codes_early =~ '^[he]$'
 						" a bare group/block close (end, endcase,
 						" endfunction, ...) after an `endif: it closes
@@ -2367,7 +2486,8 @@ function! s:SlowIndent( line_num )
 	let prev1_codeline = s:GetWholeLine (prev1_line_num)
 	let prev1_codes = s:ConvertToCodes(prev1_codeline)
 	let in_comment = 0
-	while ( prev1_codes =~ s:LINE_COMMENT || in_comment || prev1_codes =~ s:BLOCK_COMMENT_STOP || prev1_codes =~ s:BLOCK_COMMENT_START || prev1_codes =~ s:PREPROCESSOR)
+	" line bound: an unterminated comment (or a stray '*/') must stop at line 1, not walk forever (demo100).
+	while (prev1_line_num > 0 && (prev1_codes =~ s:LINE_COMMENT || in_comment || prev1_codes =~ s:BLOCK_COMMENT_STOP || prev1_codes =~ s:BLOCK_COMMENT_START || prev1_codes =~ s:PREPROCESSOR))
 		if (prev1_codes =~ s:BLOCK_COMMENT_STOP)
 			let in_comment = 1
 		endif
@@ -2395,7 +2515,8 @@ function! s:SlowIndent( line_num )
 	let prev2_codeline = s:GetWholeLine (prev2_line_num)
 	let prev2_codes = s:ConvertToCodes(prev2_codeline)
 	let in_comment = 0
-	while ( prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR)
+	" line bound: an unterminated comment (or a stray '*/') must stop at line 1, not walk forever (demo100).
+	while (prev2_line_num > 0 && (prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR))
 		if (prev2_codes =~ s:BLOCK_COMMENT_STOP)
 			let in_comment = 1
 		endif

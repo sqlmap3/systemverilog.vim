@@ -432,7 +432,7 @@ function string uvm_reg_file::get_full_name();
 
   // Is there a parent register file?
   if (m_rf != null)
-  return {m_rf.get_full_name(), ".", get_full_name};
+    return {m_rf.get_full_name(), ".", get_full_name};
 
   // No: then prepend the full name of the parent block (if any)
   if (this.parent == null)

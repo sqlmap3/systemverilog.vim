@@ -2980,7 +2980,7 @@ virtual class uvm_component extends uvm_report_object;
       return "^$";
 
     if(scope == "*")
-    return {get_full_name(), ".*"};
+      return {get_full_name(), ".*"};
 
     // absolute path to the top-level test
     if(scope == "uvm_test_top")
@@ -2988,7 +2988,7 @@ virtual class uvm_component extends uvm_report_object;
 
     // absolute path to uvm_root
     if(scope[0] == ".")
-    return {get_full_name(), scope};
+      return {get_full_name(), scope};
 
     return {get_full_name(), ".", scope};
 

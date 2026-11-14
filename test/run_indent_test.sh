@@ -48,8 +48,12 @@ set -u
 #   indent_demo78.sv  always @(...`ifdef...`) begin same line shifts
 #                     everything after +1 (bug #2, root cause not pinned)
 #   indent_demo79.sv  multi-line unnamed default clocking body not
+#   indent_demo99.sv  line-leading '};' closing a split concatenation
+#                     dedents -1 (hit 2, 2026-11-14): a line-local drop
+#                     breaks demo50, only a contextual opener-matching
+#                     fix can tell the shapes apart
 #                     indented, endclocking lands at module level (bug #3)
-XFAIL_DEMOS="indent_demo78.sv indent_demo79.sv"
+XFAIL_DEMOS="indent_demo78.sv indent_demo79.sv indent_demo99.sv"
 
 VIM="${VIM:-vim}"
 PLUGDIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)

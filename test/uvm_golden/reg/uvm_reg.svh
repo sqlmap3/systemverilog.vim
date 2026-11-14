@@ -1564,10 +1564,10 @@ endfunction
 function string uvm_reg::get_full_name();
 
   if (m_regfile_parent != null)
-  return {m_regfile_parent.get_full_name(), ".", get_name()};
+    return {m_regfile_parent.get_full_name(), ".", get_name()};
 
   if (m_parent != null)
-  return {m_parent.get_full_name(), ".", get_name()};
+    return {m_parent.get_full_name(), ".", get_name()};
 
   return get_name();
 endfunction: get_full_name
