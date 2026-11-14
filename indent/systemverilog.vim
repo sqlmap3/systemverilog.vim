@@ -27,13 +27,24 @@ endif
 " slow-path skip loop walked past line 1 forever (demo100).
 let s:BLOCK_COMMENT_START = 's'
 let s:BLOCK_COMMENT_STOP = '^.*p$'
+" a line closes a block comment when a leftover "p" has no
+" later "s" on the line: code after "*/" ("*/ begin",
+" "*/ x = 1;") still ends the comment (demo103). The strict
+" STOP above stays for lines that ARE the close (their
+" indent is kept); STOP_ANY only clears comment state.
+let s:BLOCK_COMMENT_STOP_ANY = 'p[^s]*$'
+" structural code letters in ConvertToCodes output (b/e/f/h/x/;).
+" Codes also carry punctuation residue verbatim (a doc-comment
+" opener codes as "s*", a close as "*p"), so "carries code" must
+" test for these letters, never for any non-marker character.
+let s:CODE_LETTER = '[befhx;]'
 let s:LINE_COMMENT = '^l$'
 let s:GROUP_INDENT_START = 'f'
 let s:GROUP_INDENT_STOP = 'h'
 let s:BLOCK_INDENT_START = 'b'
 let s:BLOCK_INDENT_STOP = 'e'
-let s:LINE_INDENT = '^.*x$'
-let s:EXEC_LINE = '^.*;$'
+let s:LINE_INDENT = '^.*x[sp]*$'
+let s:EXEC_LINE = '^.*;[sp]*$'
 let s:PREPROCESSOR = '^z.*$'
 
 "b - 'begin', '(', '{'
@@ -377,6 +388,37 @@ function! s:ConvertToCodes( codeline, ... )
 	endwhile
 	let b:sv_conv_cache[l:key] = delims
 	return delims
+endfunction
+
+" Segments of a block-comment boundary line that lie outside the
+" comment markers: [before-first-/*, after-first-*/-up-to-reopen].
+" Strings are stripped first (same uniform pattern as the code
+" paths), so a "/*" inside a string cannot split the line.
+function! s:CommentSegments( codeline )
+	let l:stripped = substitute(a:codeline, '"\(\\.\|[^"\\]\)*"', '""', 'g')
+	let l:before = matchstr(l:stripped, '^.\{-}\ze/\*')
+	let l:after = matchstr(l:stripped, '\*/\zs.*$')
+	let l:cut = stridx(l:after, '/*')
+	if l:cut >= 0
+		let l:after = strpart(l:after, 0, l:cut)
+	endif
+	return [l:before, l:after]
+endfunction
+
+" True when a boundary line carries real code outside the markers.
+" Codes alone cannot tell: comment prose maps keywords to letters
+" (an 'if' inside a /** doc comment codes as 'x'), so test the
+" segments for a structural code letter instead (demo103/104).
+function! s:BoundaryHasCode( codeline )
+	let [l:before, l:after] = s:CommentSegments(a:codeline)
+	return (l:before != '' && s:ConvertToCodes(l:before) =~ s:CODE_LETTER)
+		\ || (l:after != '' && s:ConvertToCodes(l:after) =~ s:CODE_LETTER)
+endfunction
+
+" True when code follows the first */ (up to a re-opening /*).
+function! s:CodeAfterClose( codeline )
+	let l:after = s:CommentSegments(a:codeline)[1]
+	return l:after != '' && s:ConvertToCodes(l:after) =~ s:CODE_LETTER
 endfunction
 
 function! s:GetPrevWholeLineNum ( line_num )
@@ -1121,11 +1163,18 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 				let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
 				let l:in_comment = 0
 				while l:pl > 0 && (l:pl_codes =~ s:LINE_COMMENT || l:in_comment || l:pl_codes =~ s:BLOCK_COMMENT_STOP || l:pl_codes =~ s:BLOCK_COMMENT_START || l:pl_codes =~ s:PREPROCESSOR)
-					if l:pl_codes =~ s:BLOCK_COMMENT_STOP
+					if l:pl_codes =~ s:BLOCK_COMMENT_STOP_ANY
 						let l:in_comment = 1
 					endif
 					if l:pl_codes =~ s:BLOCK_COMMENT_START
 						let l:in_comment = 0
+					endif
+					" boundary line carrying code ("begin /*", "*/ end"):
+					" use it as the previous code line instead of skipping
+					" past it; comment-interior lines keep skipping even
+					" when their text contains keywords (demo103).
+					if (l:pl_codes =~ s:BLOCK_COMMENT_STOP_ANY || l:pl_codes =~ s:BLOCK_COMMENT_START) && s:BoundaryHasCode(s:GetWholeLine(l:pl)) && l:pl_codes !~ s:LINE_COMMENT && l:pl_codes !~ s:PREPROCESSOR
+						break
 					endif
 					let l:pl = s:GetPrevWholeLineNum(l:pl)
 					if l:pl <= 0
@@ -1678,8 +1727,16 @@ function! s:RollUpdate( line_num, indnt )
 	elseif !l:blank || b:sv_roll_pend >= 0
 		let l:ustart = b:sv_roll_pend >= 0 ? b:sv_roll_pend : a:line_num
 		let l:uic = b:sv_roll_pend >= 0 ? b:sv_roll_pend_ic : b:sv_roll_incomment
-		let l:ucodes = s:ConvertToCodes(s:GetWholeLine(l:ustart))
-		if !(l:ucodes =~ s:LINE_COMMENT || l:ucodes =~ s:BLOCK_COMMENT_START || l:ucodes =~ s:BLOCK_COMMENT_STOP || l:ucodes =~ s:PREPROCESSOR || l:uic)
+		let l:utext = s:GetWholeLine(l:ustart)
+		let l:ucodes = s:ConvertToCodes(l:utext)
+		" a unit is comment-only when it carries no code outside
+		" the comment markers: a unit starting inside a comment
+		" counts only with code AFTER the closing "*/" (demo103);
+		" a unit starting outside counts when any code letter
+		" survives the markers (a "begin /*" opener included).
+		let l:ucode = s:BoundaryHasCode(l:utext)
+		let l:uafter = s:CodeAfterClose(l:utext)
+		if !(l:ucodes =~ s:LINE_COMMENT || l:ucodes =~ s:PREPROCESSOR || (l:uic && !l:uafter) || (!l:uic && !l:ucode && (l:ucodes =~ s:BLOCK_COMMENT_START || l:ucodes =~ s:BLOCK_COMMENT_STOP)))
 			call add(b:sv_roll_codelines, l:ustart)
 			let b:sv_roll_ucodes[l:ustart] = l:ucodes
 			let b:sv_roll_uindent[l:ustart] = (l:ustart == a:line_num ? l:eff : indent(l:ustart))
@@ -1734,7 +1791,7 @@ function! s:RollUpdate( line_num, indnt )
 	" path's block-comment block; continuation lines never reach it there
 	if !l:prev_bs
 		let l:pcodes = s:ConvertToCodes(l:line)
-		if l:pcodes =~ s:BLOCK_COMMENT_STOP
+		if l:pcodes =~ s:BLOCK_COMMENT_STOP_ANY
 			let b:sv_roll_incomment = 0
 		elseif l:pcodes =~ s:BLOCK_COMMENT_START
 			let b:sv_roll_incomment = 1
@@ -1935,7 +1992,7 @@ function! s:RollPlainLine( line_num )
 	let l:ind = indent(l:prev)
 	if len(b:sv_roll_codelines) >= 2 && b:sv_roll_codelines[-1] == l:prev
 		let l:p2codes = get(b:sv_roll_ucodes, b:sv_roll_codelines[-2], '')
-		if l:p2codes[-1:] ==# 'x' || s:ControlTailHead(b:sv_roll_codelines[-2]) > 0
+		if l:p2codes =~ s:LINE_INDENT || s:ControlTailHead(b:sv_roll_codelines[-2]) > 0
 			let l:ind = l:ind - &shiftwidth
 		endif
 	elseif len(b:sv_roll_codelines) < 2
@@ -2485,19 +2542,42 @@ function! s:SlowIndent( line_num )
 	let prev1_for_comment_line = prev1_line_num
 	let prev1_codeline = s:GetWholeLine (prev1_line_num)
 	let prev1_codes = s:ConvertToCodes(prev1_codeline)
-	let in_comment = 0
+	" this line closes a block comment ("*/ begin"): the lines above
+	" it back to the opener are comment interior, so seed the walk
+	" inside the comment; otherwise prev1 lands on an interior line
+	" and this line inherits its arbitrary kept indent (demo103).
+	let in_comment = (l:this_codes_early =~ s:BLOCK_COMMENT_STOP_ANY) ? 1 : 0
+	let l:seeded_close = in_comment
+	let l:saw_comment_start = 0
+	let l:orig_p1_num = prev1_line_num
+	let l:orig_p1_codes = prev1_codes
 	" line bound: an unterminated comment (or a stray '*/') must stop at line 1, not walk forever (demo100).
 	while (prev1_line_num > 0 && (prev1_codes =~ s:LINE_COMMENT || in_comment || prev1_codes =~ s:BLOCK_COMMENT_STOP || prev1_codes =~ s:BLOCK_COMMENT_START || prev1_codes =~ s:PREPROCESSOR))
-		if (prev1_codes =~ s:BLOCK_COMMENT_STOP)
+		if (prev1_codes =~ s:BLOCK_COMMENT_STOP_ANY)
 			let in_comment = 1
 		endif
 		if (prev1_codes =~ s:BLOCK_COMMENT_START)
 			let in_comment = 0
+			let l:saw_comment_start = 1
+		endif
+		" boundary line carrying code ("begin /*", "*/ end"):
+		" use it as the previous code line instead of skipping
+		" past it; comment-interior lines keep skipping even
+		" when their text contains keywords (demo103).
+		if (prev1_codes =~ s:BLOCK_COMMENT_STOP_ANY || prev1_codes =~ s:BLOCK_COMMENT_START) && s:BoundaryHasCode(prev1_codeline) && prev1_codes !~ s:LINE_COMMENT && prev1_codes !~ s:PREPROCESSOR
+			break
 		endif
 		let prev1_line_num = s:GetPrevWholeLineNum (prev1_line_num)
 		let prev1_codeline = s:GetWholeLine (prev1_line_num)
 		let prev1_codes = s:ConvertToCodes(prev1_codeline)
 	endwhile
+	" a stray "*/" with no opener above: the seeded walk ran off the
+	" top of the file without finding a comment start; fall back to
+	" the unseeded previous line (demo103).
+	if l:seeded_close && !l:saw_comment_start && prev1_line_num <= 0
+		let prev1_line_num = l:orig_p1_num
+		let prev1_codes = l:orig_p1_codes
+	endif
 
 	" a line in a branch after `else/`elsif must see the code before
 	" the `ifdef, not the sibling branch's lines, when it closes the
@@ -2517,11 +2597,18 @@ function! s:SlowIndent( line_num )
 	let in_comment = 0
 	" line bound: an unterminated comment (or a stray '*/') must stop at line 1, not walk forever (demo100).
 	while (prev2_line_num > 0 && (prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR))
-		if (prev2_codes =~ s:BLOCK_COMMENT_STOP)
+		if (prev2_codes =~ s:BLOCK_COMMENT_STOP_ANY)
 			let in_comment = 1
 		endif
 		if (prev2_codes =~ s:BLOCK_COMMENT_START)
 			let in_comment = 0
+		endif
+		" boundary line carrying code ("begin /*", "*/ end"):
+		" use it as the previous code line instead of skipping
+		" past it; comment-interior lines keep skipping even
+		" when their text contains keywords (demo103).
+		if (prev2_codes =~ s:BLOCK_COMMENT_STOP_ANY || prev2_codes =~ s:BLOCK_COMMENT_START) && s:BoundaryHasCode(prev2_codeline) && prev2_codes !~ s:LINE_COMMENT && prev2_codes !~ s:PREPROCESSOR
+			break
 		endif
 		let prev2_line_num = s:GetPrevWholeLineNum (prev2_line_num)
 		let prev2_codeline = s:GetWholeLine (prev2_line_num)
@@ -2646,7 +2733,7 @@ function! s:SlowIndent( line_num )
 
 	let indnt = s:GetCodeIndent ( indnt, prev2_gci_codes, prev1_codes, this_codes)
 
-	if this_codes =~ s:BLOCK_COMMENT_STOP || b:block_comment_change != b:changedtick || b:block_comment_line != prev1_for_comment_line
+	if this_codes =~ s:BLOCK_COMMENT_STOP_ANY || b:block_comment_change != b:changedtick || b:block_comment_line != prev1_for_comment_line
 		let b:in_block_comment = 0
 	endif
 	if this_codes =~ s:BLOCK_COMMENT_STOP

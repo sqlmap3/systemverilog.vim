@@ -159,4 +159,19 @@
  3|  endfunction
  2|endclass
  1|
+ 2|class proto_qual_c;
+ 2|  extern protected function void a();
+ 2|  extern local function void b();
+ 2|  extern protected virtual function void c();
+ 2|  extern local task d();
+ 2|  extern protected function void e();
+ 2|  extern virtual protected function void f();
+ 2|  extern local virtual task g();
+ 2|  extern protected static function void h();
+ 2|  extern local static function void i();
+ 3|  function void real_fn();
+ 3|    x = 1;
+ 3|  endfunction
+ 2|endclass
+ 1|
  1|`endif // FOLD_DEMO_SV

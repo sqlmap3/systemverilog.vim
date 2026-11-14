@@ -159,4 +159,19 @@ class str_edge_c;
   endfunction
 endclass
 
+class proto_qual_c;
+  extern protected function void a();
+  extern local function void b();
+  extern protected virtual function void c();
+  extern local task d();
+  extern protected function void e();
+  extern virtual protected function void f();
+  extern local virtual task g();
+  extern protected static function void h();
+  extern local static function void i();
+  function void real_fn();
+    x = 1;
+  endfunction
+endclass
+
 `endif // FOLD_DEMO_SV
