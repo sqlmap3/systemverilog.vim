@@ -421,6 +421,76 @@ function! s:CodeAfterClose( codeline )
 	return l:after != '' && s:ConvertToCodes(l:after) =~ s:CODE_LETTER
 endfunction
 
+" True when a:codeline ends with a backslash that is real code: the
+" last character is \ and it sits outside any string literal
+" and outside any comment. A \ ending a // comment
+" line, or inside a trailing // comment, or inside a
+" same-line /* */ comment, is comment text, not a line
+" continuation: treating it as one used to swallow the next line
+" into the comment (a comment line ending in \ made the
+" following if/begin invisible, demo105). The raw last character
+" must be \ (a \ followed by a comment or trailing
+" spaces is not a continuation, as before); only the
+" comment/string membership is new.
+function! s:EndsWithCodeBs( codeline )
+	let l:l = a:codeline
+	if strlen(l:l) == 0 || strpart(l:l, strlen(l:l) - 1, 1) != '\'
+		return 0
+	endif
+	let l:l = substitute(l:l, '"\(\\.\|[^"\\]\)*"', '""', 'g')
+	if strlen(l:l) == 0 || strpart(l:l, strlen(l:l) - 1, 1) != '\'
+		return 0
+	endif
+	let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
+	if strlen(l:l) == 0 || strpart(l:l, strlen(l:l) - 1, 1) != '\'
+		return 0
+	endif
+	let l:cut = stridx(l:l, '//')
+	if l:cut >= 0
+		let l:l = strpart(l:l, 0, l:cut)
+	endif
+	return strlen(l:l) > 0 && strpart(l:l, strlen(l:l) - 1, 1) == '\'
+endfunction
+
+" Raw backslash-chain test: is a:line_num inside a multi-line `define
+" body, judging the chain by RAW trailing backslashes only (no
+" comment/string awareness)? A `define body is a contiguous run of
+" lines ending in backslash rooted at a `define line; UVM macro
+" bodies chain code and comment lines alike with backslashes, and
+" the chain verdicts below must not break such a body (demos
+" u1/u2/u3). Blank lines break the chain. Never calls
+" s:EndsWithCodeBs, so no recursion through s:DefineBodyStart.
+function! s:InDefineBodyRaw( line_num )
+	let l:ln = a:line_num
+	while l:ln > 1
+		let l:prev = getline(l:ln - 1)
+		if strlen(l:prev) == 0 || strpart(l:prev, strlen(l:prev) - 1, 1) != '\'
+			break
+		endif
+		let l:ln -= 1
+	endwhile
+	return l:ln < a:line_num && getline(l:ln) =~ '^\s*`define\>'
+endfunction
+
+" Chain verdict: a trailing backslash that continues the logical
+" line. A code backslash (s:EndsWithCodeBs) always chains. A
+" backslash inside a comment or string chains ONLY inside a
+" multi-line `define body, where the UVM macro idiom chains every
+" body line with a backslash and breaking the chain collapses the
+" body (demos u1/u2/u3). Outside a define body such a backslash is
+" comment/string text and the next line starts fresh (demos
+" 105/106, s12). a:line_num must be the number of the line whose
+" text a:codeline is (the define-body walk reads the buffer).
+function! s:EndsWithChainBs( codeline, line_num )
+	if s:EndsWithCodeBs(a:codeline)
+		return 1
+	endif
+	if strlen(a:codeline) == 0 || strpart(a:codeline, strlen(a:codeline) - 1, 1) != '\'
+		return 0
+	endif
+	return s:InDefineBodyRaw(a:line_num)
+endfunction
+
 function! s:GetPrevWholeLineNum ( line_num )
 	if b:sv_conv_tick != b:changedtick
 		let b:sv_conv_tick = b:changedtick
@@ -434,7 +504,7 @@ function! s:GetPrevWholeLineNum ( line_num )
 	let prev1_line_num = prevnonblank( a:line_num - 1)
 	let prev2_line_num = prev1_line_num - 1
 	let prev2_codeline = getline( prev2_line_num )
-	while ( strpart( prev2_codeline , strlen(prev2_codeline) - 1 , 1) == '\' )
+	while ( s:EndsWithChainBs(prev2_codeline, prev2_line_num) )
 		let prev1_line_num = prev1_line_num - 1
 		let prev2_line_num = prev1_line_num - 1
 		let prev2_codeline = getline( prev2_line_num )
@@ -456,9 +526,13 @@ function! s:GetWholeLine ( line_num )
 	endif
 	let line_num = a:line_num
 	let codeline = getline( line_num )
-	while ( strpart( codeline , strlen(codeline) - 1 , 1) == '\' )
+	let lastline = codeline
+	let lastnum = line_num
+	while ( s:EndsWithChainBs(lastline, lastnum) )
 		let line_num = line_num + 1
-		let codeline = strpart( codeline , 0 , strlen( codeline ) - 1 ) . " " . getline (line_num)
+		let lastline = getline (line_num)
+		let lastnum = line_num
+		let codeline = strpart( codeline , 0 , strlen( codeline ) - 1 ) . " " . lastline
 	endwhile
 
 	let b:sv_whole_cache[a:line_num] = codeline
@@ -517,7 +591,7 @@ endfunction
 " to the counting), so a:line_num equal to the `define line returns 0.
 function! s:DefineBodyStart( line_num )
 	let l:ln = a:line_num
-	while l:ln > 1 && getline(l:ln - 1) =~ '\\$'
+	while l:ln > 1 && s:EndsWithCodeBs(getline(l:ln - 1))
 		let l:ln -= 1
 	endwhile
 	if l:ln < a:line_num && getline(l:ln) =~ '^\s*`define\>'
@@ -1653,8 +1727,7 @@ function! s:RollReset()
 endfunction
 
 function! s:RollEndsBs( line_num )
-	let l:l = getline(a:line_num)
-	return strlen(l:l) > 0 && strpart(l:l, strlen(l:l) - 1, 1) == '\'
+	return s:EndsWithChainBs(getline(a:line_num), a:line_num)
 endfunction
 
 " 1 while the chain is intact: called for consecutive non-blank lines from
@@ -2345,8 +2418,18 @@ function! s:SlowIndent( line_num )
 	" line, so prev1 resolves to the code before the whole region
 	let l:prev_start = a:line_num
 
-	if ( strpart( prev1_codeline , strlen(prev1_codeline) - 1 , 1) == '\' )
-		if ( strpart( prev2_codeline , strlen(prev2_codeline) - 1 , 1) == '\' )
+	" Backslash verdicts for the continuation block below: a directive
+	" line (this line) never sits "in the middle" of a continuation
+	" block for indent purposes - its indent comes from the directive
+	" machinery, and a comment backslash above it must not divert it
+	" there (demo107: the `ifdef after a `define + comment line).
+	" Code lines use the chain verdict so a `define body chains
+	" through its comment lines (demos u1/u2/u3).
+	let l:bs1 = (l:this_codes_early =~ s:PREPROCESSOR) ? s:EndsWithCodeBs(prev1_codeline) : s:EndsWithChainBs(prev1_codeline, prev1_line_num)
+	let l:bs2 = (l:this_codes_early =~ s:PREPROCESSOR) ? s:EndsWithCodeBs(prev2_codeline) : s:EndsWithChainBs(prev2_codeline, prev2_line_num)
+
+	if ( l:bs1 )
+		if ( l:bs2 )
 			" middle of a backslash continuation block (a multi-line
 			" `define body): keep the previous line's level, adjusted only
 			" by the keyword structure of the surrounding lines. Parens are
@@ -2363,7 +2446,7 @@ function! s:SlowIndent( line_num )
 			return indnt + &shiftwidth
 		endif
 	else
-		if ( strpart( prev2_codeline , strlen(prev2_codeline) - 1 , 1) == '\' )
+		if ( l:bs2 )
 			let indnt = indnt - &shiftwidth
 		endif
 	endif

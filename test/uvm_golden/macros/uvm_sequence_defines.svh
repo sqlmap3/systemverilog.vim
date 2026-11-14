@@ -345,7 +345,7 @@
 //|    `uvm_add_to_seq_lib(seqA, simple_seq_lib_CFG)
 //|
 //|    virtual task body(); \
-  //|      `uvm_info("SEQ_START", {"Executing sequence '", get_full_name(),
+//|      `uvm_info("SEQ_START", {"Executing sequence '", get_full_name(),
 //|                             "' (",get_type_name(),")"},UVM_HIGH)
 //|      #10;
 //|    endtask

@@ -120,8 +120,8 @@
 //
 //|
 //|   sequencer.wait_for_grant(prior) (task) \ start_item  \
-  //|   parent_seq.pre_do(1)            (task) /              \
-  //|                                                      `uvm_do* macros
+//|   parent_seq.pre_do(1)            (task) /              \
+//|                                                      `uvm_do* macros
 //|   parent_seq.mid_do(item)         (func) \              /
 //|   sequencer.send_request(item)    (func)  \finish_item /
 //|   sequencer.wait_for_item_done()  (task)  /
