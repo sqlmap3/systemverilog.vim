@@ -233,4 +233,58 @@
  2|  y = 2;
  2|endmodule
  1|
+ 2|module dc_c1_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    input #1 a;
+ 3|    /* http://example.com/spec */
+ 3|    output #1 b;
+ 3|  endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_c2_m;
+ 3|  default clocking cb @(posedge clk);
+ 4|    /* comment start
+ 4|    // note */
+ 3|    input #1 a;
+ 3|  endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_c9b_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    input #1 a;
+ 3|    $display("a\n/* trap");
+ 3|  endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_c6_m;
+ 2|  default clocking cb;
+ 2|  /* http://example.com/spec */
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_c7_m;
+ 2|  default clocking cb;
+ 3|  /* start
+ 3|  // note */
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_c8_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    input #1 a;
+ 3|  endclocking
+ 2|  /* http://example.com/spec */
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_e6_m;
+ 3|  default clocking cb @(posedge clk); /* http://example.com/spec */
+ 3|    input #1 a;
+ 3|  endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
  1|`endif // FOLD_DEMO_SV

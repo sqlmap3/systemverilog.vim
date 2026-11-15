@@ -151,9 +151,10 @@ function! s:DefaultClockingIsBlock(lnum, code, in_comment) abort
 	while l:j <= l:last
 		let l:t = getline(l:j)
 		let l:t = substitute(l:t, "'\\.'", '', 'g')
-		let l:t = substitute(l:t, '"\(\\. \|[^"\\]\)*"', '', 'g')
-		let l:t = substitute(l:t, '//.*', '', 'g')
+		let l:t = substitute(l:t, '"\(\\.\|[^"\\]\)*"', '', 'g')
 		if l:in_comment
+			" inside a block comment // is inert: find the closer
+			" before stripping line comments
 			if l:t =~# '\*/'
 				let l:in_comment = 0
 				let l:t = substitute(l:t, '^.\{-}\*/', '', '')
@@ -162,7 +163,11 @@ function! s:DefaultClockingIsBlock(lnum, code, in_comment) abort
 				continue
 			endif
 		endif
-		let l:tc = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		" complete /* ... */ pairs drop out before // is stripped:
+		" a // inside a pair must not eat the closing */
+		let l:t = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		let l:t = substitute(l:t, '//.*', '', 'g')
+		let l:tc = l:t
 		if l:tc =~# '/\*'
 			let l:in_comment = 1
 			let l:tc = substitute(l:tc, '/\*.*$', '', '')
@@ -199,13 +204,14 @@ function! s:Scan(lnum) abort
 			\   ? (s:Count(l:t, '\V{{{') - s:Count(l:t, '\V}}}'))
 			\   : 0
 
-		let l:t = substitute(l:t, '//.*', '', 'g')
-
-		" complete same-line block comments drop out; a leftover /* opens
-		" one, a leftover */ closes one
-		let l:tc = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		" complete /* ... */ pairs drop out before line comments are
+		" stripped: a // inside a pair must not eat the closing */.
+		" The closer test uses the pre-// text: inside a block comment
+		" entered on an earlier line, // is inert and */ still closes.
+		let l:tp = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		let l:tc = substitute(l:tp, '//.*', '', 'g')
 		let l:r.oc = l:tc =~# '/\*' ? 1 : 0
-		let l:r.cc = (l:tc =~# '\*/' && !l:r.oc) ? 1 : 0
+		let l:r.cc = (l:tp =~# '\*/' && !l:r.oc) ? 1 : 0
 		let l:code = substitute(l:tc, '/\*.*$', '', '')
 
 		let l:r.bs  = l:code =~# '\\\s*$' ? 1 : 0

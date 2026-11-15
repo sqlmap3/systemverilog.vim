@@ -313,9 +313,9 @@ function! s:ConvertToCodes( codeline, ... )
 	" (demo48)
 	let delims = substitute(delims, 'export[^\n]*function', '', 'g')
 	let delims = substitute(delims, 'export[^\n]*task', '', 'g')
-	let delims = substitute(delims, 'default\s\+clocking[^;]*;\s*endclocking', '', 'g')
-	let delims = substitute(delims, 'default\s\+clocking\ze\s\+\h\w*\s*;', '', 'g')
-	let delims = substitute(delims, 'default\s\+clocking\ze\s*[@;]', '', 'g')
+	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking[^;]*;\s*endclocking', '', 'g')
+	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s\+\h\w*\s*;', '', 'g')
+	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s*[@;]', '', 'g')
 	" A control line whose body is a complete block on the SAME line
 	" ("if (a) begin b = 1; end") must not indent the next line: the
 	" b/e cancel leaves a trailing 'x' (LINE_INDENT) and the following
@@ -340,8 +340,8 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
 	let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
 	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|wait_order\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|restrict\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
-	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
-	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
+	let delims = substitute(delims, 'wait\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
+	let delims = substitute(delims, 'disable\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
 	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
@@ -368,12 +368,12 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<wait\>', l:kx, 'g')
 	let delims = substitute(delims, '\<alias\>', '', 'g')
 	let delims = substitute(delims, '\<final\>', '', 'g')
-	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
+	let delims = substitute(delims, 'typedef\s*\%(\/\*.\{-}\*\/\s*\)*class', '', 'g')
 	let delims = substitute(delims, 'typedef', '', 'g')
 	" 'property'/'sequence' in assert/assume/cover/restrict is a reference, not a
 	" sequence/property definition (assert, property, sequence are all in the
 	" keep-list, so this can run after the filter)
-	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s\+\%(\[\s*#\s*\S\{-}\s*\]\s*\)\?\%(property\|sequence\)', '', 'g')
+	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s*\%(\/\*.\{-}\*\/\s*\)*\%(\[\s*#\s*\S\{-}\s*\]\s*\%(\/\*.\{-}\*\/\s*\)*\)\?\%(property\|sequence\)', '', 'g')
 	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
 	" a macro call in the MIDDLE of a line ("else `uvm_error(...)",
 	" "if (x) `uvm_info(...)") is a complete statement to the indent
@@ -397,7 +397,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" indents one level, and the dedent rule (prev2 x + prev1 exec) can also
 	" fire for end/endfunction/endtask that follow an else-branch.
 	" 'assert' stays a statement terminator (lower priority, per README).
-	let delims = substitute(delims, '\<assert\>', ';', 'g')
+	let delims = substitute(delims, '\<\%(assert\|assume\|cover\|restrict\)\>', ';', 'g')
 	let delims = substitute(delims, '\<else\>', l:kx, 'g')
 	let delims = substitute(delims, '^\s*\/\/.*$', 'l', 'g')
 	let delims = substitute(delims, '\/\/.*', '', 'g')

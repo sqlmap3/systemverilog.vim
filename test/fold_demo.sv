@@ -233,4 +233,58 @@ module dc_b9_m;
   y = 2;
 endmodule
 
+module dc_c1_m;
+  default clocking cb @(posedge clk);
+    input #1 a;
+    /* http://example.com/spec */
+    output #1 b;
+  endclocking
+  x = 1;
+endmodule
+
+module dc_c2_m;
+  default clocking cb @(posedge clk);
+    /* comment start
+    // note */
+    input #1 a;
+  endclocking
+  x = 1;
+endmodule
+
+module dc_c9b_m;
+  default clocking cb @(posedge clk);
+    input #1 a;
+    $display("a\n/* trap");
+  endclocking
+  x = 1;
+endmodule
+
+module dc_c6_m;
+  default clocking cb;
+  /* http://example.com/spec */
+  x = 1;
+endmodule
+
+module dc_c7_m;
+  default clocking cb;
+  /* start
+  // note */
+  x = 1;
+endmodule
+
+module dc_c8_m;
+  default clocking cb @(posedge clk);
+    input #1 a;
+  endclocking
+  /* http://example.com/spec */
+  x = 1;
+endmodule
+
+module dc_e6_m;
+  default clocking cb @(posedge clk); /* http://example.com/spec */
+    input #1 a;
+  endclocking
+  x = 1;
+endmodule
+
 `endif // FOLD_DEMO_SV
