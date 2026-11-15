@@ -47,6 +47,12 @@ let s:LINE_INDENT = '^.*x[sp]*$'
 let s:EXEC_LINE = '^.*;[sp]*$'
 let s:PREPROCESSOR = '^z.*$'
 
+" Silent concat close (see s:ConcatPairVerdict): a '}' that closes a
+" kept '{' but must not self-dedent its line. Only GetCodeIndent's
+" prev1 rule reads it. 'c' never appears in baseline codes.
+let s:CONCAT_CLOSE = 'c'
+
+
 "b - 'begin', '(', '{'
 "e - 'end', ')', '{'
 "f - 'class', 'function', 'task'
@@ -94,14 +100,45 @@ function! s:ConvertToCodes( codeline, ... )
 	" bodies are not indented - see README)
 	" memoize: the skip loops below re-classify the same (joined) lines many
 	" times. Key on changedtick (constant during gg=G) + input + mode.
+
+" All three caches share b:sv_conv_tick as the invalidation signal, so
+" all three reset together: if this block advances the tick while
+" leaving the whole/prev caches, GetWholeLine serves 1-tick-stale
+" text and the pairing scan's text==getline guard never fires.
 	if b:sv_conv_tick != b:changedtick
 		let b:sv_conv_tick = b:changedtick
 		let b:sv_conv_cache = {}
+		let b:sv_prev_cache = {}
+		let b:sv_whole_cache = {}
 	endif
-	let l:key = (a:0 ? '1:' : '0:') . a:codeline
+
+" Modes: the first optional argument absent/0 = normal; 1 = no-parens
+" (delimiters dropped); 2 = brace-only (only '{'/'}' map to b/e; the
+" pairing scan's classifier). The second optional argument = the buffer
+
+" line number of a:codeline: only when it is given AND a:codeline is
+" that line's current text (up to leading whitespace, which gg=G
+" changes without moving changedtick) does the pairing scan run;
+" joined/substituted text never scans.
+	let l:mode = a:0 ? a:1 : 0
+	let l:lnum = a:0 > 1 ? a:2 : 0
+
+	let l:scan = l:mode == 0 && l:lnum > 0 && stridx(a:codeline, '}') >= 0 && a:codeline !~ '^\s*`' && a:codeline !~ '^\s*\*'
+	if l:scan
+		" The text must be this physical line, up to leading whitespace:
+		" GetWholeLine's cache survives a whole gg=G (changedtick does
+		" not move while '=' runs), so cached text may carry the line's
+		" pre-indent whitespace while getline has the new one. Only
+		" leading whitespace may differ: joined text (a backslash
+		" continuation) differs in content and never matches.
+		let l:cur = getline(l:lnum)
+		let l:scan = a:codeline ==# l:cur || substitute(a:codeline, '^\s*', '', '') ==# substitute(l:cur, '^\s*', '', '')
+	endif
+	let l:key = l:mode . ':' . (l:scan ? l:lnum . ':' : '') . a:codeline
 	if has_key(b:sv_conv_cache, l:key)
 		return b:sv_conv_cache[l:key]
 	endif
+	let l:verdict = l:scan ? s:ConcatPairVerdict(l:lnum) : 0
 	" Fast path: plain statement -> codes ';'. A simple statement with
 	" no control keyword, no unbalanced delimiter, no directive, no
 	" string, no clocking event, not comment-only, and terminated by
@@ -122,6 +159,18 @@ function! s:ConvertToCodes( codeline, ... )
 		return ';'
 	endif
 	let delims = a:codeline
+
+" Pairing verdict 2 (silent concat close): shield the closer '}'
+" from the tail-drop rule below with a placeholder that maps to
+" 'c' at the delimiter stage. Only when the raw line holds exactly
+" one '}' (a '}' inside a string would make the rewrite
+" ambiguous); any pre-existing placeholder byte is stripped first
+" so the placeholder below is always ours.
+	let l:shield = (l:verdict == 2 && count(delims, '}') == 1)
+	if l:shield
+		let delims = substitute(delims, nr2char(1), '', 'g')
+		let delims = substitute(delims, '}', nr2char(1), '')
+	endif
 	" '{'/'}' are blocks only as struct/union/enum/constraint bodies; in a
 	" string-concatenation or literal context they must not indent. A
 	" concatenation '{' sits after = ( , ? : ' (the last is the assignment
@@ -308,7 +357,15 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<extern\>', '', 'g')
 	let delims = substitute(delims, '\<pure\>', '', 'g')
 	let delims = substitute(delims, '\<disable\>', '', 'g')
-	let delims = substitute(delims, '\<wait\>', 'x', 'g')
+
+" Brace-only mode maps structural keywords to nothing: only
+" '{'/'}' survive as b/e, so the pairing scan counts braces.
+	let l:kb = l:mode == 2 ? '' : 'b'
+	let l:ke = l:mode == 2 ? '' : 'e'
+	let l:kf = l:mode == 2 ? '' : 'f'
+	let l:kh = l:mode == 2 ? '' : 'h'
+	let l:kx = l:mode == 2 ? '' : 'x'
+	let delims = substitute(delims, '\<wait\>', l:kx, 'g')
 	let delims = substitute(delims, '\<alias\>', '', 'g')
 	let delims = substitute(delims, '\<final\>', '', 'g')
 	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
@@ -328,11 +385,11 @@ function! s:ConvertToCodes( codeline, ... )
 	if delims !~ '^\s*`'
 		let delims = substitute(delims, '`\h\w*\>', ';', 'g')
 	endif
-	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\|table\)\>', 'b', 'g')
-	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', 'e', 'g')
-	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|primitive\|randsequence\)\>', 'f', 'g')
-	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', 'h', 'g')
-	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\|wait_order\)\>', 'x', 'g')
+	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\|table\)\>', l:kb, 'g')
+	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', l:ke, 'g')
+	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|primitive\|randsequence\)\>', l:kf, 'g')
+	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', l:kh, 'g')
+	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\|wait_order\)\>', l:kx, 'g')
 	" 'wait_order' is a control statement like 'if': its body indents one
 	" level and its 'else' clause dedents back (demo68). Without this the
 	" body sits at the same level as 'wait_order' itself.
@@ -341,14 +398,14 @@ function! s:ConvertToCodes( codeline, ... )
 	" fire for end/endfunction/endtask that follow an else-branch.
 	" 'assert' stays a statement terminator (lower priority, per README).
 	let delims = substitute(delims, '\<assert\>', ';', 'g')
-	let delims = substitute(delims, '\<else\>', 'x', 'g')
+	let delims = substitute(delims, '\<else\>', l:kx, 'g')
 	let delims = substitute(delims, '^\s*\/\/.*$', 'l', 'g')
 	let delims = substitute(delims, '\/\/.*', '', 'g')
 	let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
 	let delims = substitute(delims, '\/\*', 's', 'g')
 	let delims = substitute(delims, '\*\/', 'p', 'g')
 	let delims = substitute(delims, '\[[^:\[\]]*:[^:\[\]]*\]', '', 'g')
-	let delims = substitute(delims, '\@', 'x', 'g')
+	let delims = substitute(delims, '\@', l:kx, 'g')
 	" a macro call whose argument is a multi-line constraint/block
 	" ('`uvm_do_with(x, {' ... '})') keeps its open brace: map the whole
 	" line to '{' so the body indents one level and the closing '})'
@@ -356,11 +413,26 @@ function! s:ConvertToCodes( codeline, ... )
 	" replaces the backtick, so the ^\s*`.*$ rule below leaves it alone;
 	" in no-parens mode the brace is dropped with the other delimiters.
 	let delims = substitute(delims, '^\s*`.*{\s*$', '{', '')
-	if a:0
+
+" Pairing verdict 1: the closer '}' pairs with a dropped '{'
+" (demo99) - remove it so no phantom 'e' survives. Only when
+" exactly one '}' is left: strings and comments are stripped by
+" now, so any other '}' would mean the scan's picture was wrong.
+	if l:verdict == 1 && count(delims, '}') == 1
+		let delims = substitute(delims, '}', '', '')
+	endif
+	if l:mode == 1
 		let delims = substitute(delims, '[][(){}]', '', 'g')
+	elseif l:mode == 2
+		let delims = substitute(delims, '[()]', '', 'g')
+		let delims = substitute(delims, '{', 'b', 'g')
+		let delims = substitute(delims, '}', 'e', 'g')
 	else
 		let delims = substitute(delims, '[({]', 'b', 'g')
 		let delims = substitute(delims, '[)}]', 'e', 'g')
+	endif
+	if l:shield
+		let delims = substitute(delims, nr2char(1), s:CONCAT_CLOSE, 'g')
 	endif
 	let delims = substitute(delims, '^\s*`.*$', ';', 'g')
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
@@ -377,12 +449,18 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, ':', '', 'g')
 	let delims = substitute(delims, 'x\+', 'x', 'g')
 	let delims = substitute(delims, 'o\+', 'o', 'g')
-	while (match(delims, '\(b[^be]*e\)') != -1)
-		let delims = substitute(delims, '\(b[^be]*e\)', '', 'g')
-	endwhile
-	while (match(delims, '\(f[^fh]*h\)') != -1)
-		let delims = substitute(delims, '\(f[^fh]*h\)', '', 'g')
-	endwhile
+
+" Brace-only mode keeps raw kept braces (no canceling): the pairing
+" scan matches them across lines itself. The comment-pair cancel
+" below still runs so braces inside /* */ pairs stay neutral.
+	if l:mode != 2
+		while (match(delims, '\(b[^be]*e\)') != -1)
+			let delims = substitute(delims, '\(b[^be]*e\)', '', 'g')
+		endwhile
+		while (match(delims, '\(f[^fh]*h\)') != -1)
+			let delims = substitute(delims, '\(f[^fh]*h\)', '', 'g')
+		endwhile
+	endif
 	while (match(delims, '\(s[^sp]*p\)') != -1)
 		let delims = substitute(delims, '\(s[^sp]*p\)', '', 'g')
 	endwhile
@@ -491,6 +569,139 @@ function! s:EndsWithChainBs( codeline, line_num )
 	return s:InDefineBodyRaw(a:line_num)
 endfunction
 
+
+" Strip strings, //-tails and single-line /* */ pairs: the brace
+" census below must not count braces inside strings or comments.
+function! s:StripForBraces( line )
+	let l:l = substitute(a:line, '"\(\\.\|[^"\\]\)*"', '', 'g')
+	let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
+	let l:cut = stridx(l:l, '//')
+	if l:cut >= 0
+		let l:l = strpart(l:l, 0, l:cut)
+	endif
+	return l:l
+endfunction
+
+" True when the code part of a:line ends with ';' (a complete statement).
+function! s:EndsWithSemi( line )
+	let l:l = s:StripForBraces(a:line)
+	let l:l = substitute(l:l, '\s\+$', '', '')
+	return strlen(l:l) > 0 && strpart(l:l, strlen(l:l) - 1, 1) == ';'
+endfunction
+
+" Pairing verdict for the '}' on line a:lnum. 0 = leave the line-local
+" rules alone; 1 = drop the '}' (its '{' was dropped: demo99); 2 = the
+" '}' is a silent concat close (its '{' was kept: demo113). Only the
+" single-concat shape is adjudicated: exactly one '{' in the statement
+" span, no kept '}' inside the span, exactly one '}' and no '{' on the
+" closer line. Anything else (nested concats, replication, streaming,
+" struct/enum/constraint closes, macro lines) keeps current behavior.
+" Memoized per line, invalidated on changedtick like the other caches.
+function! s:ConcatPairVerdict( lnum )
+	if !exists('b:sv_pair_tick') || b:sv_pair_tick != b:changedtick
+		let b:sv_pair_tick = b:changedtick
+		let b:sv_pair_cache = {}
+	endif
+	if has_key(b:sv_pair_cache, a:lnum)
+		return b:sv_pair_cache[a:lnum]
+	endif
+	let l:verdict = s:ConcatPairScan(a:lnum)
+	let b:sv_pair_cache[a:lnum] = l:verdict
+	return l:verdict
+endfunction
+
+function! s:ConcatPairScan( lnum )
+	let l:line = getline(a:lnum)
+	if l:line =~ '^\s*`' || l:line =~ '^\s*\*'
+		return 0
+	endif
+	let l:stripped = s:StripForBraces(l:line)
+	if count(l:stripped, '}') != 1 || count(l:stripped, '{') != 0
+		return 0
+	endif
+
+" Search up for the nearest line holding a '{': the concat opener.
+" Stop-tests run FIRST: a ';'-terminated, control/group/close, or
+" directive line above means no opener in this statement (a
+" block-open line like 'constraint c_c {' must not be crossed:
+" its '{' would corrupt the census). Conditional directives and
+" //-comment lines are transparent.
+	let l:s = 0
+	let l:limit = 100
+	let l:m = a:lnum
+	while l:limit > 0
+		let l:limit -= 1
+		let l:pp = prevnonblank(l:m - 1)
+		if l:pp <= 0
+			break
+		endif
+		let l:pl = getline(l:pp)
+		if l:pl =~ '^\s*`\s*\c\%(ifdef\|ifndef\|elsif\|else\|endif\)\>'
+			let l:m = l:pp
+			continue
+		endif
+		if l:pl =~ '^\s*`'
+			break
+		endif
+		if l:pl =~ '^\s*//'
+			let l:m = l:pp
+			continue
+		endif
+		if l:pl =~ '^\s*/\*\|^\s*\*\|^\s*\*/'
+			break
+		endif
+		if s:EndsWithSemi(l:pl)
+			break
+		endif
+		" Plain codes, WITHOUT a line number, so no nested scan: the
+		" verdict search must not recurse into itself.
+		let l:pcodes = s:ConvertToCodes(l:pl, 0)
+		if l:pcodes =~# '[xfhe]'
+			break
+		endif
+		if count(s:StripForBraces(l:pl), '{') > 0
+			let l:s = l:pp
+			break
+		endif
+		let l:m = l:pp
+	endwhile
+	if l:s <= 0
+		return 0
+	endif
+	" Brace census over the span above the closer line.
+	let l:total_open = 0
+	let l:kept_open = 0
+	let l:kept_close = 0
+	let l:ln = l:s
+	while l:ln < a:lnum
+		let l:l = getline(l:ln)
+		if l:l =~ '^\s*`\s*\c\%(ifdef\|ifndef\|elsif\|else\|endif\)\>' || l:l =~ '^\s*//\|^\s*/\*\|^\s*\*\|^\s*\*/'
+			let l:ln += 1
+			continue
+		endif
+		let l:st = s:StripForBraces(l:l)
+		let l:total_open += count(l:st, '{')
+		let l:bc = s:ConvertToCodes(l:l, 2)
+		let l:kept_open += count(l:bc, 'b')
+		let l:kept_close += count(l:bc, 'e')
+		let l:ln += 1
+	endwhile
+	if l:total_open != 1 || l:kept_close != 0
+		return 0
+	endif
+	" Baseline disposition of the closer '}': brace mode applies the
+	" same drop rules, so no 'e' means the tail rule dropped it.
+	let l:closer_bc = s:ConvertToCodes(l:line, 2)
+	let l:closer_kept = (l:closer_bc =~# 'e')
+	if l:kept_open == 0 && l:closer_kept
+		return 1
+	endif
+	if l:kept_open == 1 && !l:closer_kept
+		return 2
+	endif
+	return 0
+endfunction
+
 function! s:GetPrevWholeLineNum ( line_num )
 	if b:sv_conv_tick != b:changedtick
 		let b:sv_conv_tick = b:changedtick
@@ -545,6 +756,14 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 		let indnt = indnt - &shiftwidth
 	endif
 
+
+" A silent concat close ('c') in prev1 closes a kept '{': the next
+" line drops one level, like after any block close (demo113). The
+" closer line itself never dedents on 'c' (no rule tests this_codes
+" for it), so it stays at the concat-interior level.
+	if a:prev1_codes =~# s:CONCAT_CLOSE
+		let indnt = indnt - &shiftwidth
+	endif
 	if a:prev1_codes =~ s:GROUP_INDENT_START
 		let indnt = indnt + &shiftwidth
 	endif
@@ -901,6 +1120,8 @@ let b:sv_conv_cache = {}
 let b:sv_prev_cache = {}
 let b:sv_whole_cache = {}
 let b:sv_conv_tick = -1
+let b:sv_pair_cache = {}
+let b:sv_pair_tick = -1
 
 " --- rolling single-pass state (gg=G fast path) ---
 " Valid only while indentexpr is called for consecutive non-blank lines
@@ -1055,7 +1276,7 @@ function! s:ControlTailHead( line_num, ... )
 		let l:l = substitute(l:l, '\/\/.*', '', '')
 		let l:bal = l:bal + len(substitute(l:l, '[^(]', '', 'g')) - len(substitute(l:l, '[^)]', '', 'g'))
 		if l:bal >= 0
-			if (!l:require_preproc || l:saw_preproc) && s:ConvertToCodes(getline(l:ln)) =~ 'x'
+			if (!l:require_preproc || l:saw_preproc) && s:ConvertToCodes(getline(l:ln), 0, l:ln) =~ 'x'
 				return l:ln
 			endif
 			return 0
@@ -1109,7 +1330,7 @@ function! s:RegionEndsWithBlockOpener( endif_ln, ifdef_ln )
 	if l:last <= 0
 		return 0
 	endif
-	let l:codes = s:ConvertToCodes(getline(l:last))
+	let l:codes = s:ConvertToCodes(getline(l:last), 0, l:last)
 	if l:codes =~ '^[^e]*xb;*$'
 		return l:last
 	endif
@@ -1133,7 +1354,7 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 	if l:last <= 0
 		return -1
 	endif
-	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
+	if s:ConvertToCodes(getline(l:last), 0, l:last) =~ s:LINE_INDENT
 		return indent(l:last) + &shiftwidth
 	endif
 	" a block opener (if/for/... begin, or a bare begin/fork/case) as
@@ -1165,7 +1386,7 @@ function! s:RegionExitLine( endif_ln, ifdef_ln )
 	if l:last <= 0
 		return 0
 	endif
-	if s:ConvertToCodes(getline(l:last)) =~ s:LINE_INDENT
+	if s:ConvertToCodes(getline(l:last), 0, l:last) =~ s:LINE_INDENT
 		return a:ifdef_ln
 	endif
 	" see s:AfterEndifBodyIndent: no directive crossing required here.
@@ -1234,7 +1455,7 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 				if l:pl <= 0
 					return 0
 				endif
-				let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
+				let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl), 0, l:pl)
 				let l:in_comment = 0
 				while l:pl > 0 && (l:pl_codes =~ s:LINE_COMMENT || l:in_comment || l:pl_codes =~ s:BLOCK_COMMENT_STOP || l:pl_codes =~ s:BLOCK_COMMENT_START || l:pl_codes =~ s:PREPROCESSOR)
 					if l:pl_codes =~ s:BLOCK_COMMENT_STOP_ANY
@@ -1254,7 +1475,7 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 					if l:pl <= 0
 						break
 					endif
-					let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl))
+					let l:pl_codes = s:ConvertToCodes(s:GetWholeLine(l:pl), 0, l:pl)
 				endwhile
 				" redirect only for a `)`-tail line (more closes than
 				" opens: a complete `if (c)` head is not a tail), or
@@ -1273,7 +1494,7 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 				if l:cur =~ ')\s*$' && l:cur !~ ');\s*$' && l:closes > l:opens
 					return l:pl
 				endif
-				if l:cur !~ ';\s*$' && !(l:cur =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl)) =~ 'b'
+				if l:cur !~ ';\s*$' && !(l:cur =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl), 0, l:pl) =~ 'b'
 					let l:sib = substitute(getline(a:prev1_ln), '"\(\\.\|[^"\\]\)*"', '', 'g')
 					let l:sib = substitute(l:sib, '/\*.\{-}\*/', '', 'g')
 					let l:sib = substitute(l:sib, '\/\/.*', '', '')
@@ -1301,7 +1522,7 @@ function! s:ChainToEndif( ln )
 		if getline(l:ln) =~ '^\s*`\s*\cendif\>'
 			return l:ln
 		endif
-		if getline(l:ln) =~ '^\s*\%(end\s\+\)\?else\>' && s:ConvertToCodes(getline(l:ln)) !~ 'b'
+		if getline(l:ln) =~ '^\s*\%(end\s\+\)\?else\>' && s:ConvertToCodes(getline(l:ln), 0, l:ln) !~ 'b'
 			" a bare `else` between the walked heads and the region:
 			" jump over the whole if/else-if chain and continue
 			" above its first `if`. The step above the head is
@@ -1318,7 +1539,7 @@ function! s:ChainToEndif( ln )
 			let l:ln = prevnonblank(s:ElseChainHead(l:ln) - 1)
 			continue
 		endif
-		if l:limit <= 0 || s:ConvertToCodes(getline(l:ln)) !~ s:LINE_INDENT
+		if l:limit <= 0 || s:ConvertToCodes(getline(l:ln), 0, l:ln) !~ s:LINE_INDENT
 			return 0
 		endif
 		let l:limit -= 1
@@ -1350,7 +1571,7 @@ function! s:ElseChainHead( p1_ln )
 			if l:body <= 0
 				break
 			endif
-			if s:ConvertToCodes(getline(l:body)) =~ '^[he]$'
+			if s:ConvertToCodes(getline(l:body), 0, l:body) =~ '^[he]$'
 				let l:op = s:MatchBlockOpener(l:body)
 				if l:op <= 0
 					break
@@ -1402,7 +1623,7 @@ function! s:ChainHeadPrev( ln )
 	if l:ch > 0
 		let l:pe = l:ch
 	endif
-	if l:pe > 0 && getline(l:pe) =~ '^\s*\%(end\s\+\)\?else\>' && (l:ch > 0 || s:ConvertToCodes(getline(l:pe)) !~ 'b')
+	if l:pe > 0 && getline(l:pe) =~ '^\s*\%(end\s\+\)\?else\>' && (l:ch > 0 || s:ConvertToCodes(getline(l:pe), 0, l:pe) !~ 'b')
 		let l:hd = s:ElseChainHead(l:pe)
 		let l:pe = prevnonblank(l:hd - 1)
 	elseif l:ch > 0
@@ -1420,7 +1641,7 @@ function! s:MatchBlockOpener( close_ln )
 	let l:limit = 500
 	while l:ln > 0 && l:limit > 0
 		let l:limit -= 1
-		let l:c = s:ConvertToCodes(getline(l:ln))
+		let l:c = s:ConvertToCodes(getline(l:ln), 0, l:ln)
 		let l:depth += len(substitute(l:c, '[^eh]', '', 'g')) - len(substitute(l:c, '[^bf]', '', 'g'))
 		if l:depth <= 0
 			return l:ln
@@ -1475,7 +1696,7 @@ function! s:BodyAfterEndifIfdef( line_num )
 	if l:p1_line =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\|endif\|define\|undef\|include\)\>'
 		return 0
 	endif
-	let l:p1_codes = s:ConvertToCodes(l:p1_line)
+	let l:p1_codes = s:ConvertToCodes(l:p1_line, 0, l:p1)
 	" p1 opens a block, is itself a bare control head, or is a control
 	" tail: the current line belongs to p1's construct, not to the
 	" region outside the `endif. A complete single-line if (`if (c)
@@ -1666,7 +1887,7 @@ function! s:EnclosingCodeIndent( ifdef_line )
 			continue
 		endif
 		let l:prev2 = s:GetPrevWholeLineNum(l:ln)
-		let b:sv_enc_cache[a:ifdef_line] = s:GetCodeIndent(indent(l:ln), s:ConvertToCodes(s:GetWholeLine(l:prev2)), s:ConvertToCodes(s:GetWholeLine(l:ln)), '')
+		let b:sv_enc_cache[a:ifdef_line] = s:GetCodeIndent(indent(l:ln), s:ConvertToCodes(s:GetWholeLine(l:prev2), 0, l:prev2), s:ConvertToCodes(s:GetWholeLine(l:ln), 0, l:ln), '')
 		return b:sv_enc_cache[a:ifdef_line]
 	endwhile
 	let b:sv_enc_cache[a:ifdef_line] = 0
@@ -1801,7 +2022,7 @@ function! s:RollUpdate( line_num, indnt )
 		let l:ustart = b:sv_roll_pend >= 0 ? b:sv_roll_pend : a:line_num
 		let l:uic = b:sv_roll_pend >= 0 ? b:sv_roll_pend_ic : b:sv_roll_incomment
 		let l:utext = s:GetWholeLine(l:ustart)
-		let l:ucodes = s:ConvertToCodes(l:utext)
+		let l:ucodes = s:ConvertToCodes(l:utext, 0, l:ustart)
 		" a unit is comment-only when it carries no code outside
 		" the comment markers: a unit starting inside a comment
 		" counts only with code AFTER the closing "*/" (demo103);
@@ -1863,7 +2084,7 @@ function! s:RollUpdate( line_num, indnt )
 	" forward block-comment state from physical-line codes, like the slow
 	" path's block-comment block; continuation lines never reach it there
 	if !l:prev_bs
-		let l:pcodes = s:ConvertToCodes(l:line)
+		let l:pcodes = s:ConvertToCodes(l:line, 0, a:line_num)
 		if l:pcodes =~ s:BLOCK_COMMENT_STOP_ANY
 			let b:sv_roll_incomment = 0
 		elseif l:pcodes =~ s:BLOCK_COMMENT_START
@@ -2110,7 +2331,7 @@ function! s:RollFastIndent( line_num )
 	if empty(b:sv_roll_codelines)
 		return -1
 	endif
-	let l:this_codes = s:ConvertToCodes(l:line)
+	let l:this_codes = s:ConvertToCodes(l:line, 0, l:N)
 	let l:sw = &shiftwidth
 	" --- preprocessor-continuation loops (sig = first non-skip line above) ---
 	let l:prev_start = l:N
@@ -2297,7 +2518,7 @@ function! s:RollFastIndent( line_num )
 	if l:mhead > 0 && getline(l:mhead) =~ '^\s*`'
 		let l:p1_codes = ';'
 		let l:p2 = s:GetPrevWholeLineNum(l:mhead)
-		let l:p2_codes = s:ConvertToCodes(s:GetWholeLine(l:p2))
+		let l:p2_codes = s:ConvertToCodes(s:GetWholeLine(l:p2), 0, l:p2)
 	endif
 	" if p1 is the tail of a multi-line CONTROL statement, treat it as the
 	" control line ('x') so the next line (the body) indents one level.
@@ -2330,7 +2551,7 @@ function! s:RollFastIndent( line_num )
 	if l:mhead > 0
 		let l:sigline = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
 		if l:sigline > 0 && getline(l:sigline) =~ '\<\%(function\|task\)\>'
-			let l:is_proto = (getline(l:sigline) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sigline)) !~# 'f')
+			let l:is_proto = (getline(l:sigline) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sigline), 0, l:sigline) !~# 'f')
 			if l:is_proto
 				return indent(l:sigline) - (l:this_codes =~# 'h' ? l:sw : 0)
 			else
@@ -2412,7 +2633,7 @@ function! s:SlowIndent( line_num )
 	" region instead of aligning with it, or endfunction after a trailing
 	" `ifndef...`endif block lands one level too deep. Memoized, so the
 	" later s:ConvertToCodes call for the same text is free.
-	let l:this_codes_early = s:ConvertToCodes( this_codeline )
+	let l:this_codes_early = s:ConvertToCodes( this_codeline, 0, a:line_num )
 	" where previous-line resolution starts: normally this line; when a
 	" group/block close follows a conditional region, the matching `ifdef
 	" line, so prev1 resolves to the code before the whole region
@@ -2624,7 +2845,7 @@ function! s:SlowIndent( line_num )
 	let prev1_line_num = s:GetPrevWholeLineNum (l:prev_start)
 	let prev1_for_comment_line = prev1_line_num
 	let prev1_codeline = s:GetWholeLine (prev1_line_num)
-	let prev1_codes = s:ConvertToCodes(prev1_codeline)
+	let prev1_codes = s:ConvertToCodes(prev1_codeline, 0, prev1_line_num)
 	" this line closes a block comment ("*/ begin"): the lines above
 	" it back to the opener are comment interior, so seed the walk
 	" inside the comment; otherwise prev1 lands on an interior line
@@ -2652,7 +2873,7 @@ function! s:SlowIndent( line_num )
 		endif
 		let prev1_line_num = s:GetPrevWholeLineNum (prev1_line_num)
 		let prev1_codeline = s:GetWholeLine (prev1_line_num)
-		let prev1_codes = s:ConvertToCodes(prev1_codeline)
+		let prev1_codes = s:ConvertToCodes(prev1_codeline, 0, prev1_line_num)
 	endwhile
 	" a stray "*/" with no opener above: the seeded walk ran off the
 	" top of the file without finding a comment start; fall back to
@@ -2670,13 +2891,13 @@ function! s:SlowIndent( line_num )
 		if l:np1 > 0 && l:np1 != prev1_line_num
 			let prev1_line_num = l:np1
 			let prev1_codeline = s:GetWholeLine (prev1_line_num)
-			let prev1_codes = s:ConvertToCodes(prev1_codeline)
+			let prev1_codes = s:ConvertToCodes(prev1_codeline, 0, prev1_line_num)
 		endif
 	endif
 
 	let prev2_line_num = s:GetPrevWholeLineNum (prev1_line_num)
 	let prev2_codeline = s:GetWholeLine (prev2_line_num)
-	let prev2_codes = s:ConvertToCodes(prev2_codeline)
+	let prev2_codes = s:ConvertToCodes(prev2_codeline, 0, prev2_line_num)
 	let in_comment = 0
 	" line bound: an unterminated comment (or a stray '*/') must stop at line 1, not walk forever (demo100).
 	while (prev2_line_num > 0 && (prev2_codes =~ s:LINE_COMMENT || in_comment || prev2_codes =~ s:BLOCK_COMMENT_STOP || prev2_codes =~ s:BLOCK_COMMENT_START || prev2_codes =~ s:PREPROCESSOR))
@@ -2695,7 +2916,7 @@ function! s:SlowIndent( line_num )
 		endif
 		let prev2_line_num = s:GetPrevWholeLineNum (prev2_line_num)
 		let prev2_codeline = s:GetWholeLine (prev2_line_num)
-		let prev2_codes = s:ConvertToCodes(prev2_codeline)
+		let prev2_codes = s:ConvertToCodes(prev2_codeline, 0, prev2_line_num)
 	endwhile
 
 	let prev1_codes = s:StripPrototypeF(prev1_line_num, prev1_codeline, prev1_codes)
@@ -2711,7 +2932,7 @@ function! s:SlowIndent( line_num )
 		let prev1_codes = ';'
 		let prev2_line_num = s:GetPrevWholeLineNum(l:mhead)
 		let prev2_codeline = s:GetWholeLine(prev2_line_num)
-		let prev2_codes = s:ConvertToCodes(prev2_codeline)
+		let prev2_codes = s:ConvertToCodes(prev2_codeline, 0, prev2_line_num)
 	endif
 
 	" if prev1 is the tail of a multi-line CONTROL statement, it is that
@@ -2776,7 +2997,7 @@ function! s:SlowIndent( line_num )
 		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead
 			\ : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
 		if l:sig > 0 && getline(l:sig) =~ '\<\%(function\|task\)\>'
-			let l:is_proto = (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig)) !~# 'f')
+			let l:is_proto = (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig), 0, l:sig) !~# 'f')
 			if l:is_proto
 				" prototypes: next line returns to declaration level; group stop dedents further
 				return indent(l:sig) - (this_codes =~# 'h' ? &shiftwidth : 0)

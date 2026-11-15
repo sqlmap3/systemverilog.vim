@@ -53,7 +53,7 @@ set -u
 #                     breaks demo50, only a contextual opener-matching
 #                     fix can tell the shapes apart
 #                     indented, endclocking lands at module level (bug #3)
-XFAIL_DEMOS="indent_demo78.sv indent_demo79.sv indent_demo99.sv"
+XFAIL_DEMOS="indent_demo78.sv indent_demo79.sv"
 
 VIM="${VIM:-vim}"
 PLUGDIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
