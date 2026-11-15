@@ -117,7 +117,7 @@
 
 
 
-  // MACRO- `uvm_update_sequence_lib
+// MACRO- `uvm_update_sequence_lib
 //
 // This macro populates the instance-specific sequence library for a sequencer.
 // It should be invoked inside the sequencer��s constructor.

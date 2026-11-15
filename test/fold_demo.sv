@@ -174,4 +174,63 @@ class proto_qual_c;
   endfunction
 endclass
 
+module dc_b1_m;
+  default clocking cb @(posedge clk);
+    input #1 a;
+    output #1 b;
+  endclocking
+  x = 1;
+endmodule
+
+module dc_b2_m;
+  default clocking cb;
+  x = 1;
+endmodule
+
+module dc_b3_m;
+  default clocking @(posedge clk);
+  x = 1;
+endmodule
+
+checker dc_b4_c;
+  default clocking @(posedge clk);
+    x = 1;
+  endclocking
+  cover property (p1);
+endchecker
+
+checker dc_b5_c;
+  default clocking @(posedge clk);
+  cover property (p1);
+endchecker
+
+module dc_b6_m;
+  default clocking @(posedge clk); endclocking
+  x = 1;
+endmodule
+
+module dc_b7_m;
+  default clocking cb @(posedge clk);
+    x = 1;
+  endclocking : cb
+  y = 2;
+endmodule
+
+module dc_b8_m;
+  default clocking cb @(posedge clk);
+    /* endclocking */
+    // endclocking
+    x = 1;
+  endclocking
+  y = 2;
+endmodule
+
+module dc_b9_m;
+  default clocking
+    cb @(posedge clk);
+    x = 1;
+  endclocking
+  y = 2;
+endmodule
+
 `endif // FOLD_DEMO_SV

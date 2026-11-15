@@ -266,7 +266,7 @@ endfunction \
  endfunction \
 
 
- // MACRO: `uvm_component_utils
+// MACRO: `uvm_component_utils
 
 // MACRO: `uvm_component_param_utils
 
@@ -331,13 +331,13 @@ endfunction \
    `m_uvm_component_registry_internal(T,T) \
    `m_uvm_get_type_name_func(T) \
 
-   `define uvm_component_param_utils(T) \
-     `m_uvm_component_registry_param(T) \
+ `define uvm_component_param_utils(T) \
+   `m_uvm_component_registry_param(T) \
 
 
-     `define uvm_component_utils_begin(T) \
-       `uvm_component_utils(T) \
-       `uvm_field_utils_begin(T) 
+ `define uvm_component_utils_begin(T) \
+   `uvm_component_utils(T) \
+   `uvm_field_utils_begin(T) 
 
  `define uvm_component_param_utils_begin(T) \
    `uvm_component_param_utils(T) \
@@ -1567,14 +1567,14 @@ endfunction \
    while(ARG.size()>sz) void'(ARG.pop_front()); \
 
 
-   // M_UVM_ARRAY_RESIZE
+// M_UVM_ARRAY_RESIZE
 // ------------------
 
  `define M_UVM_ARRAY_RESIZE(ARG,VAL) \
    ARG = new[sz](ARG); \
 
 
-   // M_UVM_SARRAY_RESIZE
+// M_UVM_SARRAY_RESIZE
 // -------------------
 
  `define M_UVM_SARRAY_RESIZE(ARG,VAL) \
@@ -2409,7 +2409,7 @@ endfunction \
    `uvm_field_aa_int_key(int, ARG, FLAG) \
 
 
-   // MACRO: `uvm_field_aa_int_int_unsigned
+// MACRO: `uvm_field_aa_int_int_unsigned
 //
 // Implements the data operations for an associative array of integral
 // types indexed by the ~int unsigned~ data type.

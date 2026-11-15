@@ -174,4 +174,63 @@
  3|  endfunction
  2|endclass
  1|
+ 2|module dc_b1_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    input #1 a;
+ 3|    output #1 b;
+ 3|  endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_b2_m;
+ 2|  default clocking cb;
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_b3_m;
+ 2|  default clocking @(posedge clk);
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|checker dc_b4_c;
+ 3|  default clocking @(posedge clk);
+ 3|    x = 1;
+ 3|  endclocking
+ 2|  cover property (p1);
+ 2|endchecker
+ 1|
+ 2|checker dc_b5_c;
+ 2|  default clocking @(posedge clk);
+ 2|  cover property (p1);
+ 2|endchecker
+ 1|
+ 2|module dc_b6_m;
+ 2|  default clocking @(posedge clk); endclocking
+ 2|  x = 1;
+ 2|endmodule
+ 1|
+ 2|module dc_b7_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    x = 1;
+ 3|  endclocking : cb
+ 2|  y = 2;
+ 2|endmodule
+ 1|
+ 2|module dc_b8_m;
+ 3|  default clocking cb @(posedge clk);
+ 3|    /* endclocking */
+ 3|    // endclocking
+ 3|    x = 1;
+ 3|  endclocking
+ 2|  y = 2;
+ 2|endmodule
+ 1|
+ 2|module dc_b9_m;
+ 3|  default clocking
+ 3|    cb @(posedge clk);
+ 3|    x = 1;
+ 3|  endclocking
+ 2|  y = 2;
+ 2|endmodule
+ 1|
  1|`endif // FOLD_DEMO_SV

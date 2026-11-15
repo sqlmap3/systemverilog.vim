@@ -231,7 +231,7 @@
   `uvm_do_obj_callbacks_exit_on(T,CB,this,METHOD,VAL) \
 
 
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // MACRO: `uvm_do_obj_callbacks_exit_on
 //
 //| `uvm_do_obj_callbacks_exit_on(T,CB,OBJ,METHOD,VAL)

@@ -34,6 +34,17 @@ let s:GROUP_CLOSE =
 	\ 'endprogram\|endpackage\|endclocking\|endproperty\|endsequence\|' .
 	\ 'endgroup\|endchecker\|endconfig\|endprimitive\|endtable\|' .
 	\ 'endgenerate\|endspecify\)\>'
+" Stoppers for the default-clocking lookahead: any enclosing-scope
+" opener or closer other than endclocking itself, or another
+" default clocking line.
+let s:DC_STOP =
+	\ '\<\%(module\|class\|function\|task\|interface\|program\|package\|' .
+	\ 'clocking\|property\|sequence\|covergroup\|checker\|config\|' .
+	\ 'primitive\|table\|generate\|specify\|randsequence\|' .
+	\ 'endmodule\|endclass\|endfunction\|endtask\|endinterface\|' .
+	\ 'endprogram\|endpackage\|endproperty\|endsequence\|' .
+	\ 'endgroup\|endchecker\|endconfig\|endprimitive\|endtable\|' .
+	\ 'endgenerate\|endspecify\)\>\|\<default\s\+clocking\>'
 let s:BLOCK_OPEN  = '\<\%(begin\|case\|casex\|casez\|randcase\|fork\)\>'
 let s:BLOCK_CLOSE = '\<\%(end\|endcase\|join\|join_any\|join_none\)\>'
 let s:UVM_OPEN    = '`\h\w*_utils_begin\>'
@@ -109,6 +120,67 @@ function! s:Opts() abort
 	return l:o
 endfunction
 
+" Decide whether a `default clocking` line opens a clocking block (its
+" body runs to a later `endclocking`) or is a bare reference /
+" declaration. The first line cannot tell them apart: an unnamed block
+" opener and an unnamed declaration share the same first line, so the
+" verdict comes from the text that follows -- the first `endclocking`
+" (block) or enclosing-scope boundary (declaration) wins, scanning at
+" most s:DC_CAP lines ahead. Comment/string contents are stripped the
+" same way s:Scan strips them, so an `endclocking` inside a comment or
+" string never decides. No evidence either way degrades to a
+" declaration, which is the historical behavior. Pure function over
+" buffer text: never calls s:Scan, result is cached with the scan.
+let s:DC_CAP = 200
+function! s:DefaultClockingIsBlock(lnum, code, in_comment) abort
+	let l:endpat = '\<endclocking\>'
+	" same-line tail first: text after the `default clocking` match
+	let l:me = matchend(a:code, '\<default\s\+clocking\>')
+	let l:tail = l:me >= 0 ? a:code[l:me :] : ''
+	let l:ie = match(l:tail, l:endpat)
+	let l:is = match(l:tail, s:DC_STOP)
+	if l:ie >= 0 && (l:is < 0 || l:ie < l:is)
+		return 1
+	endif
+	if l:is >= 0 && (l:ie < 0 || l:is < l:ie)
+		return 0
+	endif
+	let l:in_comment = a:in_comment
+	let l:last = min([line('$'), a:lnum + s:DC_CAP])
+	let l:j = a:lnum + 1
+	while l:j <= l:last
+		let l:t = getline(l:j)
+		let l:t = substitute(l:t, "'\\.'", '', 'g')
+		let l:t = substitute(l:t, '"\(\\. \|[^"\\]\)*"', '', 'g')
+		let l:t = substitute(l:t, '//.*', '', 'g')
+		if l:in_comment
+			if l:t =~# '\*/'
+				let l:in_comment = 0
+				let l:t = substitute(l:t, '^.\{-}\*/', '', '')
+			else
+				let l:j += 1
+				continue
+			endif
+		endif
+		let l:tc = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		if l:tc =~# '/\*'
+			let l:in_comment = 1
+			let l:tc = substitute(l:tc, '/\*.*$', '', '')
+		endif
+		let l:ie = match(l:tc, l:endpat)
+		let l:is = match(l:tc, s:DC_STOP)
+		if l:ie >= 0 && (l:is < 0 || l:ie < l:is)
+			return 1
+		endif
+		if l:is >= 0 && (l:ie < 0 || l:is < l:ie)
+			return 0
+		endif
+		let l:j += 1
+	endwhile
+	" no evidence either way: declaration (historical behavior)
+	return 0
+endfunction
+
 " State-independent scan of one line. Results are cached per changedtick so
 " out-of-order foldexpr evaluation can replay the state machine cheaply.
 function! s:Scan(lnum) abort
@@ -157,7 +229,16 @@ function! s:Scan(lnum) abort
 		else
 			let l:c = substitute(l:code, '\<interface\s\+class\>', 'class', 'g')
 			let l:c = substitute(l:c, '\<typedef\s\+class\>', '', 'g')
-			let l:c = substitute(l:c, '\<default\s\+clocking\>', '', 'g')
+			if l:o.block && l:c =~# '\<default\s\+clocking\>'
+				if s:DefaultClockingIsBlock(a:lnum, l:code, l:r.oc)
+					" block opener: keep one GROUP_OPEN hit, strip only `default`
+					let l:c = substitute(l:c, '\<default\s\+\zeclocking\>', '', 'g')
+				else
+					let l:c = substitute(l:c, '\<default\s\+clocking\>', '', 'g')
+				endif
+			else
+				let l:c = substitute(l:c, '\<default\s\+clocking\>', '', 'g')
+			endif
 			let l:c = substitute(l:c, '\<virtual\s\+interface\s\+\%(class\>\)\@!', '', 'g')
 			let l:c = substitute(l:c, '\<\%(disable\|wait\)\s\+fork\>', '', 'g')
 			let l:c = substitute(l:c, '\<with\s\+function\s\+sample\>', '', 'g')

@@ -278,4 +278,21 @@ initial begin
   r = 2.5;
 end
 
+class spot_r13_kw;
+  longint spot_longint_v;
+  randc int spot_randc_v;
+  unsigned spot_longint_u_v;
+  bit [7:0] spot_randc_bit_v;
+endclass
+
+randcase
+  1: begin end
+endcase
+
+/**/ int spot_after_empty;
+int spot_after_empty_next;
+/** spot_doc_line */
+/***/ int spot_after_3star;
+int spot_after_3star_next;
+
 `endif

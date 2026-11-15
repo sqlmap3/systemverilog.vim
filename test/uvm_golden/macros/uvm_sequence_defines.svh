@@ -307,15 +307,15 @@
 `define uvm_create_seq(UVM_SEQ, SEQR_CONS_IF) \
   `uvm_create_on(UVM_SEQ, SEQR_CONS_IF.consumer_seqr) \
 
-  `define uvm_do_seq(UVM_SEQ, SEQR_CONS_IF) \
-    `uvm_do_on(UVM_SEQ, SEQR_CONS_IF.consumer_seqr) \
+`define uvm_do_seq(UVM_SEQ, SEQR_CONS_IF) \
+  `uvm_do_on(UVM_SEQ, SEQR_CONS_IF.consumer_seqr) \
 
-    `define uvm_do_seq_with(UVM_SEQ, SEQR_CONS_IF, CONSTRAINTS) \
-      `uvm_do_on_with(UVM_SEQ, SEQR_CONS_IF.consumer_seqr, CONSTRAINTS) \
+`define uvm_do_seq_with(UVM_SEQ, SEQR_CONS_IF, CONSTRAINTS) \
+  `uvm_do_on_with(UVM_SEQ, SEQR_CONS_IF.consumer_seqr, CONSTRAINTS) \
 
 
 
-      //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //
 // Group- Sequence Library
 //

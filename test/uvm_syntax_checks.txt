@@ -212,3 +212,15 @@ it_inst\.\zsmy_custom_method	svMethodCall
 [^0-9(]10\zsns	svTimeUnitPlain
 '?	svInteger
 2\.5	svReal
+# --- round-13: empty doc comment + longint/randc ---
+longint\s\+spot_longint_v	svType
+randc\s\+int\s\+spot_randc_v	svStorageClass
+unsigned\s\+spot_longint_u_v	svType
+int\s\+spot_randc_v	svType
+bit\s*\[7:0\]\s*spot_randc_bit_v	svType
+\<randcase\>	svKeyword
+\/\*\*\/\s*\zsint\s\+spot_after_empty	svType
+int\s\+spot_after_empty_next	svType
+\/\*\* spot_doc_line	svDocBlockComment
+\/\*\*\*\/\s*\zsint\s\+spot_after_3star	svType
+int\s\+spot_after_3star_next	svType

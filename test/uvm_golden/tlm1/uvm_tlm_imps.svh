@@ -59,35 +59,35 @@
           imp.put(arg); \
         endtask \
 
-        `define UVM_NONBLOCKING_PUT_IMP(imp, TYPE, arg) \
-          function bit try_put(input TYPE arg); \
-            if (bcast_mode) begin \
-              if (!can_put()) \
-              return 0; \
-              foreach (m_imp_list[index]) \
-                void'(m_imp_list[index].try_put(arg)); \
-              return 1; \
-            end  \
-            if (imp != null) \
-            return imp.try_put(arg)); \
-            return 0; \
-          endfunction \
-          \
-          function bit can_put(); \
-            if (bcast_mode) begin \
-              if (m_imp_list.size()) begin \
-                foreach (m_imp_list[index]) begin \
-                  if (!m_imp_list[index].can_put() \
-                  return 0; \
-                end \
-                return 1; \
-              end \
-              return 0; \
-            end \
-            if (imp != null) \
-            return imp.can_put(); \
-            return 0; \
-          endfunction
+`define UVM_NONBLOCKING_PUT_IMP(imp, TYPE, arg) \
+  function bit try_put(input TYPE arg); \
+    if (bcast_mode) begin \
+      if (!can_put()) \
+      return 0; \
+      foreach (m_imp_list[index]) \
+        void'(m_imp_list[index].try_put(arg)); \
+      return 1; \
+    end  \
+    if (imp != null) \
+    return imp.try_put(arg)); \
+    return 0; \
+  endfunction \
+  \
+  function bit can_put(); \
+    if (bcast_mode) begin \
+      if (m_imp_list.size()) begin \
+        foreach (m_imp_list[index]) begin \
+          if (!m_imp_list[index].can_put() \
+          return 0; \
+        end \
+        return 1; \
+      end \
+      return 0; \
+    end \
+    if (imp != null) \
+    return imp.can_put(); \
+    return 0; \
+  endfunction
 
 */
 

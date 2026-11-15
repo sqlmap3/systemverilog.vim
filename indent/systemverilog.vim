@@ -264,7 +264,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" while its '}' IS dropped, leaving the same unmatched 'b'
 	" (demo70).
 	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
-	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\([,;):&|^+\-*/%=<>!?.]\)', '', 'g')
+	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
 	" A concatenation '}' before '[' or ']'
 	" ("{a, b}[i]", "foo[{a, b}]") must drop exactly
 	" when its '{' was dropped above: the '{' drops run
@@ -339,7 +339,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" converted to b/e by the [({]/[)}] rules further down.
 	let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
 	let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
-	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|wait_order\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
+	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|wait_order\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|restrict\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
 	let delims = substitute(delims, 'wait\s\+fork', '', 'g')
 	let delims = substitute(delims, 'disable\s\+fork', '', 'g')
 	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
@@ -370,10 +370,10 @@ function! s:ConvertToCodes( codeline, ... )
 	let delims = substitute(delims, '\<final\>', '', 'g')
 	let delims = substitute(delims, 'typedef\s\+class', '', 'g')
 	let delims = substitute(delims, 'typedef', '', 'g')
-	" 'property' in assert/assume/cover/restrict is a reference, not a
-	" sequence/property definition (assert and property are both in the
+	" 'property'/'sequence' in assert/assume/cover/restrict is a reference, not a
+	" sequence/property definition (assert, property, sequence are all in the
 	" keep-list, so this can run after the filter)
-	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s\+\%(\[\s*\)\?property', '', 'g')
+	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s\+\%(\[\s*#\s*\S\{-}\s*\]\s*\)\?\%(property\|sequence\)', '', 'g')
 	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
 	" a macro call in the MIDDLE of a line ("else `uvm_error(...)",
 	" "if (x) `uvm_info(...)") is a complete statement to the indent
@@ -2019,6 +2019,7 @@ function! s:RollUpdate( line_num, indnt )
 			let b:sv_roll_pend_ic = b:sv_roll_incomment
 		endif
 	elseif !l:blank || b:sv_roll_pend >= 0
+		let l:had_pend = b:sv_roll_pend >= 0
 		let l:ustart = b:sv_roll_pend >= 0 ? b:sv_roll_pend : a:line_num
 		let l:uic = b:sv_roll_pend >= 0 ? b:sv_roll_pend_ic : b:sv_roll_incomment
 		let l:utext = s:GetWholeLine(l:ustart)
@@ -2030,12 +2031,39 @@ function! s:RollUpdate( line_num, indnt )
 		" survives the markers (a "begin /*" opener included).
 		let l:ucode = s:BoundaryHasCode(l:utext)
 		let l:uafter = s:CodeAfterClose(l:utext)
+		let l:urec = 0
 		if !(l:ucodes =~ s:LINE_COMMENT || l:ucodes =~ s:PREPROCESSOR || (l:uic && !l:uafter) || (!l:uic && !l:ucode && (l:ucodes =~ s:BLOCK_COMMENT_START || l:ucodes =~ s:BLOCK_COMMENT_STOP)))
 			call add(b:sv_roll_codelines, l:ustart)
 			let b:sv_roll_ucodes[l:ustart] = l:ucodes
 			let b:sv_roll_uindent[l:ustart] = (l:ustart == a:line_num ? l:eff : indent(l:ustart))
+			let l:urec = 1
 		endif
 		let b:sv_roll_pend = -1
+		" A blank line between the pending unit and this line breaks the
+		" whole-line join, so this line is not part of the unit just
+		" recorded: without a unit of its own it vanishes from the
+		" rolling state (the `=` operator never visits blank lines, so
+		" no blank line ever closes the pending unit itself).
+		" only when the pending unit was itself a code unit: if it
+		" was excluded (macro/comment text), this line belongs to
+		" that same non-code region and must not gain a unit.
+		if l:had_pend && !l:blank && l:urec
+			let l:rlast = l:ustart
+			while l:rlast < a:line_num && s:RollEndsBs(l:rlast)
+				let l:rlast += 1
+			endwhile
+			if l:rlast < a:line_num
+				let l:rtext = s:GetWholeLine(a:line_num)
+				let l:rcodes = s:ConvertToCodes(l:rtext, 0, a:line_num)
+				let l:rcode = s:BoundaryHasCode(l:rtext)
+				let l:rafter = s:CodeAfterClose(l:rtext)
+				if !(l:rcodes =~ s:LINE_COMMENT || l:rcodes =~ s:PREPROCESSOR || (b:sv_roll_incomment && !l:rafter) || (!b:sv_roll_incomment && !l:rcode && (l:rcodes =~ s:BLOCK_COMMENT_START || l:rcodes =~ s:BLOCK_COMMENT_STOP)))
+					call add(b:sv_roll_codelines, a:line_num)
+					let b:sv_roll_ucodes[a:line_num] = l:rcodes
+					let b:sv_roll_uindent[a:line_num] = l:eff
+				endif
+			endif
+		endif
 	endif
 	" classification from raw text (mirrors the slow path's walks, which
 	" read physical lines, including continuation lines of `define bodies)
@@ -2646,7 +2674,10 @@ function! s:SlowIndent( line_num )
 	" there (demo107: the `ifdef after a `define + comment line).
 	" Code lines use the chain verdict so a `define body chains
 	" through its comment lines (demos u1/u2/u3).
-	let l:bs1 = (l:this_codes_early =~ s:PREPROCESSOR) ? s:EndsWithCodeBs(prev1_codeline) : s:EndsWithChainBs(prev1_codeline, prev1_line_num)
+	" a backslash only continues onto the PHYSICALLY next line: prev1
+	" skips blank lines (prevnonblank), so without this gate a `\` above
+	" a blank line would wrongly indent the line after the blank.
+	let l:bs1 = (prev1_line_num == a:line_num - 1) && ((l:this_codes_early =~ s:PREPROCESSOR) ? s:EndsWithCodeBs(prev1_codeline) : s:EndsWithChainBs(prev1_codeline, prev1_line_num))
 	let l:bs2 = (l:this_codes_early =~ s:PREPROCESSOR) ? s:EndsWithCodeBs(prev2_codeline) : s:EndsWithChainBs(prev2_codeline, prev2_line_num)
 
 	if ( l:bs1 )
