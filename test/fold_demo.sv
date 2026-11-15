@@ -287,4 +287,43 @@ module dc_e6_m;
   x = 1;
 endmodule
 
+module dpi_alias_m;
+  import "DPI-C" c_foo = function void sv_foo();
+  import "DPI-C" context c_bar = function void sv_bar();
+  import "DPI-C" pure c_baz = function void sv_baz();
+  export "DPI-C" c_qux = function sv_qux;
+  function void real_f();
+    $display("f");
+  endfunction
+  int probe_sentinel;
+endmodule
+
+interface modport_tf_if;
+  modport mp (import function void foo(), export task bar());
+  modport mq (import task baz());
+  modport mr (input clk, import function void qux());
+  int probe_sentinel;
+endinterface
+
+class split_extern_c;
+  extern
+  function void a();
+  extern protected
+  function void b();
+  function void real_f();
+    x = 1;
+  endfunction
+  int probe_sentinel;
+endclass
+
+module split_dpi_m;
+  import "DPI-C"
+  function void c();
+  import "DPI-C" context
+  function void d();
+  export "DPI-C"
+  function e;
+  int probe_sentinel;
+endmodule
+
 `endif // FOLD_DEMO_SV

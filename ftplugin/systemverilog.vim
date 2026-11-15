@@ -12,9 +12,11 @@ endif
 
 " Don't load another plugin for this buffer
 let b:did_ftplugin = 1
+let s:keepcpo = &cpo
+set cpo&vim
 
 " Undo the plugin effect
-let b:undo_ftplugin = "setlocal fo< com< tw< commentstring< suffixesadd< include< define<"
+let b:undo_ftplugin = "setlocal fo< com< commentstring< suffixesadd< include< define<"
     \ . "| unlet! b:browsefilter b:match_ignorecase b:match_words"
 
 " Set 'formatoptions' to break comment lines but not other lines,
@@ -35,8 +37,6 @@ setlocal define=^\\s*`define\\>
 "if &textwidth == 0 
 "  setlocal tw=78
 "endif
-
-set cpo-=C
 
 " Win32 can filter files in the browse dialog
 "if has("gui_win32") && !exists("b:browsefilter")
@@ -63,6 +63,7 @@ if exists("loaded_matchit")
     \ '\<task\>:\<endtask\>,' .
     \ '\<program\>:\<endprogram\>,' .
     \ '\<package\>:\<endpackage\>,' .
+    \ '\<config\>:\<endconfig\>,' .
     \ '\<class\>:\<endclass\>,' .
     \ '\<covergroup\>:\<endgroup\>,' .
     \ '\<packet\>:\<endpacket\>,' .
@@ -70,7 +71,9 @@ if exists("loaded_matchit")
     \ '\<clocking\>:\<endclocking\>,' .
     \ '\<property\>:\<endproperty\>,' .
     \ '\<sequence\>:\<endsequence\>,' .
+    \ '\<checker\>:\<endchecker\>,' .
     \ '\<primitive\>:\<endprimitive\>,' .
+    \ '\<table\>:\<endtable\>,' .
     \ '\<randsequence\>:\<endsequence\>,' .
     \ '\<generate\>:\<endgenerate\>,' .
     \ '\<specify\>:\<endspecify\>,' .
@@ -88,3 +91,6 @@ if exists("g:systemverilog_syntax_fold")
   setlocal foldtext=systemverilog#FoldText()
   let b:undo_ftplugin .= "|setlocal foldmethod< foldexpr< foldtext<"
 endif
+
+let &cpo = s:keepcpo
+unlet s:keepcpo

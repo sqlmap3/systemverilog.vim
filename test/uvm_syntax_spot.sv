@@ -295,4 +295,30 @@ int spot_after_empty_next;
 /***/ int spot_after_3star;
 int spot_after_3star_next;
 
+// --- round-15: UVM callback macros, define-body refs,
+// --- host/operator guards (see uvm_syntax_checks.txt) ---
+`uvm_register_cb(spot_cb15, spot_cls15)
+`uvm_do_callbacks(spot_obj15, spot_cb15, spot_m15())
+`uvm_do_callbacks_exit(spot_obj15, spot_cb15, spot_m15())
+`uvm_component_utils_begin(spot_test15)
+uvm_callback spot_cb15h;
+`uvm_callback(spot_cb15, spot_m15())
+`define SPOT_DEF15 `SPOT_BAR15
+`define SPOT_DEFX15 `defineX15
+// spot_cmt15a .spot_clk15a( FOO15A.BAR15A spot_lbl15a: assert 47ns
+// spot_hash15f #10
+/* spot_blk15 .spot_clk15d( FOO15D.BAR15D */
+/// spot_doc15 .spot_clk15e(
+string spot_str15a = "x .spot_clk15b(";
+string spot_str15b = "FOO15C.BAR15C";
+string spot_str15c = "spot_lbl15c: assert";
+string spot_str15d = "48ns";
+string spot_str15e = "spot_hash15e #10";
+FOO15B.BAR15B = 1;
+#10 spot_hash15g;
+int spot_pipe15 = spot_a15 | spot_b15;
+int spot_pipe15b = spot_a15 ||| spot_b15;
+int spot_pipe15c = spot_a15 || spot_b15;
+int spot_pipe15d = spot_a15 ~| spot_b15;
+spot_pipe15e |= spot_b15;
 `endif

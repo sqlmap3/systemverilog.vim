@@ -36,6 +36,7 @@ syntax region svDefine start="^\s*`define\>" skip="\\$" end="$" contains=svMacro
 " lookbehind is admitted via containedin instead; the arg list
 " follows it via nextgroup.
 syntax match svDefineName "\(`define\>\s\+\)\@<=\h\%(\w\|\$\)*" contained containedin=svDefine nextgroup=svMacroArgs skipwhite
+syntax match svMacroRef "`\%(define\>\)\@!\h\%(\w\|\$\)*" contained containedin=svDefine
 syntax match svUndef  "^\s*`undef\>"  nextgroup=svDefineName skipwhite
 syntax match svPreProc "^\s*`\(__FILE__\|__LINE__\|begin_keywords\|celldefine\|default_nettype\|end_keywords\|endcelldefine\|line\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undefineall\)\>"
 syntax match svInclude "^\s*`include\>" nextgroup=svIncludeString,svIncludeAngle skipwhite
@@ -113,15 +114,15 @@ syntax region svStructBody start="\<\(struct\|union\)\>\%(\_s\+packed\)\?\_s*{" 
 " and field-before-;/=/ , cases must be listed separately
 syntax match svStructField "\<\h\w*\>\ze\_s*[;=,]" contained containedin=svStructBody
 syntax match svStructField "\<\h\w*\>\ze\_s*\[[^]]*\]\_s*[;=,]" contained containedin=svStructBody
-syntax match svNamedPort "\%(\s\|[(,]\)\.\zs\h\w*\ze\_s*(" containedin=ALL,svInstStmt
-syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>" containedin=ALL
+syntax match svNamedPort "\%(\s\|[(,]\)\.\zs\h\w*\ze\_s*("
+syntax match svAssertLabel "\<\zs\h\w*\ze\s*:\s*\%(assert\|assume\|cover\)\>"
 " all $-system calls ($display, $rose, $clog2, $cast, $fscanf, ...) share one
 " catch-all group instead of a huge redundant keyword list
 syntax match svSystemCall "\$\h\w*\>"
 syntax match svMemberAccess "\w\.\zs\h\w*\>"
 syntax match svMethodCall "\w\.\zs\h\w*\ze\s*("
 syntax match svObjectFunctions "\.\(randomize\|srandomize\|num\|size\|delete\|exists\|first\|last\|next\|prev\|insert\|pop_front\|pop_back\|push_front\|push_back\|find\|find_index\|find_first\|find_first_index\|find_last\|find_last_index\|min\|max\|reverse\|sort\|rsort\|shuffle\|sum\|product\|and\|or\|xor\)\>\_s*("he=e-1
-syntax match svOperator "\(\~\|&\|||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
+syntax match svOperator "\(\~\|&\|||\||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
 syntax match svDelimiter "\({\|}\|(\|)\)"
 
 syntax match svSVAOp "\(|->\||=>\|#[-=]#\|##\(\d\+\|\[\d\+\(:\d\+\)\?\]\)\?\|\[\%(\*\|+\|=\|->\)\d*\(:\d\+\)\?\]\)"
@@ -138,13 +139,13 @@ syntax match svIfndefName "\h\%(\w\|\$\)*" contained
 syntax match svIfdefName  "\h\%(\w\|\$\)*" contained
 syntax match svDefineName "\h\%(\w\|\$\)*" contained nextgroup=svMacroArgs skipwhite
 syntax region svMacroArgs start="(" end=")" contained contains=NONE
-syntax match svUpperDot    "\<[A-Z0-9_]*[A-Z][A-Z0-9_]*\(\.[A-Z0-9_]\+\)\+\>" containedin=ALL
 syntax match svUpperIdent  "\<\(UVM_\)\@![A-Z][A-Z0-9_]*\>"
-syntax match svHashNumber  "\(\#\)\@<!#[0-9_]\+\(\s*\%(fs\|ps\|ns\|us\|ms\|s\|step\)\>\|[0-9_]\)\@!" containedin=ALL
-syntax match svTimeUnitHash     "#[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
-syntax match svTimeUnitHash     "#[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
-syntax match svTimeUnitPlain    "\<[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
-syntax match svTimeUnitPlain    "\<[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>" containedin=ALL
+syntax match svUpperDot    "\<[A-Z0-9_]*[A-Z][A-Z0-9_]*\(\.[A-Z0-9_]\+\)\+\>"
+syntax match svHashNumber  "\(\#\)\@<!#[0-9_]\+\(\s*\%(fs\|ps\|ns\|us\|ms\|s\|step\)\>\|[0-9_]\)\@!"
+syntax match svTimeUnitHash     "#[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>"
+syntax match svTimeUnitHash     "#[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>"
+syntax match svTimeUnitPlain    "\<[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>"
+syntax match svTimeUnitPlain    "\<[0-9_]\+\.[0-9_]\+\s*\zs\c\(fs\|ps\|ns\|us\|ms\|s\|step\)\>"
 syntax match svCoverLabel "\<\zs\h\w*\ze\s*:\s*\(coverpoint\|cross\)\>"
 syntax match svBinsName "\<\(wildcard\s\+\)\?bins\>\s\+\zs\h\w*"
 syntax match svBinsName "\<\(illegal_bins\|ignore_bins\)\>\s\+\zs\h\w*"
@@ -200,7 +201,7 @@ syntax match uvmAnalysisClass "\<uvm_analysis_\(port\|imp\|export\)\>"
 
 " callbacks
 syntax match uvmCallbacksClass "\<uvm_\(callback\|callbacks\)\>"
-syntax match uvmCallbackMacros "\<uvm_\(register_cb\|do_callbacks\|do_callbacks_exit\)\>"
+syntax match uvmCallbackMacros "`\?\<uvm_\(register_cb\|do_callbacks\|do_callbacks_exit\)\>"
 
 " globals
 syntax match uvmTopGlobal "\<uvm_top\>"
@@ -289,12 +290,12 @@ highlight! default link uvmApiMethod Function
 highlight! default link uvmConfigApi Label
 
 
-syntax match uvmMacros "\<uvm_field_\w\+\>"
-syntax match uvmMacros "\<uvm_object_utils\(_begin\|_end\|_param\w*\)\>"
-syntax match uvmMacros "\<uvm_component_utils\(_begin\|_end\|_param\w*\)\>"
-syntax match uvmMacros "\<uvm_do\(_\w\+\)\?\>"
-syntax match uvmMacros "\<uvm_\(pack\|unpack\|record\|print\)_\w\+\>"
-syntax match uvmMacros "\<uvm_\(error\|warning\|info\|fatal\)\(_context\)\?\>"
+syntax match uvmMacros "`\?\<uvm_field_\w\+\>"
+syntax match uvmMacros "`\?\<uvm_object_utils\(_begin\|_end\|_param\w*\)\>"
+syntax match uvmMacros "`\?\<uvm_component_utils\(_begin\|_end\|_param\w*\)\>"
+syntax match uvmMacros "`\?\<uvm_do\(_\w\+\)\?\>"
+syntax match uvmMacros "`\?\<uvm_\(pack\|unpack\|record\|print\)_\w\+\>"
+syntax match uvmMacros "`\?\<uvm_\(error\|warning\|info\|fatal\)\(_context\)\?\>"
 highlight! default link uvmMacros Macro
 
 syntax keyword uvmMethodObjection raise_objection drop_objection global_stop_request

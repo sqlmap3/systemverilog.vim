@@ -73,15 +73,18 @@ type_id\s*::\s*create	uvmApiMethod|uvmTypeIdCreate
 \<uvm_wait_for_nba_region\>	uvmGlobalFn
 \<run_test\>	uvmRunTest
 #
-# --- UVM macros (backtick form: the leading ` is svMacroRef) ---
-\<uvm_object_utils_begin\>	svMacroRef
-\<uvm_object_utils_end\>	svMacroRef
+# --- UVM macros (backtick form: the leading ` is uvmMacros) ---
+\<uvm_object_utils_begin\>	uvmMacros
+\<uvm_object_utils_end\>	uvmMacros
+# NOTE: bare uvm_component_utils has no suffix, so the uvmMacros
+# pattern (which requires _begin/_end/_param) does not cover it; it stays
+# svMacroRef.
 \<uvm_component_utils\>	svMacroRef
-\<uvm_field_enum\>	svMacroRef
-\<uvm_field_int\>	svMacroRef
-\<uvm_info\>	svMacroRef
-\<uvm_error\>	svMacroRef
-\<uvm_do\>	svMacroRef
+\<uvm_field_enum\>	uvmMacros
+\<uvm_field_int\>	uvmMacros
+\<uvm_info\>	uvmMacros
+\<uvm_error\>	uvmMacros
+\<uvm_do\>	uvmMacros
 #
 # --- config/resource db and static calls ---
 \<uvm_config_db\>	uvmConfig
@@ -224,3 +227,49 @@ int\s\+spot_after_empty_next	svType
 \/\*\* spot_doc_line	svDocBlockComment
 \/\*\*\*\/\s*\zsint\s\+spot_after_3star	svType
 int\s\+spot_after_3star_next	svType
+# --- round-15: UVM callback macros ---
+# NOTE: the later uvm_do pattern also matches uvm_do_callbacks*,
+# so those land in uvmMacros; only uvm_register_cb reaches
+# uvmCallbackMacros. Do not reorder definitions.
+\<uvm_register_cb\>	uvmCallbackMacros
+\<uvm_do_callbacks\>	uvmMacros
+\<uvm_do_callbacks_exit\>	uvmMacros
+`uvm_register_cb\>	uvmCallbackMacros
+`uvm_do_callbacks\>	uvmMacros
+`uvm_do_callbacks_exit\>	uvmMacros
+# --- round-15: uvmMacros backtick positions + suffixed utils ---
+`uvm_info\>	uvmMacros
+`uvm_field_int\>	uvmMacros
+\<uvm_component_utils_begin\>	uvmMacros
+# --- round-15: uvm_callback keeps bare=class, backtick=macro ref ---
+\<uvm_callback\>\s\+spot_cb15h	uvmCallbacksClass
+`uvm_callback\>	svMacroRef
+# --- round-15: macro refs inside define bodies (VarF) ---
+`SPOT_BAR15\>	svMacroRef
+\<SPOT_BAR15\>	svMacroRef
+`define\> SPOT_DEF15\>	svDefine
+`defineX15\>	svMacroRef
+\<SPOT_DEF15\>	svDefineName
+# --- round-15: comment/string hosts must NOT leak inner groups ---
+\.\zsspot_clk15a	svLineComment
+\<FOO15A\.BAR15A\>	svLineComment
+\<spot_lbl15a\>	svLineComment
+47\zsns	svLineComment
+spot_hash15f\s.\zs10	svLineComment
+\.\zsspot_clk15d	svBlockComment
+\<FOO15D\.BAR15D\>	svBlockComment
+\.\zsspot_clk15e	svDocLineComment
+\.\zsspot_clk15b	svString
+\<FOO15C\.BAR15C\>	svString
+\<spot_lbl15c\>	svString
+48\zsns	svString
+spot_hash15e\s.\zs10	svString
+# --- round-15: code positives that must survive (UpperDot/Hash) ---
+\<FOO15B\.BAR15B\>	svUpperDot
+10\s\+spot_hash15g	svHashNumber
+# --- round-15: single-pipe operator (svOperator) + SVA guards ---
+spot_a15\s*\zs|\s*spot_b15	svOperator
+spot_a15\s*||\zs|\s*spot_b15	svOperator
+spot_a15\s*\zs||\s*spot_b15	svOperator
+spot_a15\s*[~]\zs|\s*spot_b15	svOperator
+spot_pipe15e\s*\zs|=	svOperator

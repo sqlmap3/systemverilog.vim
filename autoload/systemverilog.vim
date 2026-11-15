@@ -55,9 +55,10 @@ let s:UVM_CLOSE   = '`\h\w*_utils_end\>'
 " NOTE: s:Scan strips string literals before this test, so the DPI
 " forms below match with the "DPI-C" string already removed;
 " requiring the quoted string here could never match.
+" DPI imports/exports may carry a C alias (c_name =) before function/task.
 let s:PROTOTYPE =
 	\ '^\s*\%(\%(\%(extern\|pure\)\s\+\)\+\%(\%(protected\|local\|virtual\|static\|automatic\)\s\+\)*' .
-	\ '\|\%(import\s\+\%(context\s\+\|pure\s\+\)\?\|export\s\+\)\)\%(function\|task\)\>'
+	\ '\|\%(import\s\+\%(context\s\+\|pure\s\+\)\?\%(\h\w*\s*=\s*\)\?\|export\s\+\%(\h\w*\s*=\s*\)\?\)\)\%(function\|task\)\>'
 
 " heuristic start of a multi-line instantiation: <type> [#(...)] <inst> (...
 " (must not start with a keyword; module parameters/ports often get folded)
@@ -186,6 +187,48 @@ function! s:DefaultClockingIsBlock(lnum, code, in_comment) abort
 	return 0
 endfunction
 
+" A function/task prototype split across lines: the head line carries only
+" a dangling prefix (extern plus qualifiers, or import/export plus an
+" optional context/pure) and the function/task keyword lands on a later
+" line. One line cannot tell that continuation from a real definition:
+" both end in (); so the verdict comes from the nearest non-blank line
+" above, stripped the same way s:Scan strips. A complete statement above
+" (such as import pkg::*;) never matches: the prefix patterns below are
+" end-anchored and admit no trailing semicolon or package path. Pure
+" function over buffer text, like s:DefaultClockingIsBlock: never calls
+" s:Scan, and the result is cached with the scan.
+function! s:IsProtoContinuation(lnum, code) abort
+	let l:head = '^\s*\%(\%(extern\|pure\|protected\|local\|virtual\|static\|automatic\|context\)\s\+\)*\%(function\|task\)\>'
+	if a:code !~# l:head
+		return 0
+	endif
+	let l:j = a:lnum - 1
+	let l:stop = max([1, a:lnum - s:DC_CAP])
+	while l:j >= l:stop
+		let l:t = getline(l:j)
+		let l:t = substitute(l:t, "'\\.'", '', 'g')
+		let l:t = substitute(l:t, '"\(\\.\|[^"\\]\)*"', '', 'g')
+		let l:t = substitute(l:t, '/\*.\{-}\*/', '', 'g')
+		let l:t = substitute(l:t, '//.*', '', 'g')
+		let l:t = substitute(l:t, '/\*.*$', '', '')
+		if l:t =~# '^\s*$'
+			let l:j -= 1
+			continue
+		endif
+		if l:t =~# '^\s*\%(extern\|pure\)\%(\s\+\%(protected\|local\|virtual\|static\|automatic\)\)*\s*$'
+			return 1
+		endif
+		if l:t =~# '^\s*import\%(\s\+\%(context\|pure\)\)\?\s*$'
+			return 1
+		endif
+		if l:t =~# '^\s*export\s*$'
+			return 1
+		endif
+		return 0
+	endwhile
+	return 0
+endfunction
+
 " State-independent scan of one line. Results are cached per changedtick so
 " out-of-order foldexpr evaluation can replay the state machine cheaply.
 function! s:Scan(lnum) abort
@@ -230,7 +273,7 @@ function! s:Scan(lnum) abort
 		" code events
 		let l:r.net = 0
 		let l:r.restart = 0
-		if l:code =~# s:PROTOTYPE
+		if l:code =~# s:PROTOTYPE || s:IsProtoContinuation(a:lnum, l:code)
 			let l:c = ''
 		else
 			let l:c = substitute(l:code, '\<interface\s\+class\>', 'class', 'g')
@@ -249,6 +292,11 @@ function! s:Scan(lnum) abort
 			let l:c = substitute(l:c, '\<\%(disable\|wait\)\s\+fork\>', '', 'g')
 			let l:c = substitute(l:c, '\<with\s\+function\s\+sample\>', '', 'g')
 			let l:c = substitute(l:c, '\<\%(assert\|assume\|restrict\|cover\)\s\+\%(\%(property\|sequence\)\s\+\)\=', '', 'g')
+			" modport TF ports are prototypes, not definitions: neutralise
+			" every import/export function/task on a modport line
+			if l:code =~# '^\s*modport\>'
+				let l:c = substitute(l:c, '\<\%(import\|export\)\s\+\%(function\|task\)\>', '', 'g')
+			endif
 		endif
 
 		let l:openp = []

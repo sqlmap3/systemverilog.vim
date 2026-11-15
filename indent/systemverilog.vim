@@ -264,7 +264,35 @@ function! s:ConvertToCodes( codeline, ... )
 	" while its '}' IS dropped, leaving the same unmatched 'b'
 	" (demo70).
 	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
-	let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
+	" Nested single-line array literals: the gate above drops every
+	" open brace, but the close-brace rule only drops closes followed
+	" by a terminator, so an inner close before another close survives
+	" as a phantom block-stop and dedents the line and everything
+	" after it. Drop a close followed by a close or by end-of-line
+	" too, but only when no open brace still stands between the line
+	" start (or a previous close) and it: a kept open brace
+	" (replication, streaming, a real block) means the close is real.
+	" The span must also hold an apostrophe, the residue of an
+	" assignment-pattern opener: a real block close trailing an
+	" expression on its line has none and is left alone.
+	" The semicolon prefix stays excluded: a semicolon-led double
+	" close shuts real blocks whose opener sits on an earlier line.
+	" Iterate both rules to a fixpoint: each drop can expose the next
+	" close. Only deletions happen, so the loop terminates.
+	" Brace-only mode (the pairing scan census) skips the guarded
+	" rule: the census must see the baseline brace picture, or a
+	" dropped inner close would flip a verdict gate downstream.
+	if stridx(delims, '}') >= 0
+		let l:nest_pat = '\(^\|}\)\%(\({\)\@!.\)\{-}''\%(\({\)\@!.\)\{-}\([]A-Za-z_0-9")]\)\s*\zs}\ze\s*\%(}\|$\)'
+		let l:fix_prev = ''
+		while l:fix_prev !=# delims
+			let l:fix_prev = delims
+			let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
+			if l:mode != 2
+				let delims = substitute(delims, l:nest_pat, '', '')
+			endif
+		endwhile
+	endif
 	" A concatenation '}' before '[' or ']'
 	" ("{a, b}[i]", "foo[{a, b}]") must drop exactly
 	" when its '{' was dropped above: the '{' drops run
@@ -304,15 +332,20 @@ function! s:ConvertToCodes( codeline, ... )
 	" strips (1). Multi-line (2a) without a name is still a known gap:
 	" its endclocking closes the enclosing group (no 'default clocking'
 	" appears in UVM/VIP, so it is untested in real code).
-	let delims = substitute(delims, 'import[^\n]*function', '', 'g')
-	let delims = substitute(delims, 'import[^\n]*task', '', 'g')
+	" DPI import: word-boundary anchors and a gap that never crosses
+	" a semicolon (a function/task after one starts a new statement,
+	" a real definition). Only complete /* ... */ pairs pass the gap,
+	" so an import inside a comment cannot swallow the real function
+	" after the comment.
+	let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
+	let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
 	" same for a DPI export ("export \"DPI-C\" function sv_callback;") and
 	" a modport export ("export task run()"): the function/task is the
 	" exported symbol kind, not a definition — without this the 'function'
 	" opens a block and everything after it indents one level too deep
 	" (demo48)
-	let delims = substitute(delims, 'export[^\n]*function', '', 'g')
-	let delims = substitute(delims, 'export[^\n]*task', '', 'g')
+	let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
+	let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
 	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking[^;]*;\s*endclocking', '', 'g')
 	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s\+\h\w*\s*;', '', 'g')
 	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s*[@;]', '', 'g')
@@ -1155,13 +1188,75 @@ let b:sv_roll_prevnb = 0
 " its group opener 'f' must not stay open past the signature's closing ');',
 " or every following declaration cascades one level deeper. Strip the 'f'.
 function! s:StripPrototypeF( line_num, codeline, codes )
-	if stridx(a:codeline, 'function') == -1 && stridx(a:codeline, 'task') == -1
+	if stridx(a:codeline, 'function') == -1 && stridx(a:codeline, 'task') == -1 && stridx(a:codeline, 'class') == -1
+		return a:codes
+	endif
+	if a:codes !~# 'f'
 		return a:codes
 	endif
 	if a:codeline =~ '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\)\s\+\)*\%(function\|task\)\>'
 		let l:prev = getline(prevnonblank(a:line_num - 1))
 		if l:prev =~ '^\s*\%(extern\|virtual\|protected\|pure\|static\|local\)\%(\s\+\%(extern\|virtual\|protected\|pure\|static\|local\)\)*\s*$'
 			return substitute(a:codes, 'f', '', 'g')
+		endif
+	endif
+	" A function/task/class line whose opener sits on the previous
+	" line is a prototype, not a definition: a split DPI import/export,
+	" or a split typedef forward declaration. The signal is only the
+	" previous non-blank line (comments and strings stripped) being a
+	" dangling prefix: no semicolon, no signature of its own. A
+	" semicolon-ended previous line never suppresses, since a real
+	" definition head ends the same way. Only the first f is removed,
+	" so a real function or task later on the same line keeps its own.
+	if a:line_num <= 1
+		return a:codes
+	endif
+	let l:cur_clean = s:StripForBraces(a:codeline)
+	let l:is_ft = (l:cur_clean =~# '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\|extern\|context\)\s\+\)*\%(function\|task\)\>')
+	let l:is_class = (l:cur_clean =~# '^\s*\%(interface\s\+\)\?class\>')
+	if !l:is_ft && !l:is_class
+		return a:codes
+	endif
+	let l:prev_ln = prevnonblank(a:line_num - 1)
+	if l:prev_ln <= 0
+		return a:codes
+	endif
+	let l:prev_raw = getline(l:prev_ln)
+	let l:prev_clean = s:StripForBraces(l:prev_raw)
+	if l:is_class
+		" Split typedef forward declaration: the previous line is
+		" exactly typedef or typedef interface, or the two-line chain
+		" typedef / interface (a three-line split).
+		if l:prev_clean =~# '^\s*typedef\s*$' || l:prev_clean =~# '^\s*typedef\s\+interface\s*$'
+			return substitute(a:codes, 'f', '', '')
+		endif
+		if l:prev_clean =~# '^\s*interface\s*$'
+			let l:prev2_ln = prevnonblank(l:prev_ln - 1)
+			if l:prev2_ln > 0 && s:StripForBraces(getline(l:prev2_ln)) =~# '^\s*typedef\s*$'
+				return substitute(a:codes, 'f', '', '')
+			endif
+		endif
+		return a:codes
+	endif
+	" Split DPI import/export: the previous line starts with import or
+	" export and carries no semicolon, no function/task/class word and
+	" no paren. DPI evidence is a string literal on the prefix line or
+	" on this line: a bare package import split across lines must not
+	" swallow a real definition, and a modport export split without a
+	" DPI string stays a known gap.
+	if l:prev_clean =~# '^\s*\%(import\|export\)\>' && l:prev_clean !~# ';' && l:prev_clean !~# '\<\%(function\|task\|class\)\>' && l:prev_clean !~# '[()]'
+		let l:prev_nc = substitute(l:prev_raw, '\/\*.\{-}\*\/', ' ', 'g')
+		let l:cut = stridx(l:prev_nc, '//')
+		if l:cut >= 0
+			let l:prev_nc = strpart(l:prev_nc, 0, l:cut)
+		endif
+		let l:cur_nc = substitute(a:codeline, '\/\*.\{-}\*\/', ' ', 'g')
+		let l:cut = stridx(l:cur_nc, '//')
+		if l:cut >= 0
+			let l:cur_nc = strpart(l:cur_nc, 0, l:cut)
+		endif
+		if stridx(l:prev_nc, '"') >= 0 || stridx(l:cur_nc, '"') >= 0
+			return substitute(a:codes, 'f', '', '')
 		endif
 	endif
 	return a:codes
