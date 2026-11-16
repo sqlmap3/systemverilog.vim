@@ -94,6 +94,463 @@ function! s:IsPlainStmt( line )
 	return 1
 endfunction
 
+" Same-line paired braces whose closer the tail-drop rule below eats
+" while the opener survives the '{' gate: the surviving opener maps to
+" 'b' with no 'e' to cancel it, so every following line indents one
+" level too deep and each such line adds another level
+" ("foo with {a == 1;};", "std::randomize(...) with {...};"). The
+" pairing scan never adjudicates these: its closer line must hold no
+" '{'. Strip both braces of such a pair here, before the gate, while
+" the line still holds its true brace picture: the closer must
+" satisfy the tail-drop rule's own prefix/suffix classes (the
+" prefix char is the effective one, past a skipped inside/unique
+" set), the opener must sit where the gate keeps it, and the span
+" must hold no other brace (an inside/unique set inside the span
+" is skipped: the whole-drop below removes it, exposing the pair).
+" A nested pair that vanishes under the gate and the tail-drop
+" (a concatenation inside the span, "coverpoint x { bins b = {1};
+" };") is skipped transparently: the pipeline below removes it
+" anyway, so the enclosing pair is judged on the text with it
+" gone. A nested pair whose closer survives (the "{b, c}}" gap
+" shape) blocks the enclosing pair, preserving its signature.
+" Replication ("{2{data}}"), streaming, gate-position concats, and
+" directly nested concats ("{{x}, y}", a known gap) are all
+" excluded, and a closer at end-of-line (a real block close) never
+" qualifies. Brace-only mode skips this: the pairing census must
+" see the baseline brace picture. No regexes: byte scanning only,
+" so multibyte text is safe (only ASCII bytes match the classes).
+function! s:SLPSetEnd(s, k)
+	" a:s[a:k] starts 'inside' or 'unique' as a whole word followed by
+	" spaces and '{': return the index just past the set's closing
+	" '}', else -1. Mirrors the whole-drop: no nested braces inside
+	" the set, braces inside strings do not end it.
+	if strpart(a:s, a:k, 6) !=# 'inside' && strpart(a:s, a:k, 6) !=# 'unique'
+		return -1
+	endif
+	if a:k > 0 && stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$', strpart(a:s, a:k - 1, 1)) >= 0
+		return -1
+	endif
+	let l:j = a:k + 6
+	let l:sp = 0
+	while l:j < len(a:s) && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j += 1
+		let l:sp += 1
+	endwhile
+	if l:sp == 0 || l:j >= len(a:s) || strpart(a:s, l:j, 1) !=# '{'
+		return -1
+	endif
+	let l:m = l:j + 1
+	while l:m < len(a:s)
+		let l:c = strpart(a:s, l:m, 1)
+		if l:c ==# '"'
+			let l:m += 1
+			while l:m < len(a:s)
+				let l:c2 = strpart(a:s, l:m, 1)
+				if l:c2 ==# nr2char(92)
+					let l:m += 2
+				elseif l:c2 ==# '"'
+					let l:m += 1
+					break
+				else
+					let l:m += 1
+				endif
+			endwhile
+			continue
+		endif
+		if l:c ==# '}'
+			return l:m + 1
+		endif
+		if l:c ==# '{'
+			return -1
+		endif
+		let l:m += 1
+	endwhile
+	return -1
+endfunction
+
+function! s:SLPSetOpen(s, p)
+	" True when the '{' at byte a:p opens an inside/unique set (the
+	" whole-drop below removes it whole): a whole 'inside'/'unique'
+	" word, then spaces, then the '{'. Such braces are never
+	" stripped here: the whole-drop must see the set intact, or
+	" based literals inside it degrade to quote residues.
+	let l:j = a:p - 1
+	let l:sp = 0
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j -= 1
+		let l:sp += 1
+	endwhile
+	if l:sp == 0 || l:j < 5
+		return 0
+	endif
+	let l:w = strpart(a:s, l:j - 5, 6)
+	if l:w !=# 'inside' && l:w !=# 'unique'
+		return 0
+	endif
+	if l:j - 6 >= 0 && stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$', strpart(a:s, l:j - 6, 1)) >= 0
+		return 0
+	endif
+	return 1
+endfunction
+
+function! s:SLPOpenOk(s, p)
+	" True when the '{' at byte a:p sits where the gate keeps it: not
+	" at line start, not after a gate-prefix char, not directly
+	" nested ("{{"), and not a replication count ("{2{", "{2'b10{").
+	let l:j = a:p - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j -= 1
+	endwhile
+	if l:j < 0
+		return 0
+	endif
+	let l:c = strpart(a:s, l:j, 1)
+	if l:c ==# '{'
+		return 0
+	endif
+	if stridx("=,(+*/%&|^<>~!-:?'", l:c) >= 0
+		return 0
+	endif
+	if stridx('0123456789', l:c) >= 0
+		let l:k = l:j
+		while l:k >= 0 && stridx('0123456789', strpart(a:s, l:k, 1)) >= 0
+			let l:k -= 1
+		endwhile
+		" based-literal count: radix letter, optional sign, quote, size
+		if l:k >= 0 && stridx('bBoOdDhH', strpart(a:s, l:k, 1)) >= 0
+			if l:k >= 1 && strpart(a:s, l:k - 1, 1) ==# "'"
+				let l:k -= 2
+			elseif l:k >= 2 && stridx('sS', strpart(a:s, l:k - 1, 1)) >= 0 && strpart(a:s, l:k - 2, 1) ==# "'"
+				let l:k -= 3
+			endif
+			while l:k >= 0 && stridx('0123456789', strpart(a:s, l:k, 1)) >= 0
+				let l:k -= 1
+			endwhile
+		endif
+		while l:k >= 0 && (strpart(a:s, l:k, 1) ==# ' ' || strpart(a:s, l:k, 1) ==# nr2char(9))
+			let l:k -= 1
+		endwhile
+		if l:k < 0 || strpart(a:s, l:k, 1) ==# '{'
+			return 0
+		endif
+	endif
+	return 1
+endfunction
+
+function! s:SLPSuffixOk(s, q)
+	" True when the char after byte a:q (skipping spaces) is in the
+	" tail-drop rule's suffix class, or starts an iff/with word.
+	" End-of-line never qualifies.
+	let l:j = a:q + 1
+	let l:n = len(a:s)
+	while l:j < l:n && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j += 1
+	endwhile
+	if l:j >= l:n
+		return 0
+	endif
+	let l:c = strpart(a:s, l:j, 1)
+	if stridx(',;):&|^+*/%=<>!?-.', l:c) >= 0
+		return 1
+	endif
+	if strpart(a:s, l:j, 4) ==# 'with' && (l:j + 4 >= l:n || stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$', strpart(a:s, l:j + 4, 1)) < 0)
+		return 1
+	endif
+	if strpart(a:s, l:j, 3) ==# 'iff' && (l:j + 3 >= l:n || stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_$', strpart(a:s, l:j + 3, 1)) < 0)
+		return 1
+	endif
+	return 0
+endfunction
+
+function! s:SLPGateDrops(s, p)
+	" True when the gate below would drop the '{' at byte a:p: a
+	" gate-prefix char before it (spaces allowed) and a follow
+	" char the gate accepts after it. A digit follow that starts
+	" a replication count ("{2{") keeps the brace.
+	let l:j = a:p - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j -= 1
+	endwhile
+	if l:j < 0
+		return 0
+	endif
+	if stridx("=,(+*/%&|^<>~!-:?'", strpart(a:s, l:j, 1)) < 0
+		return 0
+	endif
+	let l:k = a:p + 1
+	let l:n = len(a:s)
+	while l:k < l:n && (strpart(a:s, l:k, 1) ==# ' ' || strpart(a:s, l:k, 1) ==# nr2char(9))
+		let l:k += 1
+	endwhile
+	if l:k >= l:n
+		return 0
+	endif
+	let l:fc = strpart(a:s, l:k, 1)
+	if l:fc ==# '['
+		return 1
+	endif
+	if stridx('0123456789', l:fc) >= 0
+		let l:m = l:k
+		while l:m < l:n && stridx('0123456789', strpart(a:s, l:m, 1)) >= 0
+			let l:m += 1
+		endwhile
+		while l:m < l:n && (strpart(a:s, l:m, 1) ==# ' ' || strpart(a:s, l:m, 1) ==# nr2char(9))
+			let l:m += 1
+		endwhile
+		if l:m < l:n && strpart(a:s, l:m, 1) ==# '{'
+			return 0
+		endif
+		return 1
+	endif
+	if l:fc ==# nr2char(96)
+		return 1
+	endif
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"$''(~!+-', l:fc) >= 0
+		return 1
+	endif
+	return 0
+endfunction
+
+function! s:SLPMatchClose(s, p)
+	" Index of the '}' matching the '{' at byte a:p by brace depth,
+	" honoring strings and block comments, or -1. A line comment
+	" ends the search: no real close follows it.
+	let l:n = len(a:s)
+	let l:k = a:p + 1
+	let l:d = 1
+	while l:k < l:n
+		let l:ch = strpart(a:s, l:k, 1)
+		if l:ch ==# '"'
+			let l:k += 1
+			while l:k < l:n
+				let l:c2 = strpart(a:s, l:k, 1)
+				if l:c2 ==# nr2char(92)
+					let l:k += 2
+				elseif l:c2 ==# '"'
+					let l:k += 1
+					break
+				else
+					let l:k += 1
+				endif
+			endwhile
+			continue
+		endif
+		if l:ch ==# '/' && l:k + 1 < l:n
+			let l:nx = strpart(a:s, l:k + 1, 1)
+			if l:nx ==# '/'
+				return -1
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:k + 2)
+				if l:e < 0
+					return -1
+				endif
+				let l:k = l:e + 2
+				continue
+			endif
+		endif
+		if l:ch ==# '{'
+			let l:d += 1
+		elseif l:ch ==# '}'
+			let l:d -= 1
+			if l:d == 0
+				return l:k
+			endif
+		endif
+		let l:k += 1
+	endwhile
+	return -1
+endfunction
+
+function! s:SLPVanishes(s, p)
+	" Index just past the matching '}' when the pair at byte a:p
+	" vanishes under the gate and the tail-drop (its opener is
+	" gate-dropped and its closer satisfies the tail-drop's own
+	" prefix/suffix classes), else -1. Such a pair is transparent
+	" to an enclosing pair: skipping it mirrors what the pipeline
+	" below does to it anyway.
+	if !s:SLPGateDrops(a:s, a:p)
+		return -1
+	endif
+	let l:q = s:SLPMatchClose(a:s, a:p)
+	if l:q < 0
+		return -1
+	endif
+	let l:j = l:q - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# nr2char(9))
+		let l:j -= 1
+	endwhile
+	if l:j < 0
+		return -1
+	endif
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");]', strpart(a:s, l:j, 1)) < 0
+		return -1
+	endif
+	if !s:SLPSuffixOk(a:s, l:q)
+		return -1
+	endif
+	return l:q + 1
+endfunction
+
+function! s:SLPCloseFor(s, p)
+	" [close, eff, com]: the '}' closing the '{' at byte a:p, or
+	" [-1, -1, 0]. The span must hold no other brace (an
+	" inside/unique set is skipped whole, a vanishing nested
+	" pair is skipped transparently), no unterminated
+	" string/comment, and balanced parens and brackets (a ')' whose
+	" '(' sits before the opener would leave a phantom 'e' once the
+	" opener is gone). eff is the last effective code char before
+	" the close: a skipped set is transparent (the whole-drop
+	" removes it before the tail-drop runs, so the close's prefix
+	" char is the one before the set), a string counts as its
+	" closing quote. com flags a block comment skipped after eff:
+	" the raw text then ends in '/', which the tail-drop would
+	" keep, so such a pair is left alone.
+	let l:n = len(a:s)
+	let l:k = a:p + 1
+	let l:pd = 0
+	let l:bd = 0
+	let l:eff = -1
+	let l:com = 0
+	while l:k < l:n
+		let l:ch = strpart(a:s, l:k, 1)
+		if l:ch ==# '"'
+			let l:k += 1
+			let l:closed = -1
+			while l:k < l:n
+				let l:c2 = strpart(a:s, l:k, 1)
+				if l:c2 ==# nr2char(92)
+					let l:k += 2
+				elseif l:c2 ==# '"'
+					let l:closed = l:k
+					let l:k += 1
+					break
+				else
+					let l:k += 1
+				endif
+			endwhile
+			if l:closed < 0
+				return [-1, -1, 0]
+			endif
+			let l:eff = l:closed
+			let l:com = 0
+			continue
+		endif
+		if l:ch ==# '/' && l:k + 1 < l:n
+			let l:nx = strpart(a:s, l:k + 1, 1)
+			if l:nx ==# '/'
+				return [-1, -1, 0]
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:k + 2)
+				if l:e < 0
+					return [-1, -1, 0]
+				endif
+				let l:k = l:e + 2
+				let l:com = 1
+				continue
+			endif
+		endif
+		if l:ch ==# '{'
+			let l:ve = s:SLPVanishes(a:s, l:k)
+			if l:ve < 0
+				return [-1, -1, 0]
+			endif
+			let l:k = l:ve
+			continue
+		endif
+		if l:ch ==# '}'
+			if l:pd != 0 || l:bd != 0
+				return [-1, -1, 0]
+			endif
+			return [l:k, l:eff, l:com]
+		endif
+		if l:ch ==# '('
+			let l:pd += 1
+		elseif l:ch ==# ')'
+			let l:pd -= 1
+			if l:pd < 0
+				return [-1, -1, 0]
+			endif
+		elseif l:ch ==# '['
+			let l:bd += 1
+		elseif l:ch ==# ']'
+			let l:bd -= 1
+			if l:bd < 0
+				return [-1, -1, 0]
+			endif
+		endif
+		if l:ch ==# 'i' || l:ch ==# 'u'
+			let l:se = s:SLPSetEnd(a:s, l:k)
+			if l:se >= 0
+				let l:k = l:se
+				continue
+			endif
+		endif
+		if l:ch !=# ' ' && l:ch !=# nr2char(9)
+			let l:eff = l:k
+			let l:com = 0
+		endif
+		let l:k += 1
+	endwhile
+	return [-1, -1, 0]
+endfunction
+
+function! s:SLPCloseOk(s, q, eff, com)
+	" True when the '}' at byte a:q satisfies the tail-drop rule's
+	" own classes: the effective prefix char (see s:SLPCloseFor)
+	" before it, a terminator/operator or iff/with after it.
+	" End-of-line never qualifies, and a block comment just
+	" before the close disqualifies it (the tail-drop sees the
+	" '/' and keeps the close, so the pair must stay balanced).
+	if a:com
+		return 0
+	endif
+	if a:eff < 0
+		return 0
+	endif
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");]', strpart(a:s, a:eff, 1)) < 0
+		return 0
+	endif
+	return s:SLPSuffixOk(a:s, a:q)
+
+endfunction
+
+function! s:SLPFindPair(s)
+	let l:n = len(a:s)
+	let l:i = 0
+	while l:i < l:n
+		let l:p = stridx(a:s, '{', l:i)
+		if l:p < 0
+			return [-1, -1]
+		endif
+		if !s:SLPSetOpen(a:s, l:p) && s:SLPOpenOk(a:s, l:p)
+			let l:cl = s:SLPCloseFor(a:s, l:p)
+			if l:cl[0] >= 0 && s:SLPCloseOk(a:s, l:cl[0], l:cl[1], l:cl[2])
+				return [l:p, l:cl[0]]
+			endif
+		endif
+		let l:i = l:p + 1
+	endwhile
+	return [-1, -1]
+endfunction
+
+function! s:StripSameLinePairs(s)
+	" Strip both braces of each qualifying same-line pair, innermost
+	" first to a fixpoint: stripping an inner pair can expose its
+	" outer pair. Only deletions happen, so the loop terminates.
+	let l:s = a:s
+	while 1
+		let l:pair = s:SLPFindPair(l:s)
+		if l:pair[0] < 0
+			break
+		endif
+		let l:s = strpart(l:s, 0, l:pair[1]) . strpart(l:s, l:pair[1] + 1)
+		let l:s = strpart(l:s, 0, l:pair[0]) . strpart(l:s, l:pair[0] + 1)
+	endwhile
+	return l:s
+endfunction
+
 function! s:ConvertToCodes( codeline, ... )
 	" keywords that don't affect indent: module endmodule package
 	" endpackage interface endinterface (upstream nachumk behavior; their
@@ -235,6 +692,13 @@ function! s:ConvertToCodes( codeline, ... )
 	while delims =~ l:stream_pat
 		let delims = substitute(delims, l:stream_pat, '(', '')
 	endwhile
+	" Same-line pairs whose closer the tail-drop eats while the
+	" opener survives the gate (see s:StripSameLinePairs above):
+	" brace-only mode skips it so the pairing census sees the
+	" baseline brace picture.
+	if l:mode != 2
+		let delims = s:StripSameLinePairs(delims)
+	endif
 	" The '{' gate also covers operators: a '{' after + - * / %
 	" & | ^ < > ~ ! is an expression operand (a concatenation), never
 	" a block (demo102).
