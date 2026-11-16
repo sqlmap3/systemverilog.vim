@@ -7,6 +7,7 @@
 " Writes PASS/FAIL lines to g:sv_result.
 
 let s:fails = []
+let s:cpo_before = &cpo
 
 function! s:fg(group) abort
   redir => r
@@ -26,6 +27,52 @@ function! s:Check(bg) abort
     let l:c = s:fg(l:g)
     if l:c ==# ''
       call add(s:fails, a:bg . ':' . l:g . ' has no guifg')
+    endif
+  endfor
+  " cterm mirroring: a gui=bold/italic group must carry the same
+  " cterm attrs, so terminal Vim without termguicolors keeps
+  " the emphasis.
+  let l:cterm_attrs = [['Comment', 'italic'], ['svLineComment', 'italic'],
+        \ ['svBlockComment', 'italic'], ['svDocLineComment', 'italic'],
+        \ ['svDocBlockComment', 'italic'], ['svDocTag', 'bold'],
+        \ ['svDocTag', 'italic'], ['svFormatSpecifier', 'bold'],
+        \ ['svDirection', 'italic'], ['svThisSuper', 'italic'],
+        \ ['svAssertLabel', 'bold'], ['svSVAOp', 'bold'],
+        \ ['svModuleName', 'bold'], ['svInterfaceName', 'bold'],
+        \ ['svPackageName', 'bold'], ['svInstanceName', 'bold'],
+        \ ['svNamedPort', 'bold'], ['svModuleKw', 'bold'],
+        \ ['svInterfaceKw', 'bold'], ['svPackageKw', 'bold'],
+        \ ['svClassKw', 'bold'], ['svFunctionKw', 'bold'],
+        \ ['svTaskKw', 'bold'], ['Keyword', 'bold'],
+        \ ['uvmRunTest', 'bold'], ['Title', 'bold'], ['Todo', 'bold']]
+  for l:t in l:cterm_attrs
+    if synIDattr(hlID(l:t[0]), l:t[1], 'cterm') !=# '1'
+      call add(s:fails, a:bg . ':' . l:t[0] . ' missing cterm ' . l:t[1])
+    endif
+  endfor
+  " plain groups must not gain cterm= attrs
+  let l:plain = ['svKeyword', 'svType', 'svString', 'svInteger', 'svMacroRef', 'Statement', 'uvmBaseClass', 'Normal']
+  for l:g in l:plain
+    redir => l:hi
+    silent execute 'hi' l:g
+    redir END
+    if l:hi =~# 'cterm='
+      call add(s:fails, a:bg . ':' . l:g . ' unexpectedly has cterm=')
+    endif
+  endfor
+  " direct-line groups must pin the cterm half (no
+  " terminal-dependent leftovers from Vim defaults)
+  let l:leftover = [['NonText', 'fg', ''], ['NonText', 'bg', ''],
+        \ ['SpecialKey', 'fg', ''], ['SpecialKey', 'bg', ''],
+        \ ['EndOfBuffer', 'fg', '238'], ['Search', 'fg', ''],
+        \ ['Search', 'bg', '52'], ['IncSearch', 'fg', ''],
+        \ ['IncSearch', 'bg', '58'], ['IncSearch', 'reverse', ''],
+        \ ['Visual', 'fg', ''], ['Visual', 'bg', '24'],
+        \ ['Visual', 'reverse', ''], ['FoldColumn', 'bg', ''],
+        \ ['ErrorMsg', 'bg', '']]
+  for l:t in l:leftover
+    if synIDattr(hlID(l:t[0]), l:t[1], 'cterm') !=# l:t[2]
+      call add(s:fails, a:bg . ':' . l:t[0] . ' cterm' . l:t[1] . '=' . synIDattr(hlID(l:t[0]), l:t[1], 'cterm') . ' want=' . l:t[2])
     endif
   endfor
   " high distinction: these must be pairwise distinct
@@ -56,6 +103,39 @@ colorscheme systemverilog_uvm
 let s:light_kw = s:fg('svKeyword')
 if s:dark_kw ==# s:light_kw
   call add(s:fails, 'dark/light svKeyword identical: ' . s:dark_kw)
+endif
+
+" cpo smoke: the scheme must source cleanly with cpo+=C (its
+" palette and class-list continuations need cpo&vim) and must
+" leave &cpo undisturbed. No continuation lines below on purpose.
+let s:cpo_save = &cpo
+for s:bg in ['dark', 'light']
+  let s:cpo_err = ''
+  set cpo+=C
+  try
+    execute 'set background=' . s:bg
+    colorscheme systemverilog_uvm
+  catch
+    let s:cpo_err = v:exception
+  endtry
+  if &cpo !~# 'C'
+    call add(s:fails, 'cpo smoke ' . s:bg . ': scheme disturbed &cpo: ' . &cpo)
+  endif
+  let &cpo = s:cpo_save
+  if s:cpo_err !=# ''
+    call add(s:fails, 'cpo smoke ' . s:bg . ': ' . s:cpo_err)
+  endif
+  for s:g in ['svKeyword', 'svType', 'svMacroRef', 'uvmBaseClass', 'Todo', 'Comment']
+    if !hlexists(s:g)
+      call add(s:fails, 'cpo smoke ' . s:bg . ':' . s:g . ' missing')
+    endif
+  endfor
+  if synIDattr(hlID('Normal'), 'fg', 'gui') ==# ''
+    call add(s:fails, 'cpo smoke ' . s:bg . ':Normal cleared')
+  endif
+endfor
+if &cpo !=# s:cpo_before
+  call add(s:fails, 'cpo changed by colorscheme runs: ' . s:cpo_before . ' -> ' . &cpo)
 endif
 
 if empty(s:fails)

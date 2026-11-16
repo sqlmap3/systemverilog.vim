@@ -37,7 +37,7 @@
 #     -c "setlocal shiftwidth=2 tabstop=2 expandtab" -c "normal! gg=G" \
 #     -c "w! test/indent_demo2.expected.sv" -c "qa!"
 #
-# Usage:  sh test/run_indent_test.sh        (override Vim with VIM=nvim)
+# Usage:  sh test/run_indent_test.sh        (override Vim binary with VIM=...)
 set -u
 
 # Expected-failure anchors (option A): the .expected.sv of these demos is

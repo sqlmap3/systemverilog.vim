@@ -786,7 +786,7 @@ endfunction
 function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 	let indnt = a:indnt
 	if a:prev2_codes =~ s:LINE_INDENT && a:prev1_codes =~ s:EXEC_LINE
-		let indnt = indnt - &shiftwidth
+		let indnt = indnt - shiftwidth()
 	endif
 
 
@@ -795,27 +795,27 @@ function! s:GetCodeIndent ( indnt, prev2_codes, prev1_codes, this_codes )
 " closer line itself never dedents on 'c' (no rule tests this_codes
 " for it), so it stays at the concat-interior level.
 	if a:prev1_codes =~# s:CONCAT_CLOSE
-		let indnt = indnt - &shiftwidth
+		let indnt = indnt - shiftwidth()
 	endif
 	if a:prev1_codes =~ s:GROUP_INDENT_START
-		let indnt = indnt + &shiftwidth
+		let indnt = indnt + shiftwidth()
 	endif
 
 	if a:this_codes =~ s:GROUP_INDENT_STOP
-		return indnt - &shiftwidth
+		return indnt - shiftwidth()
 	endif
 
 	if a:prev1_codes =~ s:BLOCK_INDENT_START
-		let indnt = indnt + &shiftwidth
+		let indnt = indnt + shiftwidth()
 	endif
 	if a:this_codes =~ s:BLOCK_INDENT_STOP
-		return indnt - &shiftwidth
+		return indnt - shiftwidth()
 	endif
 
 	if a:prev1_codes =~ s:LINE_INDENT && a:prev1_codes !~ s:BLOCK_INDENT_START
-		let indnt = indnt + &shiftwidth
+		let indnt = indnt + shiftwidth()
 		if a:this_codes =~ s:LINE_INDENT || a:this_codes =~ s:BLOCK_INDENT_START
-			let indnt = indnt - &shiftwidth
+			let indnt = indnt - shiftwidth()
 		endif
 	endif
 
@@ -1045,7 +1045,7 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 							return s:OpenerIndent(l:ln, a:base_indnt)
 						endif
 					else
-						return s:OpenerIndent(l:ln, a:base_indnt) + &shiftwidth
+						return s:OpenerIndent(l:ln, a:base_indnt) + shiftwidth()
 					endif
 				elseif l:line =~ '^\s*`'
 					" other preprocessor directive - transparent
@@ -1092,7 +1092,7 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 			break
 		endwhile
 		if l:skipped && l:enc > 0 && getline(l:enc) =~ '^\s*`\s*\c\(ifdef\|ifndef\)\>' && !s:IsFileGuard(l:enc)
-			return indent(l:enc) + &shiftwidth
+			return indent(l:enc) + shiftwidth()
 		endif
 		let l:nest = 0
 		while l:ln > 0
@@ -1118,7 +1118,7 @@ function! s:GetPreprocIndent( line_num, base_indnt )
 			endif
 			let l:ln = prevnonblank(l:ln - 1)
 		endwhile
-		return a:base_indnt + l:nest * &shiftwidth
+		return a:base_indnt + l:nest * shiftwidth()
 	endif
 	" `include inside an `ifdef body (reached when the previous line is code,
 	" so SlowIndent's include block did not return early): an `include is a
@@ -1194,10 +1194,43 @@ function! s:StripPrototypeF( line_num, codeline, codes )
 	if a:codes !~# 'f'
 		return a:codes
 	endif
-	if a:codeline =~ '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\)\s\+\)*\%(function\|task\)\>'
-		let l:prev = getline(prevnonblank(a:line_num - 1))
-		if l:prev =~ '^\s*\%(extern\|virtual\|protected\|pure\|static\|local\)\%(\s\+\%(extern\|virtual\|protected\|pure\|static\|local\)\)*\s*$'
-			return substitute(a:codes, 'f', '', 'g')
+	if a:codeline =~ '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\|protected\|context\)\s\+\)*\%(function\|task\)\>'
+		" the qualifier line may sit above comment-only lines (a doc
+		" comment between the prefix and the function) and may itself
+		" carry trailing or inter-qualifier comments: skip provably
+		" comment-only lines, then test the comment-stripped prefix
+		" line (strings are kept, so a quoted word cannot pose as a
+		" qualifier). A line with any code stops the walk.
+		let l:pln = prevnonblank(a:line_num - 1)
+		let l:limit = 200
+		while l:pln > 0 && l:limit > 0
+			let l:pl = getline(l:pln)
+			if l:pl =~ '^\s*//' || l:pl =~ '^\s*\*'
+				let l:pln = prevnonblank(l:pln - 1)
+				let l:limit -= 1
+				continue
+			endif
+			let l:pl_nc = substitute(l:pl, '/\*.\{-}\*/', ' ', 'g')
+			let l:cut = stridx(l:pl_nc, '//')
+			if l:cut >= 0
+				let l:pl_nc = strpart(l:pl_nc, 0, l:cut)
+			endif
+			if l:pl_nc =~ '^\s*$' || l:pl_nc =~ '^\s*/\*\+\s*$'
+				let l:pln = prevnonblank(l:pln - 1)
+				let l:limit -= 1
+				continue
+			endif
+			break
+		endwhile
+		if l:pln > 0
+			let l:prev = substitute(getline(l:pln), '/\*.\{-}\*/', ' ', 'g')
+			let l:cut = stridx(l:prev, '//')
+			if l:cut >= 0
+				let l:prev = strpart(l:prev, 0, l:cut)
+			endif
+			if l:prev =~ '^\s*\%(extern\|virtual\|protected\|pure\|static\|local\|automatic\)\%(\s\+\%(extern\|virtual\|protected\|pure\|static\|local\|automatic\)\)*\s*$'
+				return substitute(a:codes, 'f', '', 'g')
+			endif
 		endif
 	endif
 	" A function/task/class line whose opener sits on the previous
@@ -1212,7 +1245,7 @@ function! s:StripPrototypeF( line_num, codeline, codes )
 		return a:codes
 	endif
 	let l:cur_clean = s:StripForBraces(a:codeline)
-	let l:is_ft = (l:cur_clean =~# '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\|extern\|context\)\s\+\)*\%(function\|task\)\>')
+	let l:is_ft = (l:cur_clean =~# '^\s*\%(\%(virtual\|pure\|static\|automatic\|local\|extern\|context\|protected\)\s\+\)*\%(function\|task\)\>')
 	let l:is_class = (l:cur_clean =~# '^\s*\%(interface\s\+\)\?class\>')
 	if !l:is_ft && !l:is_class
 		return a:codes
@@ -1274,14 +1307,23 @@ endfunction
 " statement, not a tail.
 function! s:StatementTailHead( line_num )
 	let l:line = getline(a:line_num)
-	if l:line !~ ')\s*;\?\s*$'
+	let l:gate = s:StripForBraces(l:line)
+	if l:gate !~ ')\s*;\?\s*$'
 		return 0
 	endif
 	if l:line =~ '^\s*[;)}]'
 	  \ || l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
 		return 0
 	endif
-	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+	let l:pln = prevnonblank(a:line_num - 1)
+	if l:pln == 0
+		return 0
+	endif
+	let l:pend = s:StripForBraces(getline(l:pln))
+	if l:pend =~ '^\s*$'
+		let l:pend = getline(l:pln)
+	endif
+	if l:pend !~ '[,([{]\s*$'
 		return 0
 	endif
 	let l:bal = 0
@@ -1450,21 +1492,21 @@ function! s:AfterEndifBodyIndent( endif_ln, ifdef_ln )
 		return -1
 	endif
 	if s:ConvertToCodes(getline(l:last), 0, l:last) =~ s:LINE_INDENT
-		return indent(l:last) + &shiftwidth
+		return indent(l:last) + shiftwidth()
 	endif
 	" a block opener (if/for/... begin, or a bare begin/fork/case) as
 	" the region's last code line opens a block whose body sits after
 	" the 'endif (demo101): the body indents one level past the opener
 	let l:op = s:RegionEndsWithBlockOpener(a:endif_ln, a:ifdef_ln)
 	if l:op > 0
-		return indent(l:op) + &shiftwidth
+		return indent(l:op) + shiftwidth()
 	endif
 	" l:last is confirmed inside the region, so the tail walk needs no
 	" directive crossing: a multi-line control wholly inside one branch
 	" (no directive between its head and tail) must still resolve
 	let l:chead = s:ControlTailHead(l:last, 0)
 	if l:chead > 0
-		return indent(l:chead) + &shiftwidth
+		return indent(l:chead) + shiftwidth()
 	endif
 	return -1
 endfunction
@@ -1901,7 +1943,15 @@ function! s:SigArgColumn( line_num )
 	" signature argument lines follow a ','-ending head. Without this guard
 	" every ordinary body line would walk to the top of the file, making a
 	" whole-buffer re-indent O(n^2).
-	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+	let l:pln = prevnonblank(a:line_num - 1)
+	if l:pln == 0
+		return 0
+	endif
+	let l:pend = s:StripForBraces(getline(l:pln))
+	if l:pend =~ '^\s*$'
+		let l:pend = getline(l:pln)
+	endif
+	if l:pend !~ '[,([{]\s*$'
 		return 0
 	endif
 	let l:bal = 0
@@ -1970,8 +2020,8 @@ function! s:EnclosingCodeIndent( ifdef_line )
 				let l:ln = prevnonblank(l:ln - 1)
 				continue
 			endif
-			let b:sv_enc_cache[a:ifdef_line] = indent(l:ln) + &shiftwidth
-			return indent(l:ln) + &shiftwidth
+			let b:sv_enc_cache[a:ifdef_line] = indent(l:ln) + shiftwidth()
+			return indent(l:ln) + shiftwidth()
 		endif
 		if l:l =~ '^\s*`'
 			let l:ln = prevnonblank(l:ln - 1)
@@ -1993,7 +2043,7 @@ endfunction
 " call, return the head line that opened the paren (paren-balance walk,
 " strings and //-comments stripped); otherwise 0.
 function! s:SigTailHead( line_num )
-	if getline(a:line_num) !~ '^\s*);\s*$'
+	if s:StripForBraces(getline(a:line_num)) !~ '^\s*);\s*$'
 		return 0
 	endif
 	let l:bal = -1
@@ -2219,14 +2269,23 @@ endfunction
 
 function! s:RollTailHead( line_num )
 	let l:line = getline(a:line_num)
-	if l:line !~ ')\s*;\?\s*$'
+	let l:gate = s:StripForBraces(l:line)
+	if l:gate !~ ')\s*;\?\s*$'
 		return 0
 	endif
 	if l:line =~ '^\s*[;)}]'
 	  \ || l:line =~ '^\s*\%(end\|endcase\|endgenerate\|endmodule\|endinterface\|endpackage\|endclass\|endfunction\|endtask\|endgroup\|endproperty\|endsequence\|endchecker\|endconfig\|endclocking\|endspecify\|join\|join_any\|join_none\)\>'
 		return 0
 	endif
-	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+	let l:pln = prevnonblank(a:line_num - 1)
+	if l:pln == 0
+		return 0
+	endif
+	let l:pend = s:StripForBraces(getline(l:pln))
+	if l:pend =~ '^\s*$'
+		let l:pend = getline(l:pln)
+	endif
+	if l:pend !~ '[,([{]\s*$'
 		return 0
 	endif
 	let l:bal = 0
@@ -2250,7 +2309,7 @@ function! s:RollTailHead( line_num )
 endfunction
 
 function! s:RollSigTailHead( line_num )
-	if getline(a:line_num) !~ '^\s*);\s*$'
+	if s:StripForBraces(getline(a:line_num)) !~ '^\s*);\s*$'
 		return 0
 	endif
 	let l:bal = -1
@@ -2276,7 +2335,15 @@ function! s:RollSigArgColumn( line_num )
 	" signature argument lines follow a ','-ending head. Without this guard
 	" every ordinary body line would walk to the top of the file, making a
 	" whole-buffer re-indent O(n^2).
-	if prevnonblank(a:line_num - 1) == 0 || getline(prevnonblank(a:line_num - 1)) !~ '[,([{]\s*$'
+	let l:pln = prevnonblank(a:line_num - 1)
+	if l:pln == 0
+		return 0
+	endif
+	let l:pend = s:StripForBraces(getline(l:pln))
+	if l:pend =~ '^\s*$'
+		let l:pend = getline(l:pln)
+	endif
+	if l:pend !~ '[,([{]\s*$'
 		return 0
 	endif
 	let l:bal = 0
@@ -2325,7 +2392,7 @@ function! s:RollPreprocIndent( line_num, base_indnt )
 			endif
 			return a:base_indnt
 		endif
-		return a:base_indnt + b:sv_roll_run * &shiftwidth
+		return a:base_indnt + b:sv_roll_run * shiftwidth()
 	endif
 	" `include inside an `ifdef body: a body line like any statement, so
 	" sit at the code level (base_indnt), not at the opener level like a
@@ -2410,7 +2477,7 @@ function! s:RollPlainLine( line_num )
 	if len(b:sv_roll_codelines) >= 2 && b:sv_roll_codelines[-1] == l:prev
 		let l:p2codes = get(b:sv_roll_ucodes, b:sv_roll_codelines[-2], '')
 		if l:p2codes =~ s:LINE_INDENT || s:ControlTailHead(b:sv_roll_codelines[-2]) > 0
-			let l:ind = l:ind - &shiftwidth
+			let l:ind = l:ind - shiftwidth()
 		endif
 	elseif len(b:sv_roll_codelines) < 2
 		" no prev2 unit: no dedent possible, keep indent(prev)
@@ -2455,7 +2522,7 @@ function! s:RollFastIndent( line_num )
 		return -1
 	endif
 	let l:this_codes = s:ConvertToCodes(l:line, 0, l:N)
-	let l:sw = &shiftwidth
+	let l:sw = shiftwidth()
 	" --- preprocessor-continuation loops (sig = first non-skip line above) ---
 	let l:prev_start = l:N
 	let l:sig = b:sv_roll_sig
@@ -2630,7 +2697,7 @@ function! s:RollFastIndent( line_num )
 		endif
 	endif
 	let l:p1line = getline(l:p1)
-	if l:p1line =~ '\<endfunction\>' && stridx(l:p1line, ');') >= 0
+	if l:p1line =~ '\<\%(endfunction\|endtask\)\>' && stridx(l:p1line, ');') >= 0
 		return -1
 	endif
 	let l:p1_codes = s:StripPrototypeF(l:p1, s:GetWholeLine(l:p1), b:sv_roll_ucodes[l:p1])
@@ -2654,6 +2721,52 @@ function! s:RollFastIndent( line_num )
 	if l:p2 > 0 && s:ControlTailHead(l:p2) > 0
 		let l:p2_codes = 'x'
 	endif
+	" Comment and directive lines reach the state and preproc handling
+	" BEFORE the signature early returns below (mirrors the slow-path
+	" routing in s:SlowIndent; R3 lines already fell back to SlowIndent
+	" at the endfunction/endtask deferral above, so only the R4 rescue
+	" is computed here). Block-comment interior lines never reach this
+	" point (b:sv_roll_incomment returns -1 at the top).
+	if l:this_codes =~ s:BLOCK_COMMENT_STOP || l:this_codes =~ s:BLOCK_COMMENT_START || l:this_codes =~ s:PREPROCESSOR || l:this_codes =~ s:LINE_COMMENT || (stridx(l:line, '/*') >= 0 && s:StripForBraces(l:line) =~ '^\s*$')
+		let l:route_base = l:chead1 > 0 ? get(b:sv_roll_uindent, l:chead1, indent(l:chead1)) : b:sv_roll_uindent[l:p1]
+		let l:route_p2 = l:p2_codes
+		if l:p2 > 0 && l:p2_codes =~ s:LINE_INDENT && s:IsStalePrev2(l:p2, l:p1)
+			let l:route_p2 = ''
+		endif
+		let l:route_base = s:GetCodeIndent(l:route_base, l:route_p2, l:p1_codes, l:this_codes)
+		let l:rmhead = s:RollTailHead(l:p1)
+		if l:rmhead <= 0
+			let l:rmhead = s:RollSigTailHead(l:p1)
+		endif
+		if l:rmhead > 0
+			let l:rsigline = (getline(l:rmhead) =~ '\<\%(function\|task\)\>') ? l:rmhead : (getline(l:rmhead) =~ '^\s*(' ? s:PrototypeSigHead(l:rmhead) : 0)
+			if l:rsigline > 0 && getline(l:rsigline) =~ '\<\%(function\|task\)\>'
+				let l:rsig_clean = s:StripForBraces(getline(l:rsigline))
+				let l:ris_proto = (l:rsig_clean =~ '\<\%(extern\|pure\)\>' || s:StripPrototypeF(l:rsigline, getline(l:rsigline), s:ConvertToCodes(getline(l:rsigline), 0, l:rsigline)) !~# 'f')
+				if l:ris_proto
+					let l:route_base = indent(l:rsigline) - (l:this_codes =~# 'h' ? l:sw : 0)
+				else
+					let l:route_base = indent(l:rsigline) + (l:this_codes =~# 'h' ? 0 : l:sw)
+				endif
+			endif
+		endif
+		if l:this_codes =~ s:BLOCK_COMMENT_STOP
+			let b:in_block_comment = 0
+			return indent(l:N)
+		endif
+		if l:this_codes =~ s:BLOCK_COMMENT_START
+			let b:in_block_comment = 1
+			let b:block_comment_line = l:N
+			let b:block_comment_change = b:changedtick
+			return l:route_base
+		endif
+		if l:this_codes =~ s:PREPROCESSOR
+			return s:RollPreprocIndent(l:N, l:route_base)
+		endif
+		" line comment or comment-only '/* */' line: routed base.
+		return l:route_base
+	endif
+
 	" --- signature argument column ---
 	let l:argcol = s:RollSigArgColumn(l:N)
 	if l:argcol > 0
@@ -2674,7 +2787,8 @@ function! s:RollFastIndent( line_num )
 	if l:mhead > 0
 		let l:sigline = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
 		if l:sigline > 0 && getline(l:sigline) =~ '\<\%(function\|task\)\>'
-			let l:is_proto = (getline(l:sigline) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sigline), 0, l:sigline) !~# 'f')
+			let l:sigline_clean = s:StripForBraces(getline(l:sigline))
+			let l:is_proto = (l:sigline_clean =~ '\<\%(extern\|pure\)\>' || s:StripPrototypeF(l:sigline, getline(l:sigline), s:ConvertToCodes(getline(l:sigline), 0, l:sigline)) !~# 'f')
 			if l:is_proto
 				return indent(l:sigline) - (l:this_codes =~# 'h' ? l:sw : 0)
 			else
@@ -2790,11 +2904,11 @@ function! s:SlowIndent( line_num )
 			let tc  = s:ConvertToCodes(substitute(this_codeline, '\\\s*$', '', ''), 1)
 			return s:GetCodeIndent( indent( prev1_line_num ), pc2, pc1, tc )
 		else
-			return indnt + &shiftwidth
+			return indnt + shiftwidth()
 		endif
 	else
 		if ( l:bs2 )
-			let indnt = indnt - &shiftwidth
+			let indnt = indnt - shiftwidth()
 		endif
 	endif
 	if this_codeline =~ '^\s*`\s*\cinclude\>'
@@ -2814,7 +2928,7 @@ function! s:SlowIndent( line_num )
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
-				return indent(ln) + &shiftwidth
+				return indent(ln) + shiftwidth()
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
 				let ln = prevnonblank(ln - 1)
@@ -2936,7 +3050,7 @@ function! s:SlowIndent( line_num )
 				if l:pp > 0 && s:PrevBeforeBranch(l:pp, a:line_num) != l:pp
 					break
 				endif
-				return indent(ln) + &shiftwidth
+				return indent(ln) + shiftwidth()
 			endif
 			break
 		endwhile
@@ -2958,7 +3072,7 @@ function! s:SlowIndent( line_num )
 				break
 			endif
 			if l =~ '^\s*`\s*\c\(ifdef\|ifndef\|elsif\|else\)\>'
-				return indent(ln) + &shiftwidth
+				return indent(ln) + shiftwidth()
 			endif
 			if l =~ '^\s*`\s*\cinclude\>'
 				let ln = prevnonblank(ln - 1)
@@ -3077,6 +3191,101 @@ function! s:SlowIndent( line_num )
 	let this_codes = l:this_codes_early
 	let this_codes = s:StripPrototypeF(a:line_num, this_codeline, this_codes)
 
+	" Comment and directive lines reach the state and preproc handling
+	" BEFORE the signature early returns below (R1/R3/R4/R5). A
+	" directive or comment line inside a parameter list must not take
+	" the arg column (R1), a block-comment START must update
+	" b:in_block_comment before any early return can skip it, and a
+	" closer directive after a signature must align with its opener
+	" instead of taking the signature level (R4). But an OPENER
+	" directive after a signature still needs the R3/R4 rescue value
+	" as its base: the plain GetCodeIndent base is inflated by the
+	" arg-aligned tail line above it. So when R3/R4 would fire, their
+	" value becomes the base for the handling below; otherwise the
+	" GetCodeIndent value is used. Code lines are unaffected: they
+	" fall through to the early returns exactly as before.
+	if this_codes =~ s:BLOCK_COMMENT_STOP_ANY || b:block_comment_change != b:changedtick || b:block_comment_line != prev1_for_comment_line
+		let b:in_block_comment = 0
+	endif
+	if this_codes =~ s:BLOCK_COMMENT_STOP || this_codes =~ s:BLOCK_COMMENT_START || b:in_block_comment || this_codes =~ s:PREPROCESSOR || this_codes =~ s:LINE_COMMENT || (stridx(this_codeline, '/*') >= 0 && s:StripForBraces(this_codeline) =~ '^\s*$')
+		let l:route_indnt = indent(prev1_line_num)
+		if l:chead1 > 0
+			let l:route_indnt = indent(l:chead1)
+		endif
+		let l:route_p2 = prev2_codes
+		if prev2_line_num > 0 && prev2_codes =~ s:LINE_INDENT && s:IsStalePrev2(prev2_line_num, prev1_line_num)
+			let l:route_p2 = ''
+		endif
+		let l:route_indnt = s:GetCodeIndent(l:route_indnt, l:route_p2, prev1_codes, this_codes)
+		let l:route_base = l:route_indnt
+		let l:route_has = 0
+		" R3 rescue: prev1 is a '...); endfunction/endtask' tail line
+		" (mirrors the R3 block below, including the group-stop
+		" adjustment and the comment-stripped tests).
+		let l:rp1 = s:StripForBraces(getline(prev1_line_num))
+		if l:rp1 =~ '\<\%(endfunction\|endtask\)\>' && l:rp1 =~ ');'
+			let l:rln = prevnonblank(prev1_line_num - 1)
+			while l:rln > 0
+				let l:rl = s:StripForBraces(getline(l:rln))
+				if l:rl =~ '\<\%(function\|task\)\>'
+					let l:route_base = indent(l:rln) - (this_codes =~# 'h' ? shiftwidth() : 0)
+					let l:route_has = 1
+					break
+				endif
+				if l:rl =~ '[;{}]' || l:rl =~ '\<endclass\>'
+					break
+				endif
+				let l:rln = prevnonblank(l:rln - 1)
+			endwhile
+		endif
+		" R4 rescue: prev1 is a signature tail (mirrors the R4 block
+		" below, including the SPF-aware prototype test).
+		if !l:route_has
+			let l:rmhead = s:StatementTailHead(prev1_line_num)
+			if l:rmhead <= 0
+				let l:rmhead = s:SigTailHead(prev1_line_num)
+			endif
+			if l:rmhead > 0
+				let l:rsig = (getline(l:rmhead) =~ '\<\%(function\|task\)\>') ? l:rmhead : (getline(l:rmhead) =~ '^\s*(' ? s:PrototypeSigHead(l:rmhead) : 0)
+				if l:rsig > 0 && getline(l:rsig) =~ '\<\%(function\|task\)\>'
+					let l:rsig_clean = s:StripForBraces(getline(l:rsig))
+					let l:ris_proto = (l:rsig_clean =~ '\<\%(extern\|pure\)\>' || s:StripPrototypeF(l:rsig, getline(l:rsig), s:ConvertToCodes(getline(l:rsig), 0, l:rsig)) !~# 'f')
+					if l:ris_proto
+						let l:route_base = indent(l:rsig) - (this_codes =~# 'h' ? shiftwidth() : 0)
+					else
+						let l:route_base = indent(l:rsig) + (this_codes =~# 'h' ? 0 : shiftwidth())
+					endif
+					let l:route_has = 1
+				endif
+			endif
+		endif
+		if this_codes =~ s:BLOCK_COMMENT_STOP
+			return indent(a:line_num)
+		endif
+		if this_codes =~ s:BLOCK_COMMENT_START
+			let b:in_block_comment = 1
+			let b:block_comment_line = a:line_num
+			let b:block_comment_change = b:changedtick
+			return l:route_base
+		endif
+		if b:in_block_comment
+			let b:block_comment_line = a:line_num
+			return indent(a:line_num)
+		endif
+		if a:line_num == 1
+			return 0
+		endif
+		if this_codes =~ s:PREPROCESSOR
+			return s:GetPreprocIndent(a:line_num, l:route_base)
+		endif
+		if this_codes =~ s:LINE_COMMENT
+			return l:route_base
+		endif
+		" a comment-only '/* */' line (neutral codes, no branch above
+		" matches): it still takes the routed base, never the arg column.
+		return l:route_base
+	endif
+
 	" a continuation of a multi-line function/task PROTOTYPE signature aligns
 	" its argument list to the '(' column (column alignment, not shiftwidth)
 	let l:argcol = s:SigArgColumn(a:line_num)
@@ -3090,18 +3299,21 @@ function! s:SlowIndent( line_num )
 	if this_codeline =~ '^\s*('
 		let l:head = s:PrototypeSigHead(a:line_num)
 		if l:head > 0
-			return indent(l:head) + &shiftwidth
+			return indent(l:head) + shiftwidth()
 		endif
 	endif
 
-	" if prev1 contains a same-line '...); endfunction' tail, return to the
-	" function declaration's level
-	if getline(prev1_line_num) =~ '\<endfunction\>' && getline(prev1_line_num) =~ ');'
+	" if prev1 contains a same-line '...); endfunction/endtask' tail,
+	" return to the function/task declaration's level (a group stop one
+	" further out). Comment text is stripped before matching, so a
+	" '// endfunction' remark cannot pose as the real tail.
+	let l:p1s = s:StripForBraces(getline(prev1_line_num))
+	if l:p1s =~ '\<\%(endfunction\|endtask\)\>' && l:p1s =~ ');'
 		let l:ln = prevnonblank(prev1_line_num - 1)
 		while l:ln > 0
-			let l:l = getline(l:ln)
+			let l:l = s:StripForBraces(getline(l:ln))
 			if l:l =~ '\<\%(function\|task\)\>'
-				return indent(l:ln)
+				return indent(l:ln) - (this_codes =~# 'h' ? shiftwidth() : 0)
 			endif
 			if l:l =~ '[;{}]' || l:l =~ '\<endclass\>'
 				break
@@ -3123,13 +3335,14 @@ function! s:SlowIndent( line_num )
 		let l:sig = (getline(l:mhead) =~ '\<\%(function\|task\)\>') ? l:mhead
 			\ : (getline(l:mhead) =~ '^\s*(' ? s:PrototypeSigHead(l:mhead) : 0)
 		if l:sig > 0 && getline(l:sig) =~ '\<\%(function\|task\)\>'
-			let l:is_proto = (getline(l:sig) =~ '\<\%(extern\|pure\)\>' || s:ConvertToCodes(getline(l:sig), 0, l:sig) !~# 'f')
+			let l:sig_clean = s:StripForBraces(getline(l:sig))
+			let l:is_proto = (l:sig_clean =~ '\<\%(extern\|pure\)\>' || s:StripPrototypeF(l:sig, getline(l:sig), s:ConvertToCodes(getline(l:sig), 0, l:sig)) !~# 'f')
 			if l:is_proto
 				" prototypes: next line returns to declaration level; group stop dedents further
-				return indent(l:sig) - (this_codes =~# 'h' ? &shiftwidth : 0)
+				return indent(l:sig) - (this_codes =~# 'h' ? shiftwidth() : 0)
 			else
-				" definitions: next line is function body (+ &shiftwidth), or endfunction (same level)
-				return indent(l:sig) + (this_codes =~# 'h' ? 0 : &shiftwidth)
+				" definitions: next line is function body (+ shiftwidth()), or endfunction (same level)
+				return indent(l:sig) + (this_codes =~# 'h' ? 0 : shiftwidth())
 			endif
 		endif
 	endif

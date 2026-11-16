@@ -37,7 +37,12 @@ if [ ! -s "$WORK/files.txt" ]; then
 fi
 
 # distribute files over NPAR chunks, largest first round-robin
-ls -1S $(cat "$WORK/files.txt") | awk -v n="$NPAR" -v d="$WORK" '
+# Size-sorted without word-splitting so paths with spaces survive.
+# Paths containing TAB or newline still break (files.txt is line-based).
+while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s\t%s\n' "$(wc -c <"$f" | tr -d ' ')" "$f"
+done <"$WORK/files.txt" | sort -rn | cut -f2- | awk -v n="$NPAR" -v d="$WORK" '
     { f = sprintf("%s/c%d", d, (NR - 1) % n); print >> f; close(f) }'
 
 # re-indent each chunk into $WORK/out, preserving relative paths

@@ -11,7 +11,7 @@
 # filetype/syntax applied.
 #
 # Usage:  sh test/run_uvm_syntax_test.sh
-#         VIM=nvim sh test/run_uvm_syntax_test.sh          (other Vim)
+#         VIM=/path/to/vim sh test/run_uvm_syntax_test.sh    (other Vim binary)
 #         UVM_SRC=/path/to/uvm-1.2/src sh ...              (other library)
 #         UVM_SRC= sh ...                                  (skip part 2)
 #
@@ -62,7 +62,7 @@ else
         echo "ERROR: smoke-test runner produced no result"; [ "$rc" -eq 0 ] && rc=2
     else
         cat "$WORK/smoke.txt"
-        if head -1 "$WORK/smoke.txt" | grep -q '^FAIL'; then [ "$rc" -eq 0 ] && rc=1; fi
+        if ! head -1 "$WORK/smoke.txt" | grep -q '^PASS'; then [ "$rc" -eq 0 ] && rc=1; fi
     fi
 fi
 

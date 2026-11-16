@@ -12,6 +12,9 @@
 "
 " Maintainer: sqlmap3 <https://github.com/sqlmap3>
 
+let s:keepcpo = &cpo
+set cpo&vim
+
 hi clear
 if exists("syntax_on")
   syntax reset
@@ -74,31 +77,32 @@ endif
 function! s:h(group, key, ...) abort
   let l:c = s:P[a:key]
   let l:gui = a:0 ? a:1 : ''
-  execute 'hi ' . a:group . ' guifg=' . l:c[0] . ' ctermfg=' . l:c[1] . ' guibg=NONE ' . l:gui
+  let l:cterm = l:gui =~# '^gui=' ? ' cterm=' . strpart(l:gui, 4) : ''
+  execute 'hi ' . a:group . ' guifg=' . l:c[0] . ' ctermfg=' . l:c[1] . ' guibg=NONE ' . l:gui . l:cterm
 endfunction
 
 " ---------------------------------------------------------------------------
 " Base / standard groups (a minimal, usable base)
 " ---------------------------------------------------------------------------
 execute 'hi Normal guifg=' . s:P.fg[0] . ' ctermfg=' . s:P.fg[1] . ' guibg=' . s:P.bg[0] . ' ctermbg=' . s:P.bg[1]
-hi NonText    guifg=NONE guibg=NONE
-hi SpecialKey guifg=NONE guibg=NONE
-hi EndOfBuffer guifg=#3c3836 guibg=NONE
+hi NonText    guifg=NONE guibg=NONE ctermfg=NONE ctermbg=NONE
+hi SpecialKey guifg=NONE guibg=NONE ctermfg=NONE ctermbg=NONE
+hi EndOfBuffer guifg=#3c3836 guibg=NONE ctermfg=238
 hi LineNr     guifg=#6e6e6e ctermfg=242 guibg=NONE
 hi CursorLine guibg=#2a2a2a ctermbg=236 guifg=NONE
 hi CursorColumn guibg=#2a2a2a ctermbg=236 guifg=NONE
 hi StatusLine  guifg=#d4d4d4 ctermfg=252 guibg=#3c3c3c ctermbg=238
 hi StatusLineNC guifg=#6e6e6e ctermfg=242 guibg=#2a2a2a ctermbg=236
 hi VertSplit   guifg=#3c3c3c ctermfg=238 guibg=NONE
-hi Search      guifg=NONE guibg=#613214 ctermbg=52
-hi IncSearch   guifg=NONE guibg=#7f5217 ctermbg=58
-hi Visual      guibg=#264f78 ctermbg=24
+hi Search      guifg=NONE guibg=#613214 ctermbg=52 ctermfg=NONE
+hi IncSearch   guifg=NONE guibg=#7f5217 ctermbg=58 ctermfg=NONE cterm=NONE
+hi Visual      guibg=#264f78 ctermbg=24 ctermfg=NONE cterm=NONE
 hi Folded      guifg=#808080 ctermfg=244 guibg=#252526 ctermbg=235
-hi FoldColumn  guifg=#808080 ctermfg=244 guibg=NONE
-hi Title       guifg=#d4d4d4 ctermfg=252 gui=bold
-hi ErrorMsg    guifg=#f44747 ctermfg=203 guibg=NONE
+hi FoldColumn  guifg=#808080 ctermfg=244 guibg=NONE ctermbg=NONE
+hi Title       guifg=#d4d4d4 ctermfg=252 gui=bold cterm=bold
+hi ErrorMsg    guifg=#f44747 ctermfg=203 guibg=NONE ctermbg=NONE
 hi WarningMsg  guifg=#e5c07b ctermfg=180 guibg=NONE
-hi Todo        guifg=#d16969 ctermfg=167 gui=bold
+hi Todo        guifg=#d16969 ctermfg=167 gui=bold cterm=bold
 
 " ---------------------------------------------------------------------------
 " systemverilog.vim generic groups
@@ -259,3 +263,6 @@ endfor
 unlet s:g
 
 delfunction s:h
+
+let &cpo = s:keepcpo
+unlet s:keepcpo

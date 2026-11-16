@@ -26,6 +26,8 @@ jobs:
 
       - name: Syntax spot checks (self-contained)
         run: UVM_SRC= sh test/run_uvm_syntax_test.sh
+      - name: Syntax sync test (jump-into-middle, self-contained)
+        run: sh test/run_syntax_sync_test.sh
 
       - name: Clone UVM 1.2 reference library (pinned to the golden snapshot)
         run: |

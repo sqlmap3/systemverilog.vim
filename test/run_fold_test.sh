@@ -4,7 +4,7 @@
 # Computes the fold level of every line of test/fold_demo.sv through the
 # plugin's foldexpr engine and compares against test/fold_demo.expected.txt.
 #
-# Usage:  sh test/run_fold_test.sh   (override Vim with VIM=nvim)
+# Usage:  sh test/run_fold_test.sh   (override Vim binary with VIM=...)
 set -u
 
 VIM="${VIM:-vim}"

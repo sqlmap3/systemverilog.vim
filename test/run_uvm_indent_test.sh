@@ -14,7 +14,7 @@
 # .svh/.sv under it instead (run in NPAR parallel chunks, see below).
 #
 # Usage:  sh test/run_uvm_indent_test.sh
-#         VIM=nvim sh test/run_uvm_indent_test.sh          (other Vim)
+#         VIM=/path/to/vim sh test/run_uvm_indent_test.sh    (other Vim binary)
 #         UVM_SRC=/path/to/uvm-1.2/src sh ...              (full tree)
 #         NPAR=8 sh ...                                    (more parallelism)
 set -u
@@ -67,13 +67,18 @@ fi
 
 # distribute the files over NPAR chunks, largest first round-robin, so one
 # chunk does not end up with all the multi-thousand-line files while the
-# others idle (find output groups big directories together). -1 forces one
-# path per line even though ls goes to a pipe.
-ls -1S $(cat "$WORK/files.txt") | awk -v n="$NPAR" -v d="$WORK" '
+# others idle (find output groups big directories together). Size-sorted
+# without word-splitting so paths with spaces survive; paths containing
+# TAB or newline still break (files.txt is line-based).
+while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s\t%s\n' "$(wc -c <"$f" | tr -d ' ')" "$f"
+done <"$WORK/files.txt" | sort -rn | cut -f2- | awk -v n="$NPAR" -v d="$WORK" '
     { f = sprintf("%s/c%d", d, (NR - 1) % n); print >> f; close(f) }'
 
 # run the chunks in parallel: each vim instance re-indents its chunk twice
 pids=""
+resfiles=""
 for chunk in "$WORK"/c*; do
     [ -e "$chunk" ] || continue
     "$VIM" -Nu NONE -n -es \
@@ -83,13 +88,14 @@ for chunk in "$WORK"/c*; do
         -c "let g:sv_result='$chunk.res'" \
         -c "source $PLUGDIR/test/uvm_indent_idem.vim" &
     pids="$pids $!"
+    resfiles="$resfiles $chunk.res"
 done
 wait $pids
 
 # merge results
 rc=0
 total=0
-for res in "$WORK"/c*.res; do
+for res in $resfiles; do
     [ -e "$res" ] || { echo "ERROR: a chunk produced no result"; rc=2; continue; }
     if ! head -1 "$res" | grep -q '^PASS'; then
         rc=1

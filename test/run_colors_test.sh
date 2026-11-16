@@ -1,6 +1,9 @@
 #!/bin/sh
 # Colorscheme regression test: loads colors/systemverilog_uvm.vim in dark and
-# light backgrounds and verifies the semantic groups get distinct colors.
+# light backgrounds and verifies the semantic groups get distinct colors,
+# that gui=bold/italic groups mirror the same cterm= attrs, that the
+# direct-line groups pin the cterm half, and that the scheme sources
+# cleanly with cpo+=C (see test/colors_check.vim).
 #
 # Usage:  sh test/run_colors_test.sh
 set -u

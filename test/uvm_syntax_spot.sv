@@ -322,3 +322,9 @@ int spot_pipe15c = spot_a15 || spot_b15;
 int spot_pipe15d = spot_a15 ~| spot_b15;
 spot_pipe15e |= spot_b15;
 `endif
+class spot16_c implements spot16_ifc; endclass
+interconnect [7:0] spot16_ibus; nettype real spot16_nt;
+constraint spot16_c1 { soft spot16_a == 1; }
+let spot16_let(x) = x + 1;
+assert property (s_always spot16_req until_with eventually spot16_ack);
+typedef enum logic [1:0] {spot16_e0, spot16_e1} spot16_et;

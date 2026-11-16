@@ -535,3 +535,4 @@ highlight! default link uvmRegApi Operator
 highlight! default link uvmHDLApi Operator
 highlight! default link uvmEventMethod Statement
 highlight! default link uvmMethodInfo Global
+syntax sync ccomment svBlockComment minlines=200

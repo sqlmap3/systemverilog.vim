@@ -273,3 +273,14 @@ spot_a15\s*||\zs|\s*spot_b15	svOperator
 spot_a15\s*\zs||\s*spot_b15	svOperator
 spot_a15\s*[~]\zs|\s*spot_b15	svOperator
 spot_pipe15e\s*\zs|=	svOperator
+# --- round-16: LRM keyword pins (item 5) ---
+\<implements\>	svKeyword
+\<interconnect\>	svKeyword
+\<nettype\>	svKeyword
+\<constraint\>	svKeyword
+\<soft\>	svKeyword
+\<let\>\s\+spot16_let	svKeyword
+\<s_always\>	svKeyword
+\<eventually\>	svKeyword
+\<until_with\>	svKeyword
+\<enum\>\s\+logic\s\+\[1:0\]\s\+{spot16_e0	svStructure
