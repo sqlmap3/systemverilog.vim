@@ -50,14 +50,10 @@ syntax keyword svConditional if else iff case casez casex endcase
 syntax keyword svRepeat for foreach do while forever repeat
 syntax keyword svKeyword fork join join_any join_none begin end endmodule endfunction endtask always always_ff always_latch always_comb initial generate endgenerate config endconfig endclass clocking endclocking endinterface endpackage modport posedge negedge edge defparam assign deassign alias return disable wait continue and buf bufif0 bufif1 nand nor not or xnor xor tri tri0 tri1 triand trior trireg pull0 pull1 pullup pulldown cmos default endprimitive endspecify endtable force highz0 highz1 ifnone large macromodule medium nmos notif0 notif1 pmos primitive rcmos release rnmos rpmos rtran rtranif0 rtranif1 scalared small specify strong0 strong1 supply0 supply1 table tran tranif0 tranif1 vectored wand weak0 weak1 wor cell design incdir liblist library noshowcancelled pulsestyle_ondetect pulsestyle_onevent showcancelled use instance uwire assert assume before bind bins binsof break constraint context cover coverpoint cross dist endgroup endprogram endproperty endsequence expect extends final first_match ignore_bins illegal_bins inside intersect local matches new null packed unpacked priority program property pure randcase randsequence sequence solve tagged throughout timeprecision timeunit type unique wait_order wildcard with within accept_on checker endchecker eventually global implies let nexttime reject_on restrict s_always s_eventually s_nexttime s_until s_until_with strong sync_accept_on sync_reject_on unique0 until until_with untyped weak implements interconnect nettype soft
 syntax match svInteger "\<\(\.\)\@<![0-9_]\+\(\s*['.]\)\@!\>"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(d\|D\)\s*[0-9_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(o\|O\)\s*[0-7_ZzXx?]\+"
-syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\(b\|B\)\s*[01_ZzXx?]\+"
+syntax match svInteger "\(\<[0-9_]\+\s*\)\?'\(s\|S\)\?\%(\(d\|D\)\s*[0-9_ZzXx?]\+\|\(h\|H\)\s*[0-9a-fA-F_ZzXx?]\+\|\(o\|O\)\s*[0-7_ZzXx?]\+\|\(b\|B\)\s*[01_ZzXx?]\+\)"
 syntax match svInteger "\<'\(d\|D\|h\|H\|o\|O\|b\|B\)\>"
 syntax match svInteger "'[01xXzZ]\>\|'?"
-syntax match svReal "\<[0-9_]\+\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\>"
-syntax match svReal "\<[0-9_]\+\(e\|E\)[+-]\?[0-9_]\+\>"
+syntax match svReal "\<[0-9_]\+\%(\.[0-9_]\+\(\(e\|E\)[+-]\?[0-9_]\+\)\?\|\(e\|E\)[+-]\?[0-9_]\+\)\>"
 " struct/union/enum are NOT keywords on purpose: a keyword would win the
 " start position of the svStructBody / svEnumBody regions below and stop
 " them from ever opening, leaving struct fields / enumerators unhighlighted.
@@ -122,8 +118,9 @@ syntax match svSystemCall "\$\h\w*\>"
 syntax match svMemberAccess "\w\.\zs\h\w*\>"
 syntax match svMethodCall "\w\.\zs\h\w*\ze\s*("
 syntax match svObjectFunctions "\.\(randomize\|srandomize\|num\|size\|delete\|exists\|first\|last\|next\|prev\|insert\|pop_front\|pop_back\|push_front\|push_back\|find\|find_index\|find_first\|find_first_index\|find_last\|find_last_index\|min\|max\|reverse\|sort\|rsort\|shuffle\|sum\|product\|and\|or\|xor\)\>\_s*("he=e-1
-syntax match svOperator "\(\~\|&\|||\||\|\^\|=\|!\|?\|:\|@\|<\|>\|%\|+\|-\|\*\|\/[\/\*]\@!\)"
-syntax match svDelimiter "\({\|}\|(\|)\)"
+syntax match svOperator "[~&|^=!?:@<>%+*-]"
+syntax match svOperator "\/[\/\*]\@!"
+syntax match svDelimiter "[{}()]"
 
 syntax match svSVAOp "\(|->\||=>\|#[-=]#\|##\(\d\+\|\[\d\+\(:\d\+\)\?\]\)\?\|\[\%(\*\|+\|=\|->\)\d*\(:\d\+\)\?\]\)"
 

@@ -93,6 +93,29 @@ function! s:Count(text, pat) abort
 	return l:n
 endfunction
 
+" Joined OP/CL patterns for the buffer's fold options. The option dict
+" is cached per buffer (s:Opts) and never refreshed mid-buffer, so
+" caching the joins with the same lifetime is consistent.
+function! s:PatPair(o) abort
+	if exists('b:sv_fold_pats')
+		return b:sv_fold_pats
+	endif
+	let l:openp = []
+	let l:closep = []
+	if a:o.block
+		call add(l:openp, s:GROUP_OPEN)
+		call add(l:openp, s:UVM_OPEN)
+		call add(l:closep, s:GROUP_CLOSE)
+		call add(l:closep, s:UVM_CLOSE)
+	endif
+	if a:o.begin_blocks
+		call add(l:openp, s:BLOCK_OPEN)
+		call add(l:closep, s:BLOCK_CLOSE)
+	endif
+	let b:sv_fold_pats = [join(l:openp, '\|'), join(l:closep, '\|')]
+	return b:sv_fold_pats
+endfunction
+
 function! s:Opts() abort
 	if exists('b:sv_fold_opts')
 		return b:sv_fold_opts
@@ -243,7 +266,7 @@ function! s:Scan(lnum) abort
 		" manual fold markers (// {{{ / // }}}) live inside comments, so
 		" they must be counted before line comments are stripped
 		let l:r = {}
-		let l:r.mk = l:o.marker
+		let l:r.mk = (l:o.marker && (stridx(l:t, '{') >= 0 || stridx(l:t, '}') >= 0))
 			\   ? (s:Count(l:t, '\V{{{') - s:Count(l:t, '\V}}}'))
 			\   : 0
 
@@ -273,7 +296,15 @@ function! s:Scan(lnum) abort
 		" code events
 		let l:r.net = 0
 		let l:r.restart = 0
-		if l:code =~# s:PROTOTYPE || s:IsProtoContinuation(a:lnum, l:code)
+		if l:code =~# '^\s*$'
+			" Blank / comment-only line: no code event can fire (every
+			" downstream test needs a keyword, a brace or a paren).
+			" Marker, comment, define and conditional flags above kept.
+			let l:r.pd = 0
+			let l:r.inst = 0
+		else
+		if (stridx(l:code, 'function') >= 0 || stridx(l:code, 'task') >= 0)
+			\ && (l:code =~# s:PROTOTYPE || s:IsProtoContinuation(a:lnum, l:code))
 			let l:c = ''
 		else
 			let l:c = substitute(l:code, '\<interface\s\+class\>', 'class', 'g')
@@ -299,21 +330,8 @@ function! s:Scan(lnum) abort
 			endif
 		endif
 
-		let l:openp = []
-		let l:closep = []
-		if l:o.block
-			call add(l:openp, s:GROUP_OPEN)
-			call add(l:openp, s:UVM_OPEN)
-			call add(l:closep, s:GROUP_CLOSE)
-			call add(l:closep, s:UVM_CLOSE)
-		endif
-		if l:o.begin_blocks
-			call add(l:openp, s:BLOCK_OPEN)
-			call add(l:closep, s:BLOCK_CLOSE)
-		endif
-		let l:OP = join(l:openp, '\|')
+		let [l:OP, l:CL] = s:PatPair(l:o)
 		if l:OP !=# ''
-			let l:CL = join(l:closep, '\|')
 			let l:no = s:Count(l:c, l:OP)
 			let l:nc = s:Count(l:c, l:CL)
 			let l:r.net = l:no - l:nc
@@ -324,13 +342,14 @@ function! s:Scan(lnum) abort
 			endif
 		endif
 
-		if l:o.instance
+		if l:o.instance && (stridx(l:code, '(') >= 0 || stridx(l:code, ')') >= 0)
 			let l:r.pd = s:Count(l:code, '(') - s:Count(l:code, ')')
 			let l:r.inst = (l:r.pd > 0 && l:code !~# ';\s*$'
 				\   && l:code =~# s:INST_START) ? 1 : 0
 		else
 			let l:r.pd = 0
 			let l:r.inst = 0
+		endif
 		endif
 
 		let b:sv_fold_scan[a:lnum] = l:r

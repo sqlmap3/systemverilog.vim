@@ -67,6 +67,14 @@ let s:CONCAT_CLOSE = 'c'
 " True if the line is a plain statement whose ConvertToCodes result is
 " exactly ';' (see the ConvertToCodes fast path). Conservative: any
 " doubt returns 0 and the caller falls through to the full path.
+" True when the line holds any indent-affecting keyword: the shared
+" predicate of IsPlainStmt and the ConvertToCodes fast path. Both
+" sites keep their own fail-fast check order and call this last,
+" exactly where the inline regex stood.
+function! s:PlainStmtKeyword( line )
+	return a:line =~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|wait_order\|return\|break\|continue\|else\|elsif\)\>'
+endfunction
+
 function! s:IsPlainStmt( line )
 	" Fail fast: most lines have no trailing ';' at all. The big keyword
 	" regex runs last, only for lines that passed every cheap check.
@@ -88,7 +96,7 @@ function! s:IsPlainStmt( line )
 	if count(a:line, '(') != count(a:line, ')') || count(a:line, '[') != count(a:line, ']')
 		return 0
 	endif
-	if a:line =~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|wait_order\|return\|break\|continue\|else\|elsif\)\>'
+	if s:PlainStmtKeyword(a:line)
 		return 0
 	endif
 	return 1
@@ -551,6 +559,513 @@ function! s:StripSameLinePairs(s)
 	return l:s
 endfunction
 
+" Round 18 Phase 3A: unified candidate. Fix (a) keeps a
+" ':'/'?'-prefixed '{' whose span holds a ';', and fix (b) keeps
+" a ';'-preceded '}'. Either retention is only sound when its
+" mate is retained too: a kept '}' with a dropped '{' is a
+" phantom 'e' (C1 macro argument), and a kept '{' with a dropped
+" '}' is a phantom 'b' (F1b randsequence action block). The
+" pairing pass below deletes BOTH braces of such a pair before
+" the gate runs; the blocking pass further below deletes a
+" fix-(b) retention whose opener is already canceled by a
+" surviving inner closer (Group C). Only same-line pairs are
+" judged. Byte scanning only, no regexes; the pairing helpers
+" reuse the SLP functions they mirror.
+function! s:R18BSemiSpan(s, p)
+	" True when a ';' occurs after the '{' at byte a:p before any
+	" brace: mirrors fix (a)'s negative lookahead, which is
+	" string- and comment-blind, so this scan is too.
+	let l:k = a:p + 1
+	let l:n = len(a:s)
+	while l:k < l:n
+		let l:ch = strpart(a:s, l:k, 1)
+		if l:ch ==# ';'
+			return 1
+		endif
+		if l:ch ==# '{' || l:ch ==# '}'
+			return 0
+		endif
+		let l:k += 1
+	endwhile
+	return 0
+endfunction
+
+function! s:R18BPrefixAt(s, p)
+	" Index of the char before the '{' at byte a:p, skipping spaces
+	" and tabs, or -1 when only whitespace precedes it.
+	let l:tab = nr2char(9)
+	let l:j = a:p - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# l:tab)
+		let l:j -= 1
+	endwhile
+	return l:j
+endfunction
+
+function! s:R18BFollowOk(s, p)
+	" True when the char after the '{' at byte a:p (skipping spaces)
+	" is one the gate accepts: '[' or a non-replication digit or a
+	" backtick or an expression starter. The line-start '{' rule
+	" uses this same follow class.
+	let l:tab = nr2char(9)
+	let l:bt = nr2char(96)
+	let l:k = a:p + 1
+	let l:n = len(a:s)
+	while l:k < l:n && (strpart(a:s, l:k, 1) ==# ' ' || strpart(a:s, l:k, 1) ==# l:tab)
+		let l:k += 1
+	endwhile
+	if l:k >= l:n
+		return 0
+	endif
+	let l:fc = strpart(a:s, l:k, 1)
+	if l:fc ==# '['
+		return 1
+	endif
+	if stridx('0123456789', l:fc) >= 0
+		let l:m = l:k
+		while l:m < l:n && stridx('0123456789', strpart(a:s, l:m, 1)) >= 0
+			let l:m += 1
+		endwhile
+		while l:m < l:n && (strpart(a:s, l:m, 1) ==# ' ' || strpart(a:s, l:m, 1) ==# l:tab)
+			let l:m += 1
+		endwhile
+		if l:m < l:n && strpart(a:s, l:m, 1) ==# '{'
+			return 0
+		endif
+		return 1
+	endif
+	if l:fc ==# l:bt
+		return 1
+	endif
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"$''(~!+-', l:fc) >= 0
+		return 1
+	endif
+	return 0
+endfunction
+
+function! s:R18BLineStartDrops(s, p)
+	" True when the separate line-start '{' rule would drop the '{'
+	" at byte a:p: only whitespace precedes it and the follow char
+	" is one the rule accepts. Fix (a) never rescues such an opener.
+	if s:R18BPrefixAt(a:s, a:p) >= 0
+		return 0
+	endif
+	return s:R18BFollowOk(a:s, a:p)
+endfunction
+
+function! s:R18BRescued(s, p)
+	" True when fix (a) rescues the '{' at byte a:p: the pristine
+	" gate drops it, its prefix char is ':' or '?', and a ';'
+	" occurs in its span before any brace.
+	let l:tab = nr2char(9)
+	if !s:SLPGateDrops(a:s, a:p)
+		return 0
+	endif
+	let l:j = a:p - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# l:tab)
+		let l:j -= 1
+	endwhile
+	if l:j < 0
+		return 0
+	endif
+	let l:c = strpart(a:s, l:j, 1)
+	if l:c !=# ':' && l:c !=# '?'
+		return 0
+	endif
+	return s:R18BSemiSpan(a:s, a:p)
+endfunction
+
+function! s:R18BVanishes(s, p)
+	" Index just past the matching '}' when the pair at byte a:p
+	" vanishes under the gate as modified by (a) and the tail-drop
+	" as modified by (b) (its opener is gate-dropped and not
+	" rescued, and its closer satisfies the new tail-drop prefix
+	" class and suffix class), else -1. Such a pair is transparent
+	" to an enclosing pair: skipping it mirrors what the pipeline
+	" below does to it anyway. Note the new class (no ';'): this
+	" differs from the SLP vanishing test, which models the
+	" pristine tail-drop; on lines SLP touched, the guarded
+	" pristine pattern would eat a ';' closer too, so this test
+	" is conservative there (it vetoes rather than mispredicts).
+	let l:tab = nr2char(9)
+	if !s:SLPGateDrops(a:s, a:p)
+		return -1
+	endif
+	if s:R18BRescued(a:s, a:p)
+		return -1
+	endif
+	let l:q = s:SLPMatchClose(a:s, a:p)
+	if l:q < 0
+		return -1
+	endif
+	let l:j = l:q - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# l:tab)
+		let l:j -= 1
+	endwhile
+	if l:j < 0
+		return -1
+	endif
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")]', strpart(a:s, l:j, 1)) < 0
+		return -1
+	endif
+	if !s:SLPSuffixOk(a:s, l:q)
+		return -1
+	endif
+	return l:q + 1
+endfunction
+
+function! s:R18BSpanInfo(s, p)
+	" [close, eff, com] for the '{' at byte a:p, or [-1, -1, 0].
+	" The span must hold no brace other than the closer (an
+	" inside/unique set is skipped whole, a vanishing nested pair
+	" is skipped transparently), no unterminated string/comment,
+	" and no line comment. eff is the last effective code char
+	" before the close: a skipped set or a skipped vanishing pair
+	" is transparent, a string counts as its closing quote. com
+	" flags a block comment just before the closer. Paren/bracket
+	" balance is not required: both braces of the pair are
+	" deleted, so no phantom 'e' can be exposed either way.
+	let l:tab = nr2char(9)
+	let l:bsl = nr2char(92)
+	let l:n = len(a:s)
+	let l:k = a:p + 1
+	let l:eff = -1
+	let l:com = 0
+	while l:k < l:n
+		let l:ch = strpart(a:s, l:k, 1)
+		if l:ch ==# '"'
+			let l:k += 1
+			let l:closed = -1
+			while l:k < l:n
+				let l:c2 = strpart(a:s, l:k, 1)
+				if l:c2 ==# l:bsl
+					let l:k += 2
+				elseif l:c2 ==# '"'
+					let l:closed = l:k
+					let l:k += 1
+					break
+				else
+					let l:k += 1
+				endif
+			endwhile
+			if l:closed < 0
+				return [-1, -1, 0]
+			endif
+			let l:eff = l:closed
+			let l:com = 0
+			continue
+		endif
+		if l:ch ==# '/' && l:k + 1 < l:n
+			let l:nx = strpart(a:s, l:k + 1, 1)
+			if l:nx ==# '/'
+				return [-1, -1, 0]
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:k + 2)
+				if l:e < 0
+					return [-1, -1, 0]
+				endif
+				let l:k = l:e + 2
+				let l:com = 1
+				continue
+			endif
+		endif
+		if l:ch ==# '{'
+			let l:ve = s:R18BVanishes(a:s, l:k)
+			if l:ve < 0
+				return [-1, -1, 0]
+			endif
+			let l:k = l:ve
+			continue
+		endif
+		if l:ch ==# '}'
+			return [l:k, l:eff, l:com]
+		endif
+		if l:ch ==# 'i' || l:ch ==# 'u'
+			let l:se = s:SLPSetEnd(a:s, l:k)
+			if l:se >= 0
+				let l:k = l:se
+				continue
+			endif
+		endif
+		if l:ch !=# ' ' && l:ch !=# l:tab
+			let l:eff = l:k
+			let l:com = 0
+		endif
+		let l:k += 1
+	endwhile
+	return [-1, -1, 0]
+endfunction
+
+function! s:R18BFindAction(s, slpt)
+	" [open, close, kind] of one pair whose BOTH braces are deleted,
+	" or [-1, -1, -1]: kind 0 deletes a rescued '{' whose closer the
+	" tail-drop would drop (reverse), kind 1 deletes a pair whose
+	" opener the gate (or the line-start rule) drops while fix (b)
+	" would keep the closer (forward). The leftmost qualifying '{'
+	" outside strings/comments wins; a line comment ends the search.
+	" The reverse fate uses the operative prefix class: on lines
+	" SLP touched, the guarded pristine tail-drop eats a ';'
+	" preceded closer too, so a:slpt counts ';' as dropped. With
+	" a:slpt == 0 this is exactly the Phase 2B rule, which is the
+	" whole story on layouts without SLP.
+	let l:bsl = nr2char(92)
+	let l:n = len(a:s)
+	let l:i = 0
+	while l:i < l:n
+		let l:ch = strpart(a:s, l:i, 1)
+		if l:ch ==# '"'
+			let l:i += 1
+			while l:i < l:n
+				let l:c2 = strpart(a:s, l:i, 1)
+				if l:c2 ==# l:bsl
+					let l:i += 2
+				elseif l:c2 ==# '"'
+					let l:i += 1
+					break
+				else
+					let l:i += 1
+				endif
+			endwhile
+			continue
+		endif
+		if l:ch ==# '/' && l:i + 1 < l:n
+			let l:nx = strpart(a:s, l:i + 1, 1)
+			if l:nx ==# '/'
+				return [-1, -1, -1]
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:i + 2)
+				if l:e < 0
+					return [-1, -1, -1]
+				endif
+				let l:i = l:e + 2
+				continue
+			endif
+		endif
+		if l:ch ==# '{' && (s:SLPGateDrops(a:s, l:i) || s:R18BLineStartDrops(a:s, l:i))
+			let l:resc = s:R18BRescued(a:s, l:i)
+			let l:sp = s:R18BSpanInfo(a:s, l:i)
+			if l:sp[0] >= 0 && !l:sp[2] && l:sp[1] >= 0
+				let l:ec = strpart(a:s, l:sp[1], 1)
+				if l:resc
+					if (stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")]', l:ec) >= 0 || (a:slpt && l:ec ==# ';')) && s:SLPSuffixOk(a:s, l:sp[0])
+						return [l:i, l:sp[0], 0]
+					endif
+				else
+					if l:ec ==# ';' && s:SLPSuffixOk(a:s, l:sp[0])
+						return [l:i, l:sp[0], 1]
+					endif
+				endif
+			endif
+		endif
+		let l:i += 1
+	endwhile
+	return [-1, -1, -1]
+endfunction
+
+function! s:R18BPairBalance(s, slpt)
+	" Delete every unbalanced pair (see above), both braces per
+	" pass to a fixpoint: only deletions happen, so the loop
+	" terminates. The closer is deleted first so the opener index
+	" stays valid.
+	let l:s = a:s
+	" R19 P1/P2: skip the byte scan when no pair can exist.
+	" The stridx tests are existence-only; the regexes are
+	" superset tests (a gate-prefix char or a line-start
+	" '{' must exist). String/comment blindness can only
+	" over-approximate, never skip an acting line.
+	if stridx(a:s, '{') < 0 || stridx(a:s, '}') < 0
+		return a:s
+	endif
+	if a:s !~# '[-=,(+*/%&|^<>~!:?'']\s*{' && a:s !~# '^\s*{'
+		return a:s
+	endif
+	while 1
+		let l:act = s:R18BFindAction(l:s, a:slpt)
+		if l:act[0] < 0
+			break
+		endif
+		let l:s = strpart(l:s, 0, l:act[1]) . strpart(l:s, l:act[1] + 1)
+		let l:s = strpart(l:s, 0, l:act[0]) . strpart(l:s, l:act[0] + 1)
+	endwhile
+	return l:s
+endfunction
+
+function! s:R18CPrevIdx(s, q)
+	" Index of the last char before byte a:q that is not a space
+	" or a tab, or -1. Mirrors the tail-drop pattern's single
+	" prefix char plus whitespace gap: nothing is skipped over.
+	let l:tab = nr2char(9)
+	let l:j = a:q - 1
+	while l:j >= 0 && (strpart(a:s, l:j, 1) ==# ' ' || strpart(a:s, l:j, 1) ==# l:tab)
+		let l:j -= 1
+	endwhile
+	return l:j
+endfunction
+
+function! s:R18CTailDropped(s, q, slpt)
+	" True when the tail-drop rule would eat the '}' at byte a:q
+	" under the operative classes: the previous non-space char in
+	" the new prefix class, or ';' on lines SLP touched (where the
+	" guarded pristine pattern is re-armed), and a suffix the
+	" tail-drop accepts. The nest/pattern rules are not modeled
+	" here; their victims count as kept, which can only make the
+	" blocking test below more eager, never less.
+	let l:j = s:R18CPrevIdx(a:s, a:q)
+	if l:j < 0
+		return 0
+	endif
+	let l:c = strpart(a:s, l:j, 1)
+	if stridx('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")]', l:c) < 0 && !(a:slpt && l:c ==# ';')
+		return 0
+	endif
+	return s:SLPSuffixOk(a:s, a:q)
+endfunction
+
+function! s:R18CPrefixBalance(s, q, slpt)
+	" [openers, depth] over the braces in a:s before byte a:q,
+	" honoring strings and block comments (braces inside them
+	" never reach the codes) and stopping at a line comment. A
+	" '{' counts as a surviving opener. A '}' counts only when
+	" the tail-drop would keep it: it then survives as an 'e'
+	" that cancels one opener. The text seen here has already
+	" passed the gate, the line-start rule, and the inside/unique
+	" whole-drop, so every '{' present is a surviving opener and
+	" no set braces remain.
+	let l:bsl = nr2char(92)
+	let l:ns = len(a:s)
+	let l:n = a:q
+	let l:k = 0
+	let l:openers = 0
+	let l:depth = 0
+	while l:k < l:n
+		let l:ch = strpart(a:s, l:k, 1)
+		if l:ch ==# '"'
+			let l:k += 1
+			while l:k < l:n
+				let l:c2 = strpart(a:s, l:k, 1)
+				if l:c2 ==# l:bsl
+					let l:k += 2
+				elseif l:c2 ==# '"'
+					let l:k += 1
+					break
+				else
+					let l:k += 1
+				endif
+			endwhile
+			continue
+		endif
+		if l:ch ==# '/' && l:k + 1 < l:ns
+			let l:nx = strpart(a:s, l:k + 1, 1)
+			if l:nx ==# '/'
+				break
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:k + 2)
+				if l:e < 0 || l:e >= l:n
+					break
+				endif
+				let l:k = l:e + 2
+				continue
+			endif
+		endif
+		if l:ch ==# '{'
+			let l:openers += 1
+			let l:depth += 1
+		elseif l:ch ==# '}'
+			if !s:R18CTailDropped(a:s, l:k, a:slpt)
+				let l:depth -= 1
+			endif
+		endif
+		let l:k += 1
+	endwhile
+	return [l:openers, l:depth]
+endfunction
+
+function! s:R18CFindBlocked(s, slpt)
+	" Index of the leftmost blocked '}' or -1. A '}' outside
+	" strings/comments is a fix-(b) retention candidate when its
+	" previous non-space char is ';' and its suffix is one the
+	" tail-drop accepts. It is BLOCKED when a surviving same-line
+	" opener stands before it and that opener's 'b' is already
+	" canceled by a surviving inner closer (openers > 0 and
+	" depth <= 0): keeping the candidate would add a second 'e'.
+	" A closer with no same-line opener (a multi-line close) is
+	" never blocked. A line comment ends the search.
+	let l:bsl = nr2char(92)
+	let l:n = len(a:s)
+	let l:i = 0
+	while l:i < l:n
+		let l:ch = strpart(a:s, l:i, 1)
+		if l:ch ==# '"'
+			let l:i += 1
+			while l:i < l:n
+				let l:c2 = strpart(a:s, l:i, 1)
+				if l:c2 ==# l:bsl
+					let l:i += 2
+				elseif l:c2 ==# '"'
+					let l:i += 1
+					break
+				else
+					let l:i += 1
+				endif
+			endwhile
+			continue
+		endif
+		if l:ch ==# '/' && l:i + 1 < l:n
+			let l:nx = strpart(a:s, l:i + 1, 1)
+			if l:nx ==# '/'
+				return -1
+			endif
+			if l:nx ==# '*'
+				let l:e = stridx(a:s, '*/', l:i + 2)
+				if l:e < 0
+					return -1
+				endif
+				let l:i = l:e + 2
+				continue
+			endif
+		endif
+		if l:ch ==# '}'
+			let l:j = s:R18CPrevIdx(a:s, l:i)
+			if l:j >= 0 && strpart(a:s, l:j, 1) ==# ';' && s:SLPSuffixOk(a:s, l:i)
+				let l:bal = s:R18CPrefixBalance(a:s, l:i, a:slpt)
+				if l:bal[0] > 0 && l:bal[1] <= 0
+					return l:i
+				endif
+			endif
+		endif
+		let l:i += 1
+	endwhile
+	return -1
+endfunction
+
+function! s:R18CStripBlocked(s, slpt)
+	" Delete every blocked retention candidate (see above), one
+	" per pass to a fixpoint: only deletions happen, so the loop
+	" terminates. Runs just before the tail-drop fixpoint loop,
+	" on the exact text the tail-drop sees.
+	let l:s = a:s
+	" R19 P1/P2: skip the byte scan when no candidate can
+	" exist: a blocked '}' needs a preceding ';'
+	" (whitespace gap only). Evaluated here, on the gated
+	" text, never upstream (whole-drop join effect).
+	if stridx(a:s, '}') < 0 || stridx(a:s, ';') < 0
+		return a:s
+	endif
+	if a:s !~# ';\s*}'
+		return a:s
+	endif
+	while 1
+		let l:q = s:R18CFindBlocked(l:s, a:slpt)
+		if l:q < 0
+			break
+		endif
+		let l:s = strpart(l:s, 0, l:q) . strpart(l:s, l:q + 1)
+	endwhile
+	return l:s
+endfunction
+
 function! s:ConvertToCodes( codeline, ... )
 	" keywords that don't affect indent: module endmodule package
 	" endpackage interface endinterface (upstream nachumk behavior; their
@@ -579,6 +1094,23 @@ function! s:ConvertToCodes( codeline, ... )
 " joined/substituted text never scans.
 	let l:mode = a:0 ? a:1 : 0
 	let l:lnum = a:0 > 1 ? a:2 : 0
+	let l:front_key = ''
+	if l:lnum > 0
+		if !exists('b:sv_front_tick') || b:sv_front_tick != b:changedtick
+			let b:sv_front_tick = b:changedtick
+			let b:sv_front_cache = {}
+		endif
+		let l:front_key = l:mode . ':' . l:lnum
+		if has_key(b:sv_front_cache, l:front_key)
+			let l:fe = b:sv_front_cache[l:front_key]
+			if a:codeline ==# l:fe[0]
+				return l:fe[1]
+			endif
+			if substitute(a:codeline, '^\s*', '', '') ==# l:fe[2]
+				return l:fe[1]
+			endif
+		endif
+	endif
 
 	let l:scan = l:mode == 0 && l:lnum > 0 && stridx(a:codeline, '}') >= 0 && a:codeline !~ '^\s*`' && a:codeline !~ '^\s*\*'
 	if l:scan
@@ -593,6 +1125,9 @@ function! s:ConvertToCodes( codeline, ... )
 	endif
 	let l:key = l:mode . ':' . (l:scan ? l:lnum . ':' : '') . a:codeline
 	if has_key(b:sv_conv_cache, l:key)
+		if l:lnum > 0
+			let b:sv_front_cache[l:front_key] = [a:codeline, b:sv_conv_cache[l:key], substitute(a:codeline, '^\s*', '', '')]
+		endif
 		return b:sv_conv_cache[l:key]
 	endif
 	let l:verdict = l:scan ? s:ConcatPairVerdict(l:lnum) : 0
@@ -604,15 +1139,18 @@ function! s:ConvertToCodes( codeline, ... )
 	" do not match any code pattern). Detect it with C-level stridx /
 	" count plus two small regexes instead of ~40 substitutes. Any
 	" doubt falls through to the full path below.
-	if stridx(a:codeline, '`') < 0 && stridx(a:codeline, '"') < 0
+	if stridx(a:codeline, ';') >= 0 && stridx(a:codeline, '`') < 0 && stridx(a:codeline, '"') < 0
 			\ && stridx(a:codeline, '@') < 0 && stridx(a:codeline, '{') < 0
 			\ && stridx(a:codeline, '}') < 0
 			\ && stridx(a:codeline, '/*') < 0 && stridx(a:codeline, '*/') < 0
 			\ && count(a:codeline, '(') == count(a:codeline, ')')
 			\ && count(a:codeline, '[') == count(a:codeline, ']')
 			\ && a:codeline =~# ';\s*$' && a:codeline !~# '^\s*\(//\|/\*\)'
-			\ && a:codeline !~# '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|begin\|end\|function\|endfunction\|task\|endtask\|class\|endclass\|case\|casex\|casez\|endcase\|fork\|join\|join_any\|join_none\|generate\|endgenerate\|module\|endmodule\|always\|always_comb\|always_ff\|always_latch\|initial\|final\|typedef\|import\|export\|extern\|pure\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|clocking\|endclocking\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|table\|endtable\|randcase\|randsequence\|assert\|assume\|cover\|restrict\|disable\|wait\|wait_order\|return\|break\|continue\|else\|elsif\)\>'
+			\ && !s:PlainStmtKeyword(a:codeline)
 		let b:sv_conv_cache[l:key] = ';'
+		if l:lnum > 0
+			let b:sv_front_cache[l:front_key] = [a:codeline, ';', substitute(a:codeline, '^\s*', '', '')]
+		endif
 		return ';'
 	endif
 	let delims = a:codeline
@@ -679,7 +1217,9 @@ function! s:ConvertToCodes( codeline, ... )
 	" class gains '['), so the pair stays balanced either way.
 	" 'return {' is the same shape: a concatenation returned as an
 	" expression (demo102).
-	let delims = substitute(delims, '\<\(dist\|intersect\|return\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	if stridx(delims, '{') >= 0
+		let delims = substitute(delims, '\<\(dist\|intersect\|return\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+	endif
 	" Streaming operators ({<<{...}}, {>>{...}}) open a brace pair whose
 	" inner '{' must survive as a block code: the outer '{' is kept
 	" (followed by '<'/'>', outside the gate follow class) and
@@ -688,22 +1228,35 @@ function! s:ConvertToCodes( codeline, ... )
 	" 'e' would leak (demo52). Rewrite the inner '{' to '('
 	" (the same 'b' code) to a fixpoint, so nested streaming is
 	" protected level by level.
-	let l:stream_pat = '[{(]\s*\(<<\|>>\)\s*\zs{'
-	while delims =~ l:stream_pat
-		let delims = substitute(delims, l:stream_pat, '(', '')
-	endwhile
+	if stridx(delims, '{') >= 0
+		let l:stream_pat = '[{(]\s*\(<<\|>>\)\s*\zs{'
+		while delims =~ l:stream_pat
+			let delims = substitute(delims, l:stream_pat, '(', '')
+		endwhile
+	endif
 	" Same-line pairs whose closer the tail-drop eats while the
 	" opener survives the gate (see s:StripSameLinePairs above):
 	" brace-only mode skips it so the pairing census sees the
 	" baseline brace picture.
-	if l:mode != 2
+	let l:slp_touched = 0
+	if l:mode != 2 && stridx(delims, '{') >= 0 && stridx(delims, '}', stridx(delims, '{') + 1) >= 0
+		let l:slp_before = delims
 		let delims = s:StripSameLinePairs(delims)
+		let l:slp_touched = delims !=# l:slp_before
+	endif
+	if l:mode == 0
+		let delims = s:R18BPairBalance(delims, l:slp_touched)
 	endif
 	" The '{' gate also covers operators: a '{' after + - * / %
 	" & | ^ < > ~ ! is an expression operand (a concatenation), never
 	" a block (demo102).
-	let delims = substitute(delims, '\([=,(+*/%&|^<>~!-]\|[:?]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
-	let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '', 'g')
+	if stridx(delims, '{') >= 0
+		let delims = substitute(delims, '\([=,(+*/%&|^<>~!-]\|''\)\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+		if stridx(delims, '{') >= 0 && (stridx(delims, ':') >= 0 || stridx(delims, '?') >= 0)
+			let delims = substitute(delims, '\([:?]\)\s*{\([^{}]*;\)\@!\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '\1', 'g')
+		endif
+		let delims = substitute(delims, '^\s*{\ze\s*\(\d\(\d*\s*{\)\@!\|\[\|[A-Za-z_"$''(~!+`-]\)', '', 'g')
+	endif
 	" The '{' follow class also includes ' (an unsized based literal
 	" first element, "{'h0, sig[0]}"): without it the '{' is kept
 	" while the '}' is dropped, leaving an unmatched 'b' that
@@ -713,7 +1266,9 @@ function! s:ConvertToCodes( codeline, ... )
 	" based literals (8'hFF, 4'b10X1, 'd42) are number digits, not an
 	" identifier that ends a concatenation: drop the radix+digits so the
 	" closing '}' of a bins value set sees a plain digit and stays
-	let delims = substitute(delims, '''[sSdDbBhHoO]\h\+', '', 'g')
+	if stridx(delims, "'") >= 0
+		let delims = substitute(delims, '''[sSdDbBhHoO]\h\+', '', 'g')
+	endif
 	" 'inside {...}' and 'unique {...}' sets must be dropped BEFORE the
 	" concatenation '}' drop below, or that drop eats the set's closing
 	" '}' (preceded by an identifier, followed by ')') and leaves an
@@ -727,7 +1282,9 @@ function! s:ConvertToCodes( codeline, ... )
 	" concatenation rule (it follows an identifier, not = ( , : ? '),
 	" while its '}' IS dropped, leaving the same unmatched 'b'
 	" (demo70).
-	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
+	if stridx(delims, '{') >= 0
+		let delims = substitute(delims, '\<\(inside\|unique\)\s\+{\%([^}"]\|"[^"]*"\)*}', '', 'g')
+	endif
 	" Nested single-line array literals: the gate above drops every
 	" open brace, but the close-brace rule only drops closes followed
 	" by a terminator, so an inner close before another close survives
@@ -746,14 +1303,26 @@ function! s:ConvertToCodes( codeline, ... )
 	" Brace-only mode (the pairing scan census) skips the guarded
 	" rule: the census must see the baseline brace picture, or a
 	" dropped inner close would flip a verdict gate downstream.
+	" Phase 3A: block a fix-(b) retention whose opener is
+	" already canceled (see the R18C helpers above). The
+	" brace-only census skips this, keeping the (a)/(b)
+	" brace picture for the scan.
+	if l:mode == 0
+		let delims = s:R18CStripBlocked(delims, l:slp_touched)
+	endif
 	if stridx(delims, '}') >= 0
 		let l:nest_pat = '\(^\|}\)\%(\({\)\@!.\)\{-}''\%(\({\)\@!.\)\{-}\([]A-Za-z_0-9")]\)\s*\zs}\ze\s*\%(}\|$\)'
 		let l:fix_prev = ''
 		while l:fix_prev !=# delims
 			let l:fix_prev = delims
-			let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
+			let delims = substitute(delims, '\([]A-Za-z_0-9")]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
+			if l:slp_touched
+				let delims = substitute(delims, '\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*\%([,;):&|^+\-*/%=<>!?.]\|\<\%(iff\|with\)\>\)', '', 'g')
+			endif
 			if l:mode != 2
-				let delims = substitute(delims, l:nest_pat, '', '')
+				if stridx(delims, "'") >= 0 && stridx(delims, '}') >= 0
+					let delims = substitute(delims, l:nest_pat, '', '')
+				endif
 			endif
 		endwhile
 	endif
@@ -765,7 +1334,7 @@ function! s:ConvertToCodes( codeline, ... )
 	" stay paired with it. The tempered gap walks back from the
 	" '}' to the line start or a previous '}' without
 	" crossing a '{'; one '}' per pass, to a fixpoint (demo98).
-	if delims =~ '}\s*[\[\]]'
+	if stridx(delims, '}') >= 0 && (stridx(delims, '[') >= 0 || stridx(delims, ']') >= 0 || stridx(delims, "\\") >= 0)
 		let l:pair_pat = '\(^\|}\)\%(\({\)\@!.\)\{-}\([]A-Za-z_0-9");]\)\s*\zs}\ze\s*[\[\]]'
 		while delims =~ l:pair_pat
 			let delims = substitute(delims, l:pair_pat, '', '')
@@ -773,13 +1342,17 @@ function! s:ConvertToCodes( codeline, ... )
 	endif
 	" strip string literals early: keywords, comment markers and braces
 	" inside strings ("class foo", "/*", "-> {") must not disturb the
-	" classification below (the later strip becomes a no-op)
-	let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
+	" classification below (round 20: the duplicate later strip was deleted as dead - no rule below may introduce a ")
+	if stridx(delims, '"') >= 0
+		let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
+	endif
 	" set-membership 'inside {...}' and constraint 'unique {...}' are
 	" expressions, not blocks: drop them whole (after the string strip,
 	" so text inside a string cannot trigger it and eat a real brace
 	" beyond the closing quote)
-	let delims = substitute(delims, '\<\(inside\|unique\)\s\+{[^}]*}', '', 'g')
+	if (stridx(delims, 'inside') >= 0 || stridx(delims, 'unique') >= 0) && stridx(delims, '{') >= 0
+		let delims = substitute(delims, '\<\(inside\|unique\)\s\+{[^}]*}', '', 'g')
+	endif
 	" context strips that must run BEFORE the keyword filter (their leading
 	" word - import/default - is not in the keep-list and is removed by the
 	" filter): a DPI import's function/task is the imported symbol kind, not
@@ -801,18 +1374,38 @@ function! s:ConvertToCodes( codeline, ... )
 	" a real definition). Only complete /* ... */ pairs pass the gap,
 	" so an import inside a comment cannot swallow the real function
 	" after the comment.
-	let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
-	let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
+	if stridx(delims, 'import') >= 0
+		if stridx(delims, 'function') >= 0
+			let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
+		endif
+		if stridx(delims, 'task') >= 0
+			let delims = substitute(delims, '\<import\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
+		endif
+	endif
 	" same for a DPI export ("export \"DPI-C\" function sv_callback;") and
 	" a modport export ("export task run()"): the function/task is the
 	" exported symbol kind, not a definition — without this the 'function'
 	" opens a block and everything after it indents one level too deep
 	" (demo48)
-	let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
-	let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
-	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking[^;]*;\s*endclocking', '', 'g')
-	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s\+\h\w*\s*;', '', 'g')
-	let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s*[@;]', '', 'g')
+	if stridx(delims, 'export') >= 0
+		if stridx(delims, 'function') >= 0
+			let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<function\>', '', 'g')
+		endif
+		if stridx(delims, 'task') >= 0
+			let delims = substitute(delims, '\<export\>\%(\/\*.\{-}\*\/\|[^;/]\)\{-}\<task\>', '', 'g')
+		endif
+	endif
+	if stridx(delims, 'default') >= 0 && stridx(delims, 'clocking') >= 0
+		if stridx(delims, ';') >= 0 && stridx(delims, 'endclocking') >= 0
+			let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking[^;]*;\s*endclocking', '', 'g')
+		endif
+		if stridx(delims, ';') >= 0
+			let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s\+\h\w*\s*;', '', 'g')
+		endif
+		if stridx(delims, '@') >= 0 || stridx(delims, ';') >= 0
+			let delims = substitute(delims, 'default\s*\%(\/\*.\{-}\*\/\s*\)*clocking\ze\s*[@;]', '', 'g')
+		endif
+	endif
 	" A control line whose body is a complete block on the SAME line
 	" ("if (a) begin b = 1; end") must not indent the next line: the
 	" b/e cancel leaves a trailing 'x' (LINE_INDENT) and the following
@@ -828,21 +1421,39 @@ function! s:ConvertToCodes( codeline, ... )
 	" blocks have no 'end' on the line and are untouched. Bare
 	" 'begin...end' and case-label items already reduce to empty codes
 	" and need no control prefix, so they are left alone.
-	let delims = substitute(delims, '\%(\<\%(if\|for\|foreach\|do\|while\|forever\|repeat\|else\|always\|always_comb\|always_ff\|always_latch\|initial\|wait\|wait_order\)\>\|@\)\%(\%(\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\|end\|join_any\|join_none\|join\|endcase\|endgenerate\|endtable\)\>\)\@!.\)\{-}\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\)\>\%(\%(\<\%(begin\|end\|if\|else\|for\|foreach\|while\|forever\|repeat\|do\|case\|casex\|casez\|fork\|join\|join_any\|join_none\|function\|endfunction\|task\|endtask\|class\|endclass\|module\|endmodule\|generate\|endgenerate\|endcase\|table\|endtable\|randcase\|clocking\|endclocking\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|cover\|assume\|restrict\|import\|export\|wait\|wait_order\|always\|always_comb\|always_ff\|always_latch\|initial\)\>\|/\*\|//\)\@!.\)\{-}\<\%(endcase\|endgenerate\|endtable\|end\|join_any\|join_none\|join\)\>', ';', 'g')
+	if (stridx(delims, 'end') >= 0 || stridx(delims, 'join') >= 0) && (stridx(delims, 'begin') >= 0 || stridx(delims, 'fork') >= 0 || stridx(delims, 'case') >= 0 || stridx(delims, 'generate') >= 0 || stridx(delims, 'table') >= 0) && (stridx(delims, '@') >= 0 || stridx(delims, 'if') >= 0 || stridx(delims, 'for') >= 0 || stridx(delims, 'do') >= 0 || stridx(delims, 'while') >= 0 || stridx(delims, 'repeat') >= 0 || stridx(delims, 'else') >= 0 || stridx(delims, 'always') >= 0 || stridx(delims, 'initial') >= 0 || stridx(delims, 'wait') >= 0)
+		let delims = substitute(delims, '\%(\<\%(if\|for\|foreach\|do\|while\|forever\|repeat\|else\|always\|always_comb\|always_ff\|always_latch\|initial\|wait\|wait_order\)\>\|@\)\%(\%(\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\|end\|join_any\|join_none\|join\|endcase\|endgenerate\|endtable\)\>\)\@!.\)\{-}\<\%(begin\|fork\|case\|casex\|casez\|generate\|table\|randcase\)\>\%(\%(\<\%(begin\|end\|if\|else\|for\|foreach\|while\|forever\|repeat\|do\|case\|casex\|casez\|fork\|join\|join_any\|join_none\|function\|endfunction\|task\|endtask\|class\|endclass\|module\|endmodule\|generate\|endgenerate\|endcase\|table\|endtable\|randcase\|clocking\|endclocking\|covergroup\|endgroup\|property\|endproperty\|sequence\|endsequence\|checker\|endchecker\|specify\|endspecify\|config\|endconfig\|interface\|endinterface\|package\|endpackage\|primitive\|endprimitive\|cover\|assume\|restrict\|import\|export\|wait\|wait_order\|always\|always_comb\|always_ff\|always_latch\|initial\)\>\|/\*\|//\)\@!.\)\{-}\<\%(endcase\|endgenerate\|endtable\|end\|join_any\|join_none\|join\)\>', ';', 'g')
+	endif
 	" UVM field-automation macro pairs behave like block open/close so
 	" `uvm_field_* entries indent one level and `..._utils_end dedents.
 	" They are mapped to braces here on purpose: the keyword filter below
 	" strips bare letters like 'b'/'e', while braces survive it and are
 	" converted to b/e by the [({]/[)}] rules further down.
-	let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
-	let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
+	if stridx(delims, '_utils_begin') >= 0
+		let delims = substitute(delims, '`\h\w*_utils_begin\>', '{', 'g')
+	endif
+	if stridx(delims, '_utils_end') >= 0
+		let delims = substitute(delims, '`\h\w*_utils_end\>', '}', 'g')
+	endif
 	let delims = substitute(delims, '\<\(\%(initial\|always\|always_comb\|always_ff\|always_latch\|final\|begin\|generate\|disable\|if\|extern\|for\|foreach\|do\|while\|forever\|repeat\|randcase\|case\|casex\|casez\|wait\|wait_order\|fork\|ifdef\|ifndef\|else\|elsif\|end\|endgenerate\|endif\|begin_keywords\|celldefine\|default_nettype\|define\|end_keywords\|endcelldefine\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\|endcase\|join\|join_any\|join_none\|class\|config\|clocking\|function\|task\|specify\|covergroup\|pure\|endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|primitive\|table\|endprimitive\|endtable\|randsequence\|assume\|assert\|cover\|restrict\|property\|typedef\|endproperty\|sequence\|checker\|endsequence\|endchecker\)\>\)\@!\k\+', '', 'g')
-	let delims = substitute(delims, 'wait\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
-	let delims = substitute(delims, 'disable\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
-	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
-	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
-	let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
-	let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
+	if stridx(delims, 'wait') >= 0 && stridx(delims, 'fork') >= 0
+		let delims = substitute(delims, 'wait\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
+	endif
+	if stridx(delims, 'disable') >= 0 && stridx(delims, 'fork') >= 0
+		let delims = substitute(delims, 'disable\s*\%(\/\*.\{-}\*\/\s*\)*fork', '', 'g')
+	endif
+	if stridx(delims, 'pure') >= 0 && stridx(delims, 'function') >= 0
+		let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
+	endif
+	if stridx(delims, 'extern') >= 0 && stridx(delims, 'function') >= 0
+		let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*function', '', 'g')
+	endif
+	if stridx(delims, 'pure') >= 0 && stridx(delims, 'task') >= 0
+		let delims = substitute(delims, 'pure\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
+	endif
+	if stridx(delims, 'extern') >= 0 && stridx(delims, 'task') >= 0
+		let delims = substitute(delims, 'extern\s*\%(\/\*.\{-}\*\/\s*\)*task', '', 'g')
+	endif
 	" a DPI import's function/task is the imported symbol kind, not a
 	" definition: neutralize it so "import "DPI-C" function f(...);" does
 	" not open a group
@@ -851,9 +1462,15 @@ function! s:ConvertToCodes( codeline, ... )
 	" match the single-letter code patterns (e.g. "extern" contains 'e' and
 	" 'x', acting as a spurious block-stop and mis-dedenting a following
 	" "function ..." declaration that was split onto its own line)
-	let delims = substitute(delims, '\<extern\>', '', 'g')
-	let delims = substitute(delims, '\<pure\>', '', 'g')
-	let delims = substitute(delims, '\<disable\>', '', 'g')
+	if stridx(delims, 'extern') >= 0
+		let delims = substitute(delims, '\<extern\>', '', 'g')
+	endif
+	if stridx(delims, 'pure') >= 0
+		let delims = substitute(delims, '\<pure\>', '', 'g')
+	endif
+	if stridx(delims, 'disable') >= 0
+		let delims = substitute(delims, '\<disable\>', '', 'g')
+	endif
 
 " Brace-only mode maps structural keywords to nothing: only
 " '{'/'}' survive as b/e, so the pairing scan counts braces.
@@ -862,16 +1479,30 @@ function! s:ConvertToCodes( codeline, ... )
 	let l:kf = l:mode == 2 ? '' : 'f'
 	let l:kh = l:mode == 2 ? '' : 'h'
 	let l:kx = l:mode == 2 ? '' : 'x'
-	let delims = substitute(delims, '\<wait\>', l:kx, 'g')
-	let delims = substitute(delims, '\<alias\>', '', 'g')
-	let delims = substitute(delims, '\<final\>', '', 'g')
-	let delims = substitute(delims, 'typedef\s*\%(\/\*.\{-}\*\/\s*\)*class', '', 'g')
-	let delims = substitute(delims, 'typedef', '', 'g')
+	if stridx(delims, 'wait') >= 0
+		let delims = substitute(delims, '\<wait\>', l:kx, 'g')
+	endif
+	if stridx(delims, 'alias') >= 0
+		let delims = substitute(delims, '\<alias\>', '', 'g')
+	endif
+	if stridx(delims, 'final') >= 0
+		let delims = substitute(delims, '\<final\>', '', 'g')
+	endif
+	if stridx(delims, 'typedef') >= 0 && stridx(delims, 'class') >= 0
+		let delims = substitute(delims, 'typedef\s*\%(\/\*.\{-}\*\/\s*\)*class', '', 'g')
+	endif
+	if stridx(delims, 'typedef') >= 0
+		let delims = substitute(delims, 'typedef', '', 'g')
+	endif
 	" 'property'/'sequence' in assert/assume/cover/restrict is a reference, not a
 	" sequence/property definition (assert, property, sequence are all in the
 	" keep-list, so this can run after the filter)
-	let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s*\%(\/\*.\{-}\*\/\s*\)*\%(\[\s*#\s*\S\{-}\s*\]\s*\%(\/\*.\{-}\*\/\s*\)*\)\?\%(property\|sequence\)', '', 'g')
-	let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
+	if (stridx(delims, 'assert') >= 0 || stridx(delims, 'assume') >= 0 || stridx(delims, 'cover') >= 0 || stridx(delims, 'restrict') >= 0) && (stridx(delims, 'property') >= 0 || stridx(delims, 'sequence') >= 0)
+		let delims = substitute(delims, '\%(assert\|assume\|cover\|restrict\)\s*\%(\/\*.\{-}\*\/\s*\)*\%(\[\s*#\s*\S\{-}\s*\]\s*\%(\/\*.\{-}\*\/\s*\)*\)\?\%(property\|sequence\)', '', 'g')
+	endif
+	if stridx(delims, '`') >= 0
+		let delims = substitute(delims, '`\s*\<\(begin_keywords\|celldefine\|default_nettype\|define\|else\|elsif\|end_keywords\|endcelldefine\|endif\|ifdef\|ifndef\|include\|nounconnected_drive\|pragma\|resetall\|timescale\|unconnected_drive\|undef\|undefineall\)\>', 'z', 'g')
+	endif
 	" a macro call in the MIDDLE of a line ("else `uvm_error(...)",
 	" "if (x) `uvm_info(...)") is a complete statement to the indent
 	" engine: its expansion ends with one. Inject a ';' where the macro
@@ -879,13 +1510,17 @@ function! s:ConvertToCodes( codeline, ... )
 	" keyword and the next statement does not indent one level too deep.
 	" Line-LEADING macros keep the `^\s*`.*$ -> ';' rule further down
 	" (which wipes the whole line, braces included).
-	if delims !~ '^\s*`'
+	if delims !~ '^\s*`' && stridx(delims, '`') >= 0
 		let delims = substitute(delims, '`\h\w*\>', ';', 'g')
 	endif
 	let delims = substitute(delims, '\<\(begin\|generate\|randcase\|case\|casex\|casez\|fork\|table\)\>', l:kb, 'g')
-	let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', l:ke, 'g')
+	if (stridx(delims, 'end') >= 0 || stridx(delims, 'join') >= 0)
+		let delims = substitute(delims, '\<\(end\|endgenerate\|endcase\|join\|join_any\|join_none\|endtable\)\>', l:ke, 'g')
+	endif
 	let delims = substitute(delims, '\<\(class\|config\|clocking\|function\|task\|specify\|covergroup\|property\|sequence\|checker\|primitive\|randsequence\)\>', l:kf, 'g')
-	let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', l:kh, 'g')
+	if stridx(delims, 'end') >= 0
+		let delims = substitute(delims, '\<\(endclass\|endconfig\|endclocking\|endfunction\|endtask\|endspecify\|endgroup\|endproperty\|endsequence\|endchecker\|endprimitive\)\>', l:kh, 'g')
+	endif
 	let delims = substitute(delims, '\<\(if\|for\|foreach\|do\|while\|forever\|repeat\|always\|always_comb\|always_ff\|always_latch\|initial\|wait_order\)\>', l:kx, 'g')
 	" 'wait_order' is a control statement like 'if': its body indents one
 	" level and its 'else' clause dedents back (demo68). Without this the
@@ -894,22 +1529,38 @@ function! s:ConvertToCodes( codeline, ... )
 	" indents one level, and the dedent rule (prev2 x + prev1 exec) can also
 	" fire for end/endfunction/endtask that follow an else-branch.
 	" 'assert' stays a statement terminator (lower priority, per README).
-	let delims = substitute(delims, '\<\%(assert\|assume\|cover\|restrict\)\>', ';', 'g')
-	let delims = substitute(delims, '\<else\>', l:kx, 'g')
-	let delims = substitute(delims, '^\s*\/\/.*$', 'l', 'g')
-	let delims = substitute(delims, '\/\/.*', '', 'g')
-	let delims = substitute(delims, '"\(\\.\|[^"\\]\)*"', '', 'g')
-	let delims = substitute(delims, '\/\*', 's', 'g')
-	let delims = substitute(delims, '\*\/', 'p', 'g')
-	let delims = substitute(delims, '\[[^:\[\]]*:[^:\[\]]*\]', '', 'g')
-	let delims = substitute(delims, '\@', l:kx, 'g')
+	if (stridx(delims, 'assert') >= 0 || stridx(delims, 'assume') >= 0 || stridx(delims, 'cover') >= 0 || stridx(delims, 'restrict') >= 0)
+		let delims = substitute(delims, '\<\%(assert\|assume\|cover\|restrict\)\>', ';', 'g')
+	endif
+	if stridx(delims, 'else') >= 0
+		let delims = substitute(delims, '\<else\>', l:kx, 'g')
+	endif
+	if stridx(delims, '//') >= 0
+		let delims = substitute(delims, '^\s*\/\/.*$', 'l', 'g')
+		let delims = substitute(delims, '\/\/.*', '', 'g')
+	endif
+	" (round 20: duplicate string strip deleted - dead: the early strip removes every complete string and no intervening rule introduces a ".)
+	if stridx(delims, '/*') >= 0
+		let delims = substitute(delims, '\/\*', 's', 'g')
+	endif
+	if stridx(delims, '*/') >= 0
+		let delims = substitute(delims, '\*\/', 'p', 'g')
+	endif
+	if stridx(delims, '[') >= 0 && stridx(delims, ':') >= 0 && stridx(delims, ']') >= 0
+		let delims = substitute(delims, '\[[^:\[\]]*:[^:\[\]]*\]', '', 'g')
+	endif
+	if stridx(delims, '@') >= 0
+		let delims = substitute(delims, '\@', l:kx, 'g')
+	endif
 	" a macro call whose argument is a multi-line constraint/block
 	" ('`uvm_do_with(x, {' ... '})') keeps its open brace: map the whole
 	" line to '{' so the body indents one level and the closing '})'
 	" returns to the macro line instead of dedenting past it. The '{'
 	" replaces the backtick, so the ^\s*`.*$ rule below leaves it alone;
 	" in no-parens mode the brace is dropped with the other delimiters.
-	let delims = substitute(delims, '^\s*`.*{\s*$', '{', '')
+	if stridx(delims, '`') >= 0 && stridx(delims, '{') >= 0
+		let delims = substitute(delims, '^\s*`.*{\s*$', '{', '')
+	endif
 
 " Pairing verdict 1: the closer '}' pairs with a dropped '{'
 " (demo99) - remove it so no phantom 'e' survives. Only when
@@ -931,7 +1582,9 @@ function! s:ConvertToCodes( codeline, ... )
 	if l:shield
 		let delims = substitute(delims, nr2char(1), s:CONCAT_CLOSE, 'g')
 	endif
-	let delims = substitute(delims, '^\s*`.*$', ';', 'g')
+	if stridx(delims, '`') >= 0
+		let delims = substitute(delims, '^\s*`.*$', ';', 'g')
+	endif
 	let delims = substitute(delims, '[/@<=#,\.\$]*', '', 'g')
 	let delims = substitute(delims, '\s', '', 'g')
 	let delims = substitute(delims, '^o\+:', 'x', 'g')
@@ -962,6 +1615,9 @@ function! s:ConvertToCodes( codeline, ... )
 		let delims = substitute(delims, '\(s[^sp]*p\)', '', 'g')
 	endwhile
 	let b:sv_conv_cache[l:key] = delims
+	if l:lnum > 0
+		let b:sv_front_cache[l:front_key] = [a:codeline, delims, substitute(a:codeline, '^\s*', '', '')]
+	endif
 	return delims
 endfunction
 
@@ -994,6 +1650,16 @@ endfunction
 function! s:CodeAfterClose( codeline )
 	let l:after = s:CommentSegments(a:codeline)[1]
 	return l:after != '' && s:ConvertToCodes(l:after) =~ s:CODE_LETTER
+endfunction
+
+" Both block-comment-boundary verdicts from one CommentSegments
+" computation: [BoundaryHasCode, CodeAfterClose] for the same text.
+" Only used where both verdicts are needed on the same line.
+function! s:BoundaryCodePair( codeline )
+	let [l:before, l:after] = s:CommentSegments(a:codeline)
+	let l:b = (l:before != '' && s:ConvertToCodes(l:before) =~ s:CODE_LETTER)
+	let l:a = (l:after != '' && s:ConvertToCodes(l:after) =~ s:CODE_LETTER)
+	return [l:b || l:a, l:a]
 endfunction
 
 " True when a:codeline ends with a backslash that is real code: the
@@ -1070,12 +1736,26 @@ endfunction
 " Strip strings, //-tails and single-line /* */ pairs: the brace
 " census below must not count braces inside strings or comments.
 function! s:StripForBraces( line )
-	let l:l = substitute(a:line, '"\(\\.\|[^"\\]\)*"', '', 'g')
-	let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
+	if !exists('b:sv_memo_sfb_tick') || b:sv_memo_sfb_tick != b:changedtick
+		let b:sv_memo_sfb_tick = b:changedtick
+		let b:sv_memo_sfb = {}
+	endif
+	if has_key(b:sv_memo_sfb, a:line)
+		return b:sv_memo_sfb[a:line]
+	endif
+	if stridx(a:line, '"') >= 0
+		let l:l = substitute(a:line, '"\(\\.\|[^"\\]\)*"', '', 'g')
+	else
+		let l:l = a:line
+	endif
+	if stridx(l:l, '/*') >= 0 && stridx(l:l, '*/') >= 0
+		let l:l = substitute(l:l, '/\*.\{-}\*/', '', 'g')
+	endif
 	let l:cut = stridx(l:l, '//')
 	if l:cut >= 0
 		let l:l = strpart(l:l, 0, l:cut)
 	endif
+	let b:sv_memo_sfb[a:line] = l:l
 	return l:l
 endfunction
 
@@ -2095,7 +2775,7 @@ function! s:PrevBeforeBranch( prev1_ln, line_num )
 				if l:cur =~ ')\s*$' && l:cur !~ ');\s*$' && l:closes > l:opens
 					return l:pl
 				endif
-				if l:cur !~ ';\s*$' && !(l:cur =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && s:ConvertToCodes(s:GetWholeLine(l:pl), 0, l:pl) =~ 'b'
+				if l:cur !~ ';\s*$' && !(l:cur =~ ')\s*$' && l:opens == l:closes) && l:pl > 0 && l:pl_codes =~ 'b'
 					let l:sib = substitute(getline(a:prev1_ln), '"\(\\.\|[^"\\]\)*"', '', 'g')
 					let l:sib = substitute(l:sib, '/\*.\{-}\*/', '', 'g')
 					let l:sib = substitute(l:sib, '\/\/.*', '', '')
@@ -2638,8 +3318,7 @@ function! s:RollUpdate( line_num, indnt )
 		" counts only with code AFTER the closing "*/" (demo103);
 		" a unit starting outside counts when any code letter
 		" survives the markers (a "begin /*" opener included).
-		let l:ucode = s:BoundaryHasCode(l:utext)
-		let l:uafter = s:CodeAfterClose(l:utext)
+		let [l:ucode, l:uafter] = s:BoundaryCodePair(l:utext)
 		let l:urec = 0
 		if !(l:ucodes =~ s:LINE_COMMENT || l:ucodes =~ s:PREPROCESSOR || (l:uic && !l:uafter) || (!l:uic && !l:ucode && (l:ucodes =~ s:BLOCK_COMMENT_START || l:ucodes =~ s:BLOCK_COMMENT_STOP)))
 			call add(b:sv_roll_codelines, l:ustart)
@@ -2664,8 +3343,7 @@ function! s:RollUpdate( line_num, indnt )
 			if l:rlast < a:line_num
 				let l:rtext = s:GetWholeLine(a:line_num)
 				let l:rcodes = s:ConvertToCodes(l:rtext, 0, a:line_num)
-				let l:rcode = s:BoundaryHasCode(l:rtext)
-				let l:rafter = s:CodeAfterClose(l:rtext)
+				let [l:rcode, l:rafter] = s:BoundaryCodePair(l:rtext)
 				if !(l:rcodes =~ s:LINE_COMMENT || l:rcodes =~ s:PREPROCESSOR || (b:sv_roll_incomment && !l:rafter) || (!b:sv_roll_incomment && !l:rcode && (l:rcodes =~ s:BLOCK_COMMENT_START || l:rcodes =~ s:BLOCK_COMMENT_STOP)))
 					call add(b:sv_roll_codelines, a:line_num)
 					let b:sv_roll_ucodes[a:line_num] = l:rcodes
